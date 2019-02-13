@@ -1,0 +1,98 @@
+// TODO: animate in each line (so lines animate slightly when they change)
+
+$hex-color: #5bb498;
+
+.EvaluationViewer {
+  background: var(--stack-vis-background-color);
+  line-height: 14px;
+
+  .cached {
+    opacity: 0.5;
+  }
+
+  .initial-state {
+    margin: 0 0 8px;
+    padding: 8px 12px;
+    height: 14px;
+    background: var(--editor-background-color);
+    box-sizing: initial;
+  }
+
+  .state {
+    height: 18px;
+    padding-left: 12px;
+
+    &.success {
+      background-color: #14691e33;
+      border-left: 2px solid #14691e;
+      padding-left: 10px;
+      height: 16px;
+
+      .stack-item {
+        background-color: transparent;
+      }
+    }
+  }
+
+  .stack-item {
+    display: inline-block;
+    padding: 0 2px;
+    margin: 0 2px;
+    background-color: var(--editor-background-color);
+    border-radius: 2px;
+    font-size: 12px;
+    font-family: 'Fira Mono', monospace;
+    cursor: default;
+
+    &.named {
+      color: #8addff;
+    }
+    &.number {
+      color: #b5cea8;
+    }
+    &.hex {
+      color: $hex-color;
+    }
+    &.error {
+      background-color: transparent;
+      color: #b3675a;
+      &:before {
+        content: 'ⓧ';
+        font-size: 8px;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  .spacer {
+    display: inline-block;
+    width: 8px;
+    height: 100%;
+    margin-right: 4px;
+
+    &.conditional-executed {
+      border-right: 1px solid #d68d7288;
+    }
+    &.conditional-skipped {
+      border-right: 1px solid #d68d7222;
+    }
+    &.evaluation {
+      border-right: 1px solid #ffd700aa;
+    }
+  }
+}
+
+.stack-tooltip {
+  $tooltip-background: var(--interface-background-color);
+  .bp3-popover-content {
+    max-width: 400px !important;
+    overflow-wrap: break-word;
+    background: $tooltip-background !important;
+    font-family: var(--monospace-font-family);
+    color: $hex-color !important;
+  }
+  .bp3-popover-arrow-fill {
+    fill: $tooltip-background !important;
+  }
+}

@@ -1,0 +1,25 @@
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+html {
+  background-color: var(--interface-background-color);
+  overflow-y: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --monospace-font-family: 'Fira Mono', monospace;
+  --interface-background-color: #24282a;
+  --sidebar-background-color: var(--interface-background-color);
+  --sidebar-highlight-color: rgba(131, 226, 252, 0.2);
+  --editor-background-color: #1d2023;
+  --stack-vis-background-color: #181b1e;
+}

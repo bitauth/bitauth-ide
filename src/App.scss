@@ -1,0 +1,27 @@
+.App {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  font-family: 'Fira Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+code {
+  font-family: var(--monospace-font-family);
+}
+
+.mosaic.mosaic-blueprint-theme.bp3-dark {
+  background-color: var(--interface-background-color);
+}
+
+.mosaic-root {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.mosaic-tile {
+  margin: 0;
+}

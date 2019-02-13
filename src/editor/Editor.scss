@@ -1,0 +1,8 @@
+.Editor {
+  flex-grow: 1;
+  flex: 1;
+
+  .loading {
+    background-color: var(--editor-background-color);
+  }
+}

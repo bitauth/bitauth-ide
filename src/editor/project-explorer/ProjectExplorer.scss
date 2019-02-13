@@ -1,0 +1,64 @@
+.ProjectExplorer {
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 20px;
+  }
+
+  .title {
+    font-size: 1em;
+    padding: 1em;
+    margin: 0;
+    border-bottom: 1px solid var(--editor-background-color);
+  }
+  h3 {
+    font-size: 16px;
+    color: #868f98;
+    font-weight: normal;
+    text-transform: uppercase;
+    padding-left: 1em;
+  }
+
+  ul {
+    padding: 0;
+  }
+
+  & > ul {
+    margin: 0 0 2em 0;
+    ul {
+      margin-top: 0.7em;
+    }
+  }
+
+  li {
+    list-style: none;
+    padding: 0.5em 1em;
+    border-left: 2px solid transparent;
+
+    &.activatable {
+      cursor: pointer;
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    &.active {
+      border-color: #2a5b8b;
+    }
+  }
+
+  .demo-control {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    button {
+      background: none var(--editor-background-color);
+      border: none;
+      border-radius: 5px;
+      color: black;
+    }
+  }
+}
