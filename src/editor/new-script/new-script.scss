@@ -1,0 +1,34 @@
+.new-script-dialog {
+  code {
+    background-color: var(--stack-vis-background-color);
+    border-radius: 2px;
+    margin: 0 2px;
+    padding: 0 2px;
+    border: 1px solid var(--interface-background-color);
+  }
+
+  .bp3-label {
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  .bp3-dialog-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .error {
+    display: flex;
+    align-items: center;
+
+    .bp3-icon {
+      margin-right: 6px;
+      margin-bottom: 2px;
+    }
+    code {
+      padding: 2px 4px;
+      margin: 0 4px;
+    }
+  }
+}

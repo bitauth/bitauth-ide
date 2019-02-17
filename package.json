@@ -9,6 +9,7 @@
     "@svgr/webpack": "2.4.1",
     "@types/jest": "23.3.10",
     "@types/node": "^10.12.17",
+    "@types/parsimmon": "^1.10.0",
     "@types/react": "16.7.17",
     "@types/react-dom": "16.0.11",
     "@types/react-redux": "^7.0.1",
@@ -47,6 +48,7 @@
     "node-sass": "^4.11.0",
     "optimize-css-assets-webpack-plugin": "5.0.1",
     "parse-atl": "../parse-atl",
+    "parsimmon": "^1.12.0",
     "pnp-webpack-plugin": "1.1.0",
     "postcss-flexbugs-fixes": "4.1.0",
     "postcss-loader": "3.0.0",
@@ -55,7 +57,7 @@
     "react": "16.8.0-alpha.1",
     "react-app-polyfill": "^0.2.0",
     "react-dev-utils": "^7.0.0",
-    "react-dom": "16.8.0-alpha.1",
+    "react-dom": "npm:@hot-loader/react-dom",
     "react-monaco-editor": "^0.22.0",
     "react-mosaic-component": "^2.0.2",
     "react-redux": "^6.0.0",
@@ -131,5 +133,8 @@
     "presets": [
       "react-app"
     ]
+  },
+  "devDependencies": {
+    "@types/webpack-env": "^1.13.7"
   }
 }

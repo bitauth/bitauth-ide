@@ -11,7 +11,9 @@ import {
   IDETemplateLockingScript,
   IDEActivatableScript,
   IDETemplateScript,
-  IDETemplateTestedScript
+  IDETemplateTestedScript,
+  ScriptType,
+  ActiveDialog
 } from '../state/types';
 import {
   BitcoinCashOpcodes,
@@ -42,6 +44,16 @@ import {
 } from './editor-types';
 import { ActionCreators } from '../state/reducer';
 import { compileScript, CompilationResult } from '../bitauth-script/compile';
+import {
+  Classes,
+  Dialog,
+  Icon,
+  FormGroup,
+  InputGroup,
+  HTMLSelect
+} from '@blueprintjs/core';
+import { IconNames } from '@blueprintjs/icons';
+import { NewScriptDialog } from './new-script/new-script';
 
 const getEditorMode = (
   currentEditingMode: 'entity' | 'script',
@@ -97,6 +109,7 @@ interface ScriptEditorFrame<ProgramState extends IDESupportedProgramState> {
   name: string;
   id: string;
   script: string;
+  scriptType: ScriptType;
   compilation: CompilationResult<ProgramState>;
   /**
    * `evaluation` is undefined if there are compilation errors.
@@ -124,7 +137,11 @@ interface EditorStateScriptMode<ProgramState extends IDESupportedProgramState> {
     | ProjectEditorMode.scriptPairEditor;
   scriptEditorFrames: ScriptEditorFrame<ProgramState>[];
   isP2sh: boolean;
-  identifyStackItems: StackItemIdentifyFunction;
+  /**
+   * Set to `undefined` if no compilations were successful (so the previous
+   * StackItemIdentifyFunction can continue to be used.)
+   */
+  identifyStackItems: StackItemIdentifyFunction | undefined;
 }
 
 const formatScript = (
@@ -134,7 +151,8 @@ const formatScript = (
 ) => ({
   id,
   name: name || script.name,
-  script: script.script
+  script: script.script,
+  scriptType: script.type
 });
 
 const getSourceScripts = (
@@ -235,8 +253,11 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
     vm,
     createState
   };
-  // The compiler is still in alpha – it shouldn't throw, but if it does,
-  // we should prevent the IDE from crashing.
+
+  /**
+   * The compiler is still in alpha – it shouldn't throw, but if it does, we
+   * should prevent the IDE from crashing.
+   */
   try {
     /**
      * We compile the `sourceScripts` in reverse order, passing the last script in
@@ -278,8 +299,9 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
     let nextLine = undefined;
     for (const result of evaluationOrderedCompilationResults) {
       if (result.success !== true) {
-        console.error('reached a failed compilation:');
-        console.dir(result);
+        /**
+         * A compilation failed, no need to try evaluating it.
+         */
         break;
       }
       const next = sampledEvaluateReductionTraceNodes(
@@ -287,13 +309,6 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
         vm,
         stateGeneratorGenerator(nextStack)
       );
-      if (next.success === false) {
-        // TODO: is this what we want to do here?
-        console.error('failed during evaluation:');
-        console.dir(next);
-        break;
-      }
-      nextStack = next.samples[next.samples.length - 1].state.stack;
       const extractedSamples = extractSamplesFromReductionTrace<ProgramState>(
         result.reduce
       );
@@ -306,6 +321,15 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       >(spaced, createEmptyProgramState, nextLine);
       nextLine = reduced[reduced.length - 1];
       evaluations.push(reduced);
+
+      if (next.success === false) {
+        /**
+         * Bail out on failed evaluations (no need to start evaluating the next,
+         * the last state of this frame is already invalid).
+         */
+        break;
+      }
+      nextStack = next.samples[next.samples.length - 1].state.stack;
     }
 
     const scriptEditorFrames = evaluationOrderedScripts.map<
@@ -314,22 +338,23 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       id: source.id,
       name: source.name,
       script: source.script,
+      scriptType: source.scriptType,
       compilation: evaluationOrderedCompilationResults[i],
       evaluation: evaluations[i]
     }));
 
-    console.log('Frames:');
-    console.dir(scriptEditorFrames);
-
-    const identifyStackItems = createStackItemIdentificationFunction(
-      evaluationOrderedCompilationResults.reduce<ResolvedVariable[]>(
-        (vars, result) =>
-          result.success === true
-            ? [...vars, ...getResolvedVariables(result.resolve)]
-            : vars,
-        []
-      )
-    );
+    const identifyStackItems =
+      evaluationOrderedCompilationResults.length === 0
+        ? undefined
+        : createStackItemIdentificationFunction(
+            evaluationOrderedCompilationResults.reduce<ResolvedVariable[]>(
+              (vars, result) =>
+                result.success === true
+                  ? [...vars, ...getResolvedVariables(result.resolve)]
+                  : vars,
+              []
+            )
+          );
 
     return {
       editorMode,
@@ -342,6 +367,11 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
     return { editorMode: ProjectEditorMode.loading };
   }
 };
+
+const getCurrentScripts = (state: AppState) =>
+  Object.entries(state.currentTemplate.scriptsById).reduce<
+    { name: string; id: string; type: ScriptType }[]
+  >((prev, [id, obj]) => [...prev, { id, name: obj.name, type: obj.type }], []);
 
 enum Pane {
   projectExplorer = 'projectExplorerPane',
@@ -370,7 +400,7 @@ export enum ScriptEvaluationViewerPane {
    * Present for all ScriptEvaluationViewer types (`isolated`, `unlocking`, and
    * `test`).
    */
-  zero = 'ScriptEvaluationViewerPane2',
+  zero = 'ScriptEvaluationViewerPane0',
   /**
    * Present for `unlocking` and `test` ScriptEvaluationViewer types.
    */
@@ -383,26 +413,47 @@ export enum ScriptEvaluationViewerPane {
 
 interface EditorDispatch {
   updateScript: typeof ActionCreators.updateScript;
+  closeDialog: typeof ActionCreators.closeDialog;
+  createScript: typeof ActionCreators.createScript;
 }
 
 interface EditorProps<ProgramState extends IDESupportedProgramState>
   extends EditorDispatch {
   computed: ComputedEditorState<ProgramState>;
+  currentScripts: { name: string; id: string; type: ScriptType }[];
+  activeDialog: ActiveDialog;
 }
 
 export const Editor = connect(
   (state: AppState) => ({
-    computed: computeEditorState(state)
+    computed: computeEditorState(state),
+    currentScripts: getCurrentScripts(state),
+    activeDialog: state.activeDialog
   }),
   {
-    updateScript: ActionCreators.updateScript
+    closeDialog: ActionCreators.closeDialog,
+    updateScript: ActionCreators.updateScript,
+    createScript: ActionCreators.createScript
   }
 )((props: EditorProps<IDESupportedProgramState>) => {
   const [projectExplorerWidth, setProjectExplorerWidth] = useState(21);
-  const [scriptEditorWidths, setScriptEditorWidths] = useState(50);
+  const [scriptEditorWidths, setScriptEditorWidths] = useState(40);
   const [frames2SplitHeight, setFrames2SplitHeight] = useState(30);
   const [frames3TopSplitHeight, setFrames3TopSplitHeight] = useState(20);
-  const [frames3BottomSplitHeight, setFrames3BottomSplitHeight] = useState(80);
+  const [frames3BottomSplitHeight, setFrames3BottomSplitHeight] = useState(70);
+  const [scrollOffsetFrame1, setScrollOffsetFrame1] = useState(0);
+  const [scrollOffsetFrame2, setScrollOffsetFrame2] = useState(0);
+  const [scrollOffsetFrame3, setScrollOffsetFrame3] = useState(0);
+  const scrollOffset = [
+    scrollOffsetFrame1,
+    scrollOffsetFrame2,
+    scrollOffsetFrame3
+  ];
+  const setScrollOffset = [
+    setScrollOffsetFrame1,
+    setScrollOffsetFrame2,
+    setScrollOffsetFrame3
+  ];
 
   return (
     <div className="Editor">
@@ -445,8 +496,11 @@ export const Editor = connect(
                   id={computed.scriptEditorFrames[i].id}
                   name={computed.scriptEditorFrames[i].name}
                   script={computed.scriptEditorFrames[i].script}
+                  scriptType={computed.scriptEditorFrames[i].scriptType}
+                  compilation={computed.scriptEditorFrames[i].compilation}
                   isP2SH={computed.isP2sh}
                   update={props.updateScript}
+                  setScrollOffset={setScrollOffset[i]}
                 />
               ) : (
                 <EvaluationViewer
@@ -454,6 +508,7 @@ export const Editor = connect(
                   id={computed.scriptEditorFrames[i].id}
                   script={computed.scriptEditorFrames[i].script}
                   lookup={computed.identifyStackItems}
+                  scrollOffset={scrollOffset[i]}
                 />
               );
 
@@ -487,7 +542,8 @@ export const Editor = connect(
               ? {
                   direction: 'row',
                   first: ScriptEditorPane.zero,
-                  second: ScriptEvaluationViewerPane.zero
+                  second: ScriptEvaluationViewerPane.zero,
+                  splitPercentage: scriptEditorWidths
                 }
               : props.computed.editorMode === ProjectEditorMode.scriptPairEditor
               ? {
@@ -550,16 +606,49 @@ export const Editor = connect(
                 typeof node.second.first === 'object' &&
                 typeof node.second.second === 'object'
               ) {
-                const pane1 = node.second.first.splitPercentage as number;
-                const pane2 = node.second.second.splitPercentage as number;
-                setFrames2SplitHeight(
-                  frames2SplitHeight === pane1 ? pane2 : pane1
-                );
+                if (
+                  typeof node.second.first.second === 'object' &&
+                  typeof node.second.second.second === 'object'
+                ) {
+                  const editorLine1 = node.second.first
+                    .splitPercentage as number;
+                  const viewerLine1 = node.second.second
+                    .splitPercentage as number;
+                  setFrames3TopSplitHeight(
+                    frames3TopSplitHeight !== editorLine1
+                      ? editorLine1
+                      : viewerLine1
+                  );
+                  const editorLine2 = node.second.first.second
+                    .splitPercentage as number;
+                  const viewerLine2 = node.second.second.second
+                    .splitPercentage as number;
+                  setFrames3BottomSplitHeight(
+                    frames3BottomSplitHeight !== editorLine2
+                      ? editorLine2
+                      : viewerLine2
+                  );
+                } else {
+                  const editorLine = node.second.first
+                    .splitPercentage as number;
+                  const viewerLine = node.second.second
+                    .splitPercentage as number;
+                  setFrames2SplitHeight(
+                    frames2SplitHeight !== editorLine ? editorLine : viewerLine
+                  );
+                }
               }
             }
           }
+          window.dispatchEvent(new Event('resize'));
         }}
         resize={{ minimumPaneSizePercentage: 10 }}
+      />
+      <NewScriptDialog
+        activeDialog={props.activeDialog}
+        closeDialog={props.closeDialog}
+        currentScripts={props.currentScripts}
+        createScript={props.createScript}
       />
     </div>
   );

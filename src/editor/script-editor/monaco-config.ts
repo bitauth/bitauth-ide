@@ -6,6 +6,10 @@ export const bitauthDark = 'bitauth-dark';
 
 // TODO: enable and disable 'renderLineHighlight' based on editor focus? (it's a little strange to have 2-3 lines highlighted in the editor at the same time)
 export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
+  /**
+   * TODO: This is a hack to get things working – we should manually call layout
+   *  only when the Mosaic tile is being resized.
+   */
   automaticLayout: true,
   cursorBlinking: 'smooth',
   dragAndDrop: true,
@@ -16,7 +20,10 @@ export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
     enabled: false
   },
   wordWrap: 'on',
-  wrappingIndent: 'same'
+  wrappingIndent: 'same',
+  scrollbar: {
+    verticalScrollbarSize: 4
+  }
 };
 
 const vibrantYellow = 'FFD700';

@@ -2,9 +2,9 @@
   height: 100%;
   width: 100%;
   margin: 0;
-  font-family: 'Fira Sans', sans-serif;
   display: flex;
   flex-direction: column;
+  font-family: var(--standard-font-family);
 }
 
 code {

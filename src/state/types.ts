@@ -31,13 +31,13 @@ export interface IDETemplateEntity {
   variableIds: string[];
 }
 
-export type ScriptType =
+export type ScriptType = BaseScriptType | 'tested' | 'test-check';
+
+export type BaseScriptType =
   | 'locking'
   | 'unlocking'
   | 'isolated'
-  | 'tested'
-  | 'test-setup'
-  | 'test-check';
+  | 'test-setup';
 
 export interface IDETemplateScriptBase {
   type: ScriptType;
@@ -101,9 +101,9 @@ export interface IDETemplateTestSetupScript extends IDETemplateScriptBase {
 export interface IDETemplateTestCheckScript extends IDETemplateScriptBase {
   /**
    * `test-check` scripts share the name of their `test-setup` sibling, since
-   * they are both part of the same "test".
+   * they are both part of the same "test". ()
    */
-  name: never;
+  name: '';
   type: 'test-check';
   testSetupId: string;
 }
@@ -124,6 +124,7 @@ export type IDEActivatableScript =
 export type IDETemplateScript =
   | IDETemplateLockingScript
   | IDETemplateTestedScript
+  | IDETemplateTestCheckScript
   | IDEActivatableScript;
 
 export type DisableId = true;
@@ -154,6 +155,14 @@ export interface IDELoadedCrypto {
 export interface IDELoadedVMsAndCrypto {
   crypto: IDELoadedCrypto;
   vms: IDELoadedVMs;
+}
+
+export enum ActiveDialog {
+  none,
+  /**
+   * The dialog to create a new script in the current template
+   */
+  newScript
 }
 
 export interface AppState {
@@ -193,4 +202,5 @@ export interface AppState {
   authenticationVirtualMachines: IDELoadedVMs | null;
   crypto: IDELoadedCrypto | null;
   compilationData: CompilationData;
+  activeDialog: ActiveDialog;
 }

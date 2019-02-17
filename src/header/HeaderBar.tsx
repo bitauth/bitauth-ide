@@ -72,6 +72,7 @@ export const HeaderBar = () => {
           <span className="ide">IDE</span>
         </h1>
         <span className="status-badge">alpha</span>
+        {/* TODO: email icon link with red notification dot before first click – tooltip: "We're building more development tools like BitAuth IDE. Interested in updates? Click to sign up." */}
       </div>
       <div className="right-section">
         <div className="ide-mode-select">

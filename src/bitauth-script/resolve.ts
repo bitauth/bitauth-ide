@@ -514,7 +514,7 @@ export const resolveAuthenticationTemplateVariable = (
             const privateKey = privateKeys[variableId];
             const signingSerializationData = data.signatureGenerationData;
             if (signingSerializationData === undefined) {
-              return `Could not construct the signature "${identifier}", signing serialization data was not provided in the compilation data.`;
+              return `Could not construct the signature "${identifier}", signing serialization data was not provided in the compilation data. Is the locking script valid?`;
             }
             const secp256k1 = context.secp256k1;
             if (secp256k1 === undefined) {

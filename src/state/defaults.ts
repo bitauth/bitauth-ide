@@ -1,5 +1,4 @@
-import { AppState } from './types';
-import { bigIntToScriptNumber } from 'bitcoin-ts';
+import { AppState, ActiveDialog } from './types';
 import { IDEMode } from './types';
 import { CompilationData } from '../bitauth-script/resolve';
 import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
@@ -7,7 +6,10 @@ import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/li
 // TODO: fetch this from a backend eventually
 const latestKnownBlock = 561171;
 const latestKnownBlockTimeUTC = 1549166880000; // static for now for determinism
-const thirtyDaysInSeconds = 60 * 60 * 24 * 30;
+/**
+ * bigIntToScriptNumber(BigInt(60 * 60 * 24 * 30))
+ */
+const thirtyDaysInSeconds = Uint8Array.from([0, 141, 39]);
 
 const privateKeys = {
   first: new Uint8Array(32).fill(1),
@@ -36,7 +38,7 @@ const defaultVariableData: CompilationData = {
     /**
      * TODO: also cutting corners here – in a generalized wallet, this would be provided as a BitAuth Script (i.e. the number as a string: '2592000')
      */
-    delay_seconds: bigIntToScriptNumber(BigInt(thirtyDaysInSeconds))
+    delay_seconds: thirtyDaysInSeconds
   },
   currentBlockTime: new Date(latestKnownBlockTimeUTC),
   currentBlockHeight: latestKnownBlock
@@ -190,5 +192,6 @@ export const defaultState: AppState = {
   currentVmId: 'BCH_2018_11',
   authenticationVirtualMachines: null,
   crypto: null,
-  compilationData: defaultVariableData
+  compilationData: defaultVariableData,
+  activeDialog: ActiveDialog.none
 };

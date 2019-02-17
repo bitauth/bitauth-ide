@@ -1,16 +1,38 @@
 .ScriptEditor {
   background: var(--editor-background-color);
 
+  $headerHeight: 14;
+  $headerPadding: 8;
+  $headerVertical: $headerHeight + ($headerPadding * 2) + 4;
+  $iconColor: #fff9;
+
   h2 {
     font-weight: normal;
     font-size: 14px;
     display: flex;
     align-items: center;
-    margin: 0 0 8px;
-    padding: 8px 14px;
+    margin: 0;
+    padding: #{$headerPadding}px 14px;
     background: var(--interface-background-color);
-    height: 14px;
+    height: #{$headerHeight}px;
     box-sizing: initial;
+
+    .icon {
+      color: $iconColor;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    .script-buttons {
+      flex-grow: 1;
+      text-align: right;
+      line-height: 0;
+      color: $iconColor;
+      visibility: hidden;
+    }
+  }
+
+  &:hover .script-buttons {
+    visibility: visible;
   }
 
   .p2sh-tag {
@@ -21,5 +43,13 @@
     display: inline-block;
     padding: 0.1em 0.5em;
     margin-left: 1em;
+  }
+
+  .editor {
+    height: calc(100% - #{$headerVertical}px);
+  }
+
+  .monaco-editor .scroll-decoration {
+    box-shadow: var(--scrolled-under-shadow);
   }
 }

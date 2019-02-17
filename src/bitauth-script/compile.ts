@@ -116,8 +116,6 @@ export const compileScript = (
       ]
     };
   }
-  console.log('parseResult');
-  console.dir(parseResult);
   const resolver = createIdentifierResolver(
     undefined,
     data,
@@ -139,13 +137,10 @@ export const compileScript = (
     environment.vm,
     environment.createState
   );
-  console.log('reduction');
-  console.dir(reduction);
-  // TODO:
-  // const reductionErrors = getReductionErrors();
-  //  { success: true } or { success: false }
   return {
-    success: true,
+    ...(reduction.errors === undefined
+      ? { success: true }
+      : { success: false, errorType: 'reduce', errors: reduction.errors }),
     bytecode: reduction.bytecode,
     parse: parseResult.value,
     resolve: resolvedScript,

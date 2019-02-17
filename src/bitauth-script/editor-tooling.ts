@@ -1,14 +1,8 @@
 import { ResolvedScript } from './resolve';
-
-export enum MonacoMarkerSeverity {
-  Hint = 1,
-  Info = 2,
-  Warning = 4,
-  Error = 8
-}
+import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 export interface MonacoMarkerDataRequired {
-  severity: MonacoMarkerSeverity;
+  severity: monacoEditor.MarkerSeverity;
   message: string;
   startLineNumber: number;
   startColumn: number;

@@ -89,7 +89,6 @@ export interface TraceSample<ProgramState> {
 
 export interface ScriptReductionTraceEvaluationNode<ProgramState>
   extends ScriptReductionTraceContainerNode<ProgramState> {
-  script: Uint8Array;
   samples: Array<TraceSample<ProgramState>>;
 }
 
@@ -129,6 +128,7 @@ export const reduceScript = <
         const bytecode = prefixDataPush(push.bytecode);
         return {
           bytecode,
+          ...(push.errors && { errors: push.errors }),
           range: segment.range,
           source: [push]
         };
@@ -154,17 +154,20 @@ export const reduceScript = <
           vm,
           createState
         );
-        if (evaluated.success === false) {
-          return {
-            errors: evaluated.errors,
-            samples: evaluated.samples,
-            ...emptyReductionTraceNode(segment.range)
-          };
-        }
+        const errors = [
+          ...(reduction.errors !== undefined ? reduction.errors : []),
+          ...(evaluated.success === false ? evaluated.errors : [])
+        ];
         return {
-          bytecode: evaluated.bytecode,
-          range: segment.range,
-          script: reduction.bytecode,
+          ...(errors.length > 0
+            ? {
+                errors,
+                ...emptyReductionTraceNode(segment.range)
+              }
+            : {
+                bytecode: evaluated.bytecode,
+                range: segment.range
+              }),
           samples: evaluated.samples,
           source: [reduction]
         };
@@ -189,20 +192,16 @@ export const reduceScript = <
     bytecode: Uint8Array[];
     ranges: Range[];
   }>(
-    (all, segment) =>
-      segment.errors !== undefined
-        ? {
-            errors: [
-              ...(all.errors === undefined ? [] : all.errors),
-              ...segment.errors
-            ],
-            bytecode: all.bytecode,
-            ranges: all.ranges
-          }
-        : {
-            bytecode: [...all.bytecode, segment.bytecode],
-            ranges: [...all.ranges, segment.range]
-          },
+    (all, segment) => ({
+      bytecode: [...all.bytecode, segment.bytecode],
+      ranges: [...all.ranges, segment.range],
+      ...((all.errors !== undefined || segment.errors !== undefined) && {
+        errors: [
+          ...(all.errors === undefined ? [] : all.errors),
+          ...(segment.errors === undefined ? [] : segment.errors)
+        ]
+      })
+    }),
     { bytecode: [], ranges: [] }
   );
   return {
@@ -400,13 +399,13 @@ const aggregatedParseReductionTraceNodes = <Opcodes>(
     }
   }
   return {
+    aggregations,
     success: true,
     ...(incomplete !== undefined && {
       success: false,
       remainingBytecode: incomplete.bytecode,
       remainingRange: incomplete.range
-    }),
-    aggregations
+    })
   };
 };
 
@@ -419,7 +418,7 @@ export interface SampledEvaluationError<ProgramState> {
   success: false;
   errors: ErrorInformation[];
   bytecode: Uint8Array;
-  samples?: EvaluationSample<ProgramState>[];
+  samples: EvaluationSample<ProgramState>[];
 }
 
 export type SampledEvaluationResult<ProgramState> =
@@ -454,7 +453,11 @@ export const sampledEvaluateReductionTraceNodes = <
     vm,
     getState
   );
-  if (evaluated.success === true && evaluated.samples.length > 0) {
+  if (
+    parsed.success === true &&
+    evaluated.success === true &&
+    evaluated.samples.length > 0
+  ) {
     const lastSample = evaluated.samples[evaluated.samples.length - 1];
     const lastStackItem =
       lastSample.state.stack[lastSample.state.stack.length - 1];
@@ -474,7 +477,7 @@ export const sampledEvaluateReductionTraceNodes = <
         ? []
         : [
             {
-              error: `An incremental instruction is malformed and cannot be evaluated: ${disassembleScript(
+              error: `A sample is malformed and cannot be evaluated: ${disassembleScript(
                 CommonOpcodes,
                 parsed.remainingBytecode
               )}`,
@@ -515,7 +518,7 @@ const isContainerNode = <ProgramState>(
  * which they were found).
  *
  * TODO: insert a "dummy" sample at the beginning of each evaluation to ensure
- * the line gets a the evaluation spacer (if there are no further samples on a
+ * the line displays the evaluation spacer (if there are no further samples on a
  * line after the beginning of an evaluation).
  *
  * @param node
@@ -559,10 +562,12 @@ interface SpacedTraceSample<ProgramState> {
  * proper `EvaluationViewerSpacer`s for each sample. The result of this method
  * can be further reduced into an array of `EvaluationViewerLine`s.
  *
- * Note, this methods implementation relies upon receiving all of the evaluation
- * samples from a given script, both those extracted from the
+ * Note, this method's implementation relies upon receiving all of the
+ * evaluation samples from a given script – both those extracted from the
  * `ScriptReductionTrace` and the samples returned from passing the resulting
- * script to `incrementallyEvaluateReductionTraceNodes`.
+ * script to `incrementallyEvaluateReductionTraceNodes`. Samples with undefined
+ * `state`s are simply dropped from the result (since their absence implies an
+ * earlier error).
  *
  * **Implementation Notes**
  *
@@ -637,8 +642,6 @@ export const addSpacersToTraceSamples = <
         spacers: activeSpacers
       });
       previousSpacers = spacers;
-    } else {
-      // TODO: what do we do with malformedInstructions? (how do we display errors?)
     }
   }
   return results;
