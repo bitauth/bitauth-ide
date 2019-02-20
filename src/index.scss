@@ -25,3 +25,13 @@ body {
   --stack-vis-background-color: #181b1e;
   --scrolled-under-shadow: #111a 0 6px 6px -6px inset;
 }
+
+* {
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 20px;
+  }
+}

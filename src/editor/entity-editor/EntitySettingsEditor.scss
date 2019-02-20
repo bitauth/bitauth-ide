@@ -1,0 +1,62 @@
+.EntitySettingsEditor {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--editor-background-color);
+
+  /**
+  * TODO: DRY: extract the h2 top-bar elements from each component into a single
+  * component/scss declaration.
+  */
+  h2 {
+    flex-shrink: 0;
+    font-weight: normal;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 8px 14px;
+    background: var(--interface-background-color);
+    height: 14px;
+    box-sizing: content-box;
+    box-sizing: initial;
+  }
+
+  .description {
+    margin: 0 0 24px;
+  }
+
+  // TODO: DRY - this formatting is used in several places
+  code {
+    background-color: var(--stack-vis-background-color);
+    border-radius: 2px;
+    margin: 0 2px;
+    padding: 0 2px;
+    border: 1px solid var(--interface-background-color);
+  }
+
+  .entity-settings {
+    padding: 24px;
+    overflow-y: auto;
+
+    .name {
+      margin: 0 0 12px;
+    }
+
+    .description {
+      // this is important for ASCII diagrams
+      font-family: var(--monospace-font-family);
+    }
+  }
+
+  .bp3-input {
+    background: var(--stack-vis-background-color);
+  }
+  .bp3-label {
+    width: 90px;
+    flex-shrink: 0;
+  }
+  .bp3-form-group .bp3-form-helper-text {
+    color: #fff6;
+    line-height: 18px;
+  }
+}

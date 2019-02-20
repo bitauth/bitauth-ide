@@ -25,10 +25,17 @@ export enum IDEMode {
 }
 
 export interface IDETemplateEntity {
+  id: string;
+  internalId: string;
   name: string;
   description: string;
-  scriptIds: string[];
-  variableIds: string[];
+  /**
+   * `scriptInternalIds` is only used if `usesAllScripts` is `false`. It's
+   * maintained separately to avoid losing data if `usesAllScripts` is toggled.
+   */
+  scriptInternalIds: string[];
+  usesAllScripts: boolean;
+  variableInternalIds: string[];
 }
 
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';
@@ -49,11 +56,17 @@ export interface IDETemplateScriptBase {
    * The script, in the BitAuth templating language.
    */
   script: string;
+  /**
+   * The id used to refer to the script during compilation and within other
+   * scripts.
+   */
+  id: string;
+  internalId: string;
 }
 
 export interface IDETemplateUnlockingScript extends IDETemplateScriptBase {
   type: 'unlocking';
-  parentId: string;
+  parentInternalId: string;
 }
 export interface IDETemplateLockingScript extends IDETemplateScriptBase {
   type: 'locking';
@@ -69,7 +82,7 @@ export interface IDETemplateLockingScript extends IDETemplateScriptBase {
    * trimmed scripts to use the complete versions.
    */
   isP2SH: boolean;
-  childIds: string[];
+  childInternalIds: string[];
 }
 
 export interface IDETemplateIsolatedScript extends IDETemplateScriptBase {
@@ -89,13 +102,13 @@ export interface IDETemplateIsolatedScript extends IDETemplateScriptBase {
  */
 export interface IDETemplateTestedScript extends IDETemplateScriptBase {
   type: 'tested';
-  childIds: string[];
+  childInternalIds: string[];
 }
 
 export interface IDETemplateTestSetupScript extends IDETemplateScriptBase {
   type: 'test-setup';
-  testCheckId: string;
-  parentId: string;
+  testCheckInternalId: string;
+  parentInternalId: string;
 }
 
 export interface IDETemplateTestCheckScript extends IDETemplateScriptBase {
@@ -105,7 +118,7 @@ export interface IDETemplateTestCheckScript extends IDETemplateScriptBase {
    */
   name: '';
   type: 'test-check';
-  testSetupId: string;
+  testSetupInternalId: string;
 }
 
 /**
@@ -160,20 +173,30 @@ export interface IDELoadedVMsAndCrypto {
 export enum ActiveDialog {
   none,
   /**
-   * The dialog to create a new script in the current template
+   * The dialog to create a new script in the current template.
    */
-  newScript
+  newScript,
+  /**
+   * The dialog to edit a script's settings.
+   */
+  editScript,
+  /**
+   * The dialog to create a new entity in the current template.
+   */
+  newEntity
 }
 
 export interface AppState {
   ideMode: IDEMode;
   /**
-   * Must be an `IDEEditableScript` script. (Scripts of type, `isolated`,
-   * `unlocking`, or `test`). Scripts of type `locking` and `tested` can only be
-   * edited with one of their "children" scripts.
+   * The internal ID of the script or entity which is currently being edited.
+   *
+   * Must be an `IDEEditableScript` script (scripts of type, `isolated`,
+   * `unlocking`, or `test`) or an entity. Scripts of type `locking` and
+   * `tested` can only be edited with one of their "children" scripts.
    */
-  currentlyEditingId: string | undefined;
-  currentEditingMode: 'script' | 'entity' | undefined;
+  currentlyEditingInternalId: string | undefined;
+  currentEditingMode: 'script' | 'entity' | 'template-settings' | undefined;
   savedTemplates: { template: AuthenticationTemplate; savedDate: Date }[];
   /**
    * The state of the BitAuth template currently open in the IDE. This is stored
@@ -184,23 +207,44 @@ export interface AppState {
     name: string;
     description: string;
     supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
-    entitiesById: { [id: string]: IDETemplateEntity };
+    entitiesByInternalId: { [internalId: string]: IDETemplateEntity };
     /**
      * In AppState, scripts are stored in a tree structure, rather than the flat
      * list used by `AuthenticationTemplate`.
      */
-    scriptsById: {
-      [id: string]: IDETemplateScript;
+    scriptsByInternalId: {
+      [internalId: string]: IDETemplateScript;
     };
     /**
-     * Note, to match the `AuthenticationTemplateVariable` type, we leave the
-     * `id` property on every variable in `variablesById`.
+     * Note, we leave the type here as `AuthenticationTemplateVariable`, rather
+     * than a custom internal type.
      */
-    variablesById: { [id: string]: AuthenticationTemplateVariable };
+    variablesByInternalId: {
+      [internalId: string]: Required<AuthenticationTemplateVariable>;
+    };
   };
   currentVmId: keyof IDELoadedVMs;
   authenticationVirtualMachines: IDELoadedVMs | null;
   crypto: IDELoadedCrypto | null;
-  compilationData: CompilationData;
+  // compilationData: CompilationData; // TODO: delete
   activeDialog: ActiveDialog;
 }
+
+export type CurrentScripts = {
+  name: string;
+  id: string;
+  internalId: string;
+  type: ScriptType;
+}[];
+
+export type CurrentEntities = {
+  name: string;
+  id: string;
+  internalId: string;
+}[];
+
+export type CurrentVariables = {
+  name?: string;
+  id: string;
+  internalId: string;
+}[];

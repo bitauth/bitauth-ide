@@ -1,7 +1,12 @@
-import './new-script.scss';
+import '../editor-dialog.scss';
 import React, { useState } from 'react';
-import { ActionCreators } from '../../state/reducer';
-import { ActiveDialog, ScriptType, BaseScriptType } from '../../state/types';
+import { ActionCreators } from '../../../state/reducer';
+import {
+  ActiveDialog,
+  ScriptType,
+  BaseScriptType,
+  CurrentScripts
+} from '../../../state/types';
 import {
   Classes,
   Dialog,
@@ -12,6 +17,8 @@ import {
   Icon
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
+import { sanitizeId } from '../../common';
+import { createInsecureUuidV4 } from '../../../state/utils';
 
 const scriptTypes: { label: string; value: ScriptType }[] = [
   { label: 'Locking Script', value: 'locking' },
@@ -35,17 +42,6 @@ const typeDescriptions: { [key in ScriptType]: string } = {
     'Something is broken: script tests should use the `test-setup` type in this dialog.'
 };
 
-/**
- * RegExp(`[a-zA-Z_][\.a-zA-Z0-9_-]*`)
- */
-const sanitizeId = (input: string) =>
-  input
-    .toLowerCase()
-    .trim()
-    .replace(/^[^a-zA-Z_]/g, '')
-    .replace(/[^\.a-zA-Z0-9_-]/g, '')
-    .replace(/\s/g, '_');
-
 const hasParent = (scriptType: BaseScriptType) =>
   scriptType === 'unlocking' || scriptType === 'test-setup';
 
@@ -55,7 +51,7 @@ export const NewScriptDialog = ({
   currentScripts,
   createScript
 }: {
-  currentScripts: { name: string; id: string; type: ScriptType }[];
+  currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
   closeDialog: typeof ActionCreators.closeDialog;
   createScript: typeof ActionCreators.createScript;
@@ -74,12 +70,12 @@ export const NewScriptDialog = ({
     )
     .map(script => ({
       label: script.name,
-      value: script.id
+      value: script.internalId
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
   return (
     <Dialog
-      className="new-script-dialog"
+      className="editor-dialog"
       onClose={() => closeDialog()}
       title="Add Script to Authentication Template"
       isOpen={activeDialog === ActiveDialog.newScript}
@@ -128,6 +124,7 @@ export const NewScriptDialog = ({
           <InputGroup
             id="script-name"
             value={scriptName}
+            autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               setScriptName(value);
@@ -139,7 +136,7 @@ export const NewScriptDialog = ({
           helperText={
             <span>
               A unique script identifier (must begin with a-z, A-Z, or
-              <code>_</code>, remaining characters may include numbers,{' '}
+              <code>_</code>, remaining characters may include numbers,
               <code>.</code>, and
               <code>-</code>). This is used to reference the script during
               compilation and from within other scripts.
@@ -152,6 +149,7 @@ export const NewScriptDialog = ({
           <InputGroup
             id="script-id"
             value={scriptId}
+            autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               setScriptId(sanitizeId(value));
@@ -175,27 +173,31 @@ export const NewScriptDialog = ({
             disabled={
               scriptName === '' ||
               scriptId === '' ||
-              availableParents.length === 0
+              (scriptType !== 'isolated' &&
+                scriptType !== 'locking' &&
+                availableParents.length === 0)
             }
             onClick={() => {
               if (usedIds.indexOf(scriptId) !== -1) {
                 setNonUniqueId(scriptId);
               } else {
+                setScriptName('');
+                setScriptId('');
+                setScriptParentId('');
                 setNonUniqueId('');
-
                 createScript({
                   name: scriptName,
                   id: scriptId,
+                  internalId: createInsecureUuidV4(),
                   type: scriptType,
                   ...(hasParent(scriptType) && {
-                    parentId:
+                    parentInternalId:
                       scriptParentId !== ''
                         ? scriptParentId
                         : availableParents[0].value
                   })
                 });
-                console.log('todo: create script');
-                // closeDialog();
+                closeDialog();
               }
             }}
           >

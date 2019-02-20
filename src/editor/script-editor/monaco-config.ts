@@ -19,10 +19,11 @@ export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
   minimap: {
     enabled: false
   },
+  folding: false,
   wordWrap: 'on',
   wrappingIndent: 'same',
   scrollbar: {
-    verticalScrollbarSize: 4
+    verticalScrollbarSize: 3
   }
 };
 

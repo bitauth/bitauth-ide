@@ -12,13 +12,12 @@ import { ActionCreators } from '../../state/reducer';
 import { CompilationResult } from '../../bitauth-script/compile';
 import { MonacoMarkerDataRequired } from '../../bitauth-script/editor-tooling';
 import { Range } from '../../bitauth-script/resolve';
-import { ScriptType } from '../../state/types';
-import {
-  getScriptTooltipIcon,
-  wrapInterfaceTooltip
-} from '../project-explorer/ProjectExplorer';
+import { ScriptType, CurrentScripts } from '../../state/types';
+import { getScriptTooltipIcon } from '../project-explorer/ProjectExplorer';
 import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
+import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
+import { wrapInterfaceTooltip } from '../common';
 
 const prepMonaco = (monaco: typeof monacoEditor) => {
   if (monaco.languages.getLanguages().length < 2) {
@@ -30,16 +29,21 @@ interface ScriptEditorProps {
   isP2SH: boolean;
   script: string;
   scriptType: ScriptType;
+  internalId: string;
   id: string;
   name: string;
   compilation: CompilationResult;
   setScrollOffset: React.Dispatch<React.SetStateAction<number>>;
+  currentScripts: CurrentScripts;
+  editScript: typeof ActionCreators.editScript;
+  deleteScript: typeof ActionCreators.deleteScript;
   update: typeof ActionCreators.updateScript;
 }
 
 interface ScriptEditorState {
   editor?: monacoEditor.editor.IStandaloneCodeEditor;
   monaco?: typeof monacoEditor;
+  editScriptDialogIsOpen?: boolean;
 }
 
 const cursorIsInsideOfRange = (
@@ -126,7 +130,13 @@ export class ScriptEditor extends Component<
               P2SH
             </span>
           )}
-          <div className="script-buttons">
+          <div
+            className="script-buttons"
+            onClick={() => {
+              this.setState({ editScriptDialogIsOpen: true });
+              // this.props.editScript(this.props.internalId)}
+            }}
+          >
             {wrapInterfaceTooltip(
               <Icon icon={IconNames.SETTINGS} iconSize={10} />,
               'Edit Script Settings'
@@ -152,10 +162,26 @@ export class ScriptEditor extends Component<
             //   console.log(monaco);
             // }}
             onChange={(value, event) =>
-              this.props.update({ script: value, id: this.props.id, event })
+              this.props.update({
+                script: value,
+                internalId: this.props.internalId,
+                event
+              })
             }
           />
         </div>
+        <EditScriptDialog
+          isOpen={(this.state && this.state.editScriptDialogIsOpen) || false}
+          internalId={this.props.internalId}
+          id={this.props.id}
+          name={this.props.name}
+          scriptType={this.props.scriptType}
+          isP2SH={this.props.isP2SH}
+          closeDialog={() => this.setState({ editScriptDialogIsOpen: false })}
+          currentScripts={this.props.currentScripts}
+          editScript={this.props.editScript}
+          deleteScript={this.props.deleteScript}
+        />
       </div>
     );
   }

@@ -28,6 +28,11 @@ export enum ProjectEditorMode {
    */
   entityEditor = 'entityEditor',
   /**
+   * Template settings view – view and modify the settings for the current
+   * authentication template.
+   */
+  templateSettingsEditor = 'templateSettingsEditor',
+  /**
    * The state of the editor before async dependencies (VMs and crypto) have
    * loaded.
    */

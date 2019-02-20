@@ -575,10 +575,19 @@ export const resolveAuthenticationTemplateVariable = (
       return walletDataItem === undefined
         ? `Identifier "${identifier}" refers to a WalletData, but no WalletData for "${variableId}" were provided in the compilation data.`
         : typeof walletDataItem === 'string'
-        ? `err`
+        ? `TODO: IMPLEMENT script compilation for WalletData`
         : walletDataItem;
     case 'TransactionData':
-      return 'TODO: IMPLEMENT TransactionData';
+      const transactionData = data.transactionData;
+      if (transactionData === undefined) {
+        return `Identifier "${identifier}" is a TransactionData, but the compilation data doesn't include a "transactionData" property.`;
+      }
+      const transactionDataItem = transactionData[variableId];
+      return transactionDataItem === undefined
+        ? `Identifier "${identifier}" refers to a TransactionData, but no TransactionData for "${variableId}" were provided in the compilation data.`
+        : typeof transactionDataItem === 'string'
+        ? `TODO: IMPLEMENT script compilation for TransactionData`
+        : transactionDataItem;
     case 'ExternalOperation':
       return 'TODO: IMPLEMENT ExternalOperation';
     default:

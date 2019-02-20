@@ -13,12 +13,15 @@ import {
   IDETemplateScript,
   IDETemplateTestedScript,
   ScriptType,
-  ActiveDialog
+  ActiveDialog,
+  CurrentScripts,
+  CurrentEntities
 } from '../state/types';
 import {
   BitcoinCashOpcodes,
   AuthenticationVirtualMachine,
-  AuthenticationInstruction
+  AuthenticationInstruction,
+  hexToBin
 } from 'bitcoin-ts';
 import {
   CompilationEnvironment,
@@ -44,26 +47,26 @@ import {
 } from './editor-types';
 import { ActionCreators } from '../state/reducer';
 import { compileScript, CompilationResult } from '../bitauth-script/compile';
-import {
-  Classes,
-  Dialog,
-  Icon,
-  FormGroup,
-  InputGroup,
-  HTMLSelect
-} from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { NewScriptDialog } from './new-script/new-script';
+import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
+import { EntitySettingsEditor } from './entity-editor/EntitySettingsEditor';
+import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
+import { getCurrentScripts, getCurrentEntities } from './common';
+import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
+import { EditScriptDialog } from './dialogs/edit-script-dialog/EditScriptDialog';
 
 const getEditorMode = (
-  currentEditingMode: 'entity' | 'script',
-  currentlyEditingId: string,
+  currentEditingMode: 'entity' | 'script' | 'template-settings',
+  currentlyEditingInternalId: string,
   template: AppState['currentTemplate']
 ) => {
+  if (currentEditingMode === 'template-settings') {
+    return ProjectEditorMode.templateSettingsEditor;
+  }
   if (currentEditingMode === 'entity') {
     return ProjectEditorMode.entityEditor;
   }
-  const scriptType = template.scriptsById[currentlyEditingId].type;
+  const scriptType =
+    template.scriptsByInternalId[currentlyEditingInternalId].type;
   switch (scriptType) {
     case 'isolated':
       return ProjectEditorMode.isolatedScriptEditor;
@@ -108,6 +111,7 @@ const createStackItemIdentificationFunction = (
 interface ScriptEditorFrame<ProgramState extends IDESupportedProgramState> {
   name: string;
   id: string;
+  internalId: string;
   script: string;
   scriptType: ScriptType;
   compilation: CompilationResult<ProgramState>;
@@ -118,12 +122,17 @@ interface ScriptEditorFrame<ProgramState extends IDESupportedProgramState> {
 }
 
 type ComputedEditorState<ProgramState extends IDESupportedProgramState> =
+  | EditorStateTemplateSettingsMode
   | EditorStateEntityMode
   | EditorStateScriptMode<ProgramState>
   | EditorStateLoadingMode;
 
 interface EditorStateEntityMode {
   editorMode: ProjectEditorMode.entityEditor;
+}
+
+interface EditorStateTemplateSettingsMode {
+  editorMode: ProjectEditorMode.templateSettingsEditor;
 }
 
 interface EditorStateLoadingMode {
@@ -145,48 +154,58 @@ interface EditorStateScriptMode<ProgramState extends IDESupportedProgramState> {
 }
 
 const formatScript = (
-  id: string,
+  internalId: string,
   script: IDETemplateScript,
   name?: string
 ) => ({
-  id,
+  internalId,
   name: name || script.name,
+  id: script.id,
   script: script.script,
   scriptType: script.type
 });
 
 const getSourceScripts = (
-  id: string,
+  internalId: string,
   template: AppState['currentTemplate']
 ) => {
-  const currentScript = template.scriptsById[id] as IDEActivatableScript;
+  const currentScript = template.scriptsByInternalId[
+    internalId
+  ] as IDEActivatableScript;
   if (currentScript.type === 'isolated') {
-    return { isP2sh: false, sourceScripts: [formatScript(id, currentScript)] };
+    return {
+      isP2sh: false,
+      sourceScripts: [formatScript(internalId, currentScript)]
+    };
   } else if (currentScript.type === 'unlocking') {
-    const lockingId = currentScript.parentId;
-    const lockingScript = template.scriptsById[
-      currentScript.parentId
+    const lockingInternalId = currentScript.parentInternalId;
+    const lockingScript = template.scriptsByInternalId[
+      lockingInternalId
     ] as IDETemplateLockingScript;
     return {
       isP2sh: lockingScript.isP2SH,
       sourceScripts: [
-        formatScript(id, currentScript),
-        formatScript(lockingId, lockingScript)
+        formatScript(internalId, currentScript),
+        formatScript(lockingInternalId, lockingScript)
       ]
     };
   } else if (currentScript.type === 'test-setup') {
-    const testedId = currentScript.parentId;
-    const testedScript = template.scriptsById[
-      currentScript.parentId
+    const testedInternalId = currentScript.parentInternalId;
+    const testedScript = template.scriptsByInternalId[
+      testedInternalId
     ] as IDETemplateTestedScript;
     return {
       isP2sh: false,
       sourceScripts: [
-        formatScript(id, currentScript, `${currentScript.name} (Setup)`),
-        formatScript(testedId, testedScript),
         formatScript(
-          currentScript.testCheckId,
-          template.scriptsById[currentScript.testCheckId],
+          internalId,
+          currentScript,
+          `${currentScript.name} (Setup)`
+        ),
+        formatScript(testedInternalId, testedScript),
+        formatScript(
+          currentScript.testCheckInternalId,
+          template.scriptsByInternalId[currentScript.testCheckInternalId],
           `${currentScript.name} (Check)`
         )
       ]
@@ -196,9 +215,59 @@ const getSourceScripts = (
   }
 };
 
-/**
- * TODO: ProjectEditorMode.entityMode
- */
+// TODO: fetch this from a backend eventually
+const currentBlock = 561171;
+const currentTimeUTC = 1549166880000; // static onload for determinism
+
+const getIDECompilationData = (state: AppState): CompilationData => {
+  return Object.values(state.currentTemplate.variablesByInternalId).reduce<
+    CompilationData
+  >((data, variable) => {
+    switch (variable.type) {
+      case 'CurrentBlockHeight':
+        return { ...data, currentBlockHeight: currentBlock };
+      case 'CurrentBlockTime':
+        return { ...data, currentBlockTime: new Date(currentTimeUTC) };
+      case 'ExternalOperation':
+        throw new Error('Not yet implemented.');
+      case 'HDKey':
+        throw new Error('Not yet implemented.');
+      case 'Key':
+        const privateKeys = (data.keys && data.keys.privateKeys) || {};
+        return {
+          ...data,
+          keys: {
+            privateKeys: {
+              ...privateKeys,
+              [variable.id]: hexToBin(variable.mock)
+            }
+          }
+        };
+      case 'TransactionData':
+        const transactionData = data.transactionData || {};
+        return {
+          ...data,
+          transactionData: {
+            ...transactionData,
+            [variable.id]: hexToBin(variable.mock)
+          }
+        };
+      case 'WalletData':
+        const walletData = data.walletData || {};
+        return {
+          ...data,
+          walletData: {
+            ...walletData,
+            [variable.id]: hexToBin(variable.mock)
+          }
+        };
+      default:
+        unknownValue(variable);
+        return data;
+    }
+  }, {});
+};
+
 const computeEditorState = <ProgramState extends IDESupportedProgramState>(
   state: AppState
 ): ComputedEditorState<ProgramState> => {
@@ -206,13 +275,13 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
     crypto,
     authenticationVirtualMachines,
     currentEditingMode,
-    currentlyEditingId
+    currentlyEditingInternalId
   } = state;
   if (
     crypto === null ||
     authenticationVirtualMachines === null ||
     currentEditingMode === undefined ||
-    currentlyEditingId === undefined
+    currentlyEditingInternalId === undefined
   ) {
     return { editorMode: ProjectEditorMode.loading };
   }
@@ -224,17 +293,21 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
   ] as unknown) as AuthenticationVirtualMachine<ProgramState>;
   const editorMode = getEditorMode(
     currentEditingMode,
-    currentlyEditingId,
+    currentlyEditingInternalId,
     state.currentTemplate
   );
+  if (editorMode === ProjectEditorMode.templateSettingsEditor) {
+    return { editorMode };
+  }
   if (editorMode === ProjectEditorMode.entityEditor) {
     return { editorMode };
   }
   const { sourceScripts: evaluationOrderedScripts, isP2sh } = getSourceScripts(
-    currentlyEditingId,
+    currentlyEditingInternalId,
     state.currentTemplate
   );
-  const data: CompilationData = state.compilationData;
+  ///
+  const data: CompilationData = getIDECompilationData(state);
   // TODO: remove cast once we have other VMs implemented
   const stateGeneratorGenerator = (stack: Uint8Array[]) =>
     (createProgramStateGenerator(stack) as unknown) as (
@@ -243,9 +316,20 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
   const createState = stateGeneratorGenerator([]);
   const environment: CompilationEnvironment = {
     opcodes: bitcoinCashOpcodeIdentifiers,
-    variables: state.currentTemplate.variablesById,
-    scripts: Object.entries(state.currentTemplate.scriptsById).reduce(
-      (scripts, entry) => ({ ...scripts, [entry[0]]: entry[1] }),
+    variables: Object.values(
+      state.currentTemplate.variablesByInternalId
+    ).reduce(
+      (variables, variable) => ({
+        ...variables,
+        [variable.id]: variable
+      }),
+      {}
+    ),
+    scripts: Object.values(state.currentTemplate.scriptsByInternalId).reduce(
+      (scripts, ideScript) => ({
+        ...scripts,
+        [ideScript.id]: ideScript.script
+      }),
       {}
     ),
     secp256k1: crypto.secp256k1,
@@ -255,8 +339,9 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
   };
 
   /**
-   * The compiler is still in alpha – it shouldn't throw, but if it does, we
-   * should prevent the IDE from crashing.
+   * The compiler is still very alpha – it shouldn't throw, but if it does, we
+   * should prevent the IDE from completely crashing. (Hopefully users can at
+   * least export their work.)
    */
   try {
     /**
@@ -336,6 +421,7 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       ScriptEditorFrame<ProgramState>
     >((source, i) => ({
       id: source.id,
+      internalId: source.internalId,
       name: source.name,
       script: source.script,
       scriptType: source.scriptType,
@@ -368,15 +454,11 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
   }
 };
 
-const getCurrentScripts = (state: AppState) =>
-  Object.entries(state.currentTemplate.scriptsById).reduce<
-    { name: string; id: string; type: ScriptType }[]
-  >((prev, [id, obj]) => [...prev, { id, name: obj.name, type: obj.type }], []);
-
 enum Pane {
   projectExplorer = 'projectExplorerPane',
-  entityEditor = 'entityEditorPane',
-  entityEditorMeta = 'entityEditorMetaPane',
+  templateSettingsEditor = 'templateSettingsEditorPane',
+  entitySettingsEditor = 'entitySettingsEditorPane',
+  entityVariableEditor = 'entityVariableEditorPane',
   loading = 'loading'
 }
 
@@ -415,29 +497,40 @@ interface EditorDispatch {
   updateScript: typeof ActionCreators.updateScript;
   closeDialog: typeof ActionCreators.closeDialog;
   createScript: typeof ActionCreators.createScript;
+  editScript: typeof ActionCreators.editScript;
+  deleteScript: typeof ActionCreators.deleteScript;
+  createEntity: typeof ActionCreators.createEntity;
 }
 
 interface EditorProps<ProgramState extends IDESupportedProgramState>
   extends EditorDispatch {
   computed: ComputedEditorState<ProgramState>;
-  currentScripts: { name: string; id: string; type: ScriptType }[];
+  currentlyEditingInternalId: string | undefined;
+  currentScripts: CurrentScripts;
+  currentEntities: CurrentEntities;
   activeDialog: ActiveDialog;
 }
 
 export const Editor = connect(
   (state: AppState) => ({
     computed: computeEditorState(state),
+    currentlyEditingInternalId: state.currentlyEditingInternalId,
     currentScripts: getCurrentScripts(state),
+    currentEntities: getCurrentEntities(state),
     activeDialog: state.activeDialog
   }),
   {
     closeDialog: ActionCreators.closeDialog,
     updateScript: ActionCreators.updateScript,
-    createScript: ActionCreators.createScript
+    createScript: ActionCreators.createScript,
+    editScript: ActionCreators.editScript,
+    deleteScript: ActionCreators.deleteScript,
+    createEntity: ActionCreators.createEntity
   }
 )((props: EditorProps<IDESupportedProgramState>) => {
   const [projectExplorerWidth, setProjectExplorerWidth] = useState(21);
   const [scriptEditorWidths, setScriptEditorWidths] = useState(40);
+  const [settingsWidth, setSettingsWidth] = useState(50);
   const [frames2SplitHeight, setFrames2SplitHeight] = useState(30);
   const [frames3TopSplitHeight, setFrames3TopSplitHeight] = useState(20);
   const [frames3BottomSplitHeight, setFrames3BottomSplitHeight] = useState(70);
@@ -493,6 +586,7 @@ export const Editor = connect(
               }
               return type === 'editor' ? (
                 <ScriptEditor
+                  internalId={computed.scriptEditorFrames[i].internalId}
                   id={computed.scriptEditorFrames[i].id}
                   name={computed.scriptEditorFrames[i].name}
                   script={computed.scriptEditorFrames[i].script}
@@ -500,7 +594,10 @@ export const Editor = connect(
                   compilation={computed.scriptEditorFrames[i].compilation}
                   isP2SH={computed.isP2sh}
                   update={props.updateScript}
+                  currentScripts={props.currentScripts}
                   setScrollOffset={setScrollOffset[i]}
+                  editScript={props.editScript}
+                  deleteScript={props.deleteScript}
                 />
               ) : (
                 <EvaluationViewer
@@ -512,10 +609,24 @@ export const Editor = connect(
                 />
               );
 
-            case Pane.entityEditor:
-              return <h1>TODO</h1>;
-            case Pane.entityEditorMeta:
-              return <h1>TODO</h1>;
+            case Pane.entityVariableEditor:
+              return props.currentlyEditingInternalId ? (
+                <EntityVariableEditor
+                  entityInternalId={props.currentlyEditingInternalId}
+                />
+              ) : (
+                <div className="loading" />
+              );
+            case Pane.entitySettingsEditor:
+              return props.currentlyEditingInternalId ? (
+                <EntitySettingsEditor
+                  entityInternalId={props.currentlyEditingInternalId}
+                />
+              ) : (
+                <div className="loading" />
+              );
+            case Pane.templateSettingsEditor:
+              return <div className="loading" />;
             case Pane.loading:
               return <div className="loading" />;
             default:
@@ -531,11 +642,15 @@ export const Editor = connect(
           second:
             props.computed.editorMode === ProjectEditorMode.loading
               ? Pane.loading
+              : props.computed.editorMode ===
+                ProjectEditorMode.templateSettingsEditor
+              ? Pane.templateSettingsEditor
               : props.computed.editorMode === ProjectEditorMode.entityEditor
               ? {
                   direction: 'row',
-                  first: Pane.entityEditor,
-                  second: Pane.entityEditorMeta
+                  first: Pane.entitySettingsEditor,
+                  second: Pane.entityVariableEditor,
+                  splitPercentage: settingsWidth
                 }
               : props.computed.editorMode ===
                 ProjectEditorMode.isolatedScriptEditor
@@ -599,43 +714,55 @@ export const Editor = connect(
               setProjectExplorerWidth(node.splitPercentage as number);
             }
             if (typeof node.second === 'object') {
-              if (scriptEditorWidths !== node.second.splitPercentage) {
-                setScriptEditorWidths(node.second.splitPercentage as number);
-              }
               if (
-                typeof node.second.first === 'object' &&
-                typeof node.second.second === 'object'
+                props.computed.editorMode ===
+                  ProjectEditorMode.templateSettingsEditor ||
+                props.computed.editorMode === ProjectEditorMode.entityEditor
               ) {
+                if (settingsWidth !== node.second.splitPercentage) {
+                  setSettingsWidth(node.second.splitPercentage as number);
+                }
+              } else {
+                if (scriptEditorWidths !== node.second.splitPercentage) {
+                  setScriptEditorWidths(node.second.splitPercentage as number);
+                }
                 if (
-                  typeof node.second.first.second === 'object' &&
-                  typeof node.second.second.second === 'object'
+                  typeof node.second.first === 'object' &&
+                  typeof node.second.second === 'object'
                 ) {
-                  const editorLine1 = node.second.first
-                    .splitPercentage as number;
-                  const viewerLine1 = node.second.second
-                    .splitPercentage as number;
-                  setFrames3TopSplitHeight(
-                    frames3TopSplitHeight !== editorLine1
-                      ? editorLine1
-                      : viewerLine1
-                  );
-                  const editorLine2 = node.second.first.second
-                    .splitPercentage as number;
-                  const viewerLine2 = node.second.second.second
-                    .splitPercentage as number;
-                  setFrames3BottomSplitHeight(
-                    frames3BottomSplitHeight !== editorLine2
-                      ? editorLine2
-                      : viewerLine2
-                  );
-                } else {
-                  const editorLine = node.second.first
-                    .splitPercentage as number;
-                  const viewerLine = node.second.second
-                    .splitPercentage as number;
-                  setFrames2SplitHeight(
-                    frames2SplitHeight !== editorLine ? editorLine : viewerLine
-                  );
+                  if (
+                    typeof node.second.first.second === 'object' &&
+                    typeof node.second.second.second === 'object'
+                  ) {
+                    const editorLine1 = node.second.first
+                      .splitPercentage as number;
+                    const viewerLine1 = node.second.second
+                      .splitPercentage as number;
+                    setFrames3TopSplitHeight(
+                      frames3TopSplitHeight !== editorLine1
+                        ? editorLine1
+                        : viewerLine1
+                    );
+                    const editorLine2 = node.second.first.second
+                      .splitPercentage as number;
+                    const viewerLine2 = node.second.second.second
+                      .splitPercentage as number;
+                    setFrames3BottomSplitHeight(
+                      frames3BottomSplitHeight !== editorLine2
+                        ? editorLine2
+                        : viewerLine2
+                    );
+                  } else {
+                    const editorLine = node.second.first
+                      .splitPercentage as number;
+                    const viewerLine = node.second.second
+                      .splitPercentage as number;
+                    setFrames2SplitHeight(
+                      frames2SplitHeight !== editorLine
+                        ? editorLine
+                        : viewerLine
+                    );
+                  }
                 }
               }
             }
@@ -643,6 +770,12 @@ export const Editor = connect(
           window.dispatchEvent(new Event('resize'));
         }}
         resize={{ minimumPaneSizePercentage: 10 }}
+      />
+      <NewEntityDialog
+        activeDialog={props.activeDialog}
+        closeDialog={props.closeDialog}
+        currentEntities={props.currentEntities}
+        createEntity={props.createEntity}
       />
       <NewScriptDialog
         activeDialog={props.activeDialog}

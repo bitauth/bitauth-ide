@@ -99,7 +99,8 @@ $hex-color: #5bb498;
   }
 }
 
-.stack-tooltip {
+.stack-tooltip,
+.stack-popover {
   $tooltip-background: var(--interface-background-color);
   .bp3-popover-content {
     max-width: 400px !important;
@@ -107,6 +108,7 @@ $hex-color: #5bb498;
     background: $tooltip-background !important;
     font-family: var(--monospace-font-family);
     color: $hex-color !important;
+    padding: 12px;
   }
   .bp3-popover-arrow-fill {
     fill: $tooltip-background !important;

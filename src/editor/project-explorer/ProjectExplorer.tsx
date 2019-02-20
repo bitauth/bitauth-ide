@@ -16,11 +16,13 @@ import { Icon, Tooltip, Position } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../../utils';
 import { type } from 'os';
+import { wrapInterfaceTooltip } from '../common';
 
 interface ProjectExplorerTreeNode {
   active: boolean;
   name: string;
   id: string;
+  internalId: string;
   activatable: boolean;
   type: ScriptType;
 }
@@ -40,43 +42,59 @@ const hasParentId = (
   script: IDETemplateScript
 ): script is IDETemplateUnlockingScript | IDETemplateTestSetupScript =>
   (script as IDETemplateUnlockingScript | IDETemplateTestSetupScript)
-    .parentId !== undefined;
+    .parentInternalId !== undefined;
 
 const getActiveParent = (script: IDETemplateScript) =>
-  hasParentId(script) ? script.parentId : undefined;
+  hasParentId(script) ? script.parentInternalId : undefined;
 
 const buildProjectExplorerTree = (
   state: AppState
 ): ProjectExplorerTreeParent[] => {
-  const activeId =
+  const activeInternalId =
     state.currentEditingMode === 'script'
-      ? state.currentlyEditingId
+      ? state.currentlyEditingInternalId
       : undefined;
-  const activeParentId = activeId
-    ? getActiveParent(state.currentTemplate.scriptsById[activeId])
+  const activeParentInternalId = activeInternalId
+    ? getActiveParent(
+        state.currentTemplate.scriptsByInternalId[activeInternalId]
+      )
     : undefined;
-  return Object.entries(state.currentTemplate.scriptsById)
+  return Object.entries(state.currentTemplate.scriptsByInternalId)
     .reduce<ProjectExplorerTreeNode[]>(
-      (parents, [id, script]) =>
+      (parents, [internalId, script]) =>
         script.type === 'locking' || script.type === 'tested'
           ? [
               ...parents,
               {
                 active:
-                  activeId !== undefined &&
-                  (activeId === id || activeParentId === id),
-                id,
+                  activeInternalId !== undefined &&
+                  (activeInternalId === internalId ||
+                    activeParentInternalId === internalId),
+                id: script.id,
+                internalId,
                 name: script.name,
                 activatable: false,
                 type: script.type,
-                ...(script.childIds && {
-                  children: script.childIds
-                    .map(id => ({
-                      active: activeId !== undefined && activeId === id,
-                      id,
-                      name: state.currentTemplate.scriptsById[id].name,
+                ...(script.childInternalIds && {
+                  children: script.childInternalIds
+                    .map(childInternalId => ({
                       activatable: true,
-                      type: state.currentTemplate.scriptsById[id].type
+                      active:
+                        activeInternalId !== undefined &&
+                        activeInternalId === childInternalId,
+                      id:
+                        state.currentTemplate.scriptsByInternalId[
+                          childInternalId
+                        ].id,
+                      internalId: childInternalId,
+                      name:
+                        state.currentTemplate.scriptsByInternalId[
+                          childInternalId
+                        ].name,
+                      type:
+                        state.currentTemplate.scriptsByInternalId[
+                          childInternalId
+                        ].type
                     }))
                     .sort((a, b) => a.name.localeCompare(b.name))
                 })
@@ -86,8 +104,9 @@ const buildProjectExplorerTree = (
           ? [
               ...parents,
               {
-                active: activeId === id,
-                id,
+                active: activeInternalId === internalId,
+                id: script.id,
+                internalId,
                 name: script.name,
                 activatable: isActivatable(script),
                 type: script.type
@@ -146,82 +165,95 @@ const getScriptTypeName = (type?: ScriptType) => {
 export const getScriptTooltipIcon = (type?: ScriptType) =>
   wrapInterfaceTooltip(getIcon(type), getScriptTypeName(type));
 
-export const wrapInterfaceTooltip = (
-  content?: JSX.Element,
-  tooltipValue?: string
-) => (
-  <Tooltip
-    content={tooltipValue}
-    portalClassName="interface-tooltip"
-    targetClassName="interface-tooltip-target"
-    position={Position.RIGHT}
-    boundary="window"
-  >
-    {content}
-  </Tooltip>
-);
-
+// TODO: use ContextMenuTarget from "@blueprintjs/core"
 export const ProjectExplorer = connect(
   (state: AppState) => ({
     templateName: state.currentTemplate.name,
-    entities: Object.keys(state.currentTemplate.entitiesById).map(id => ({
-      id,
-      name: state.currentTemplate.entitiesById[id].name
-    })),
+    currentEditingMode: state.currentEditingMode,
+    currentlyEditingId: state.currentlyEditingInternalId,
+    entities: Object.keys(state.currentTemplate.entitiesByInternalId).map(
+      internalId => ({
+        internalId,
+        name: state.currentTemplate.entitiesByInternalId[internalId].name
+      })
+    ),
     scripts: buildProjectExplorerTree(state)
   }),
   {
+    openTemplateSettings: ActionCreators.openTemplateSettings,
+    activateEntity: ActionCreators.activateEntity,
     activateScript: ActionCreators.activateScript,
     changeTemplate: ActionCreators.changeTemplate,
+    newEntity: ActionCreators.newEntity,
     newScript: ActionCreators.newScript
   }
 )(
   ({
+    currentEditingMode,
+    currentlyEditingId,
     templateName,
     entities,
     scripts,
+    openTemplateSettings,
+    activateEntity,
     activateScript,
     changeTemplate,
+    newEntity,
     newScript
   }: {
+    currentEditingMode: AppState['currentEditingMode'];
+    currentlyEditingId: AppState['currentlyEditingInternalId'];
     templateName: string;
-    entities: { id: string; name: string }[];
+    entities: { internalId: string; name: string }[];
     scripts: ProjectExplorerTreeParent[];
+    openTemplateSettings: typeof ActionCreators.openTemplateSettings;
+    activateEntity: typeof ActionCreators.activateEntity;
     activateScript: typeof ActionCreators.activateScript;
     changeTemplate: typeof ActionCreators.changeTemplate;
+    newEntity: typeof ActionCreators.newEntity;
     newScript: typeof ActionCreators.newScript;
   }) => {
     return (
       <div className="ProjectExplorer">
         <h1 className="title-area">
           <span className="title">{templateName}</span>
-          <div className="settings-button">
+          <div
+            className="settings-button"
+            onClick={() => openTemplateSettings()}
+          >
             {wrapInterfaceTooltip(
               <Icon icon={IconNames.COG} iconSize={10} />,
               'Authentication Template Settings'
             )}
           </div>
         </h1>
-        {entities.length > 0 ? (
-          <div className="entities-section">
-            <h3>
-              Entities
-              <div className="add-button">
-                {wrapInterfaceTooltip(
-                  <Icon icon={IconNames.PLUS} iconSize={12} />,
-                  'New Entity...'
-                )}
-              </div>
-            </h3>
-            <ul className="entities">
-              {entities.map(entity => (
-                <li key={entity.id}>{entity.name}</li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          ''
-        )}
+        <div className="entities-section">
+          <h3>
+            Entities
+            <div className="add-button" onClick={() => newEntity()}>
+              {wrapInterfaceTooltip(
+                <Icon icon={IconNames.PLUS} iconSize={12} />,
+                'New Entity...'
+              )}
+            </div>
+          </h3>
+          <ul className="entities">
+            {entities.map(entity => (
+              <li
+                key={entity.internalId}
+                className={
+                  currentEditingMode === 'entity' &&
+                  currentlyEditingId === entity.internalId
+                    ? 'activatable active'
+                    : 'activatable'
+                }
+                onClick={() => activateEntity(entity.internalId)}
+              >
+                {entity.name}
+              </li>
+            ))}
+          </ul>
+        </div>
         <div className="script-section">
           <h3>
             Scripts
@@ -235,14 +267,18 @@ export const ProjectExplorer = connect(
           <ul className="scripts">
             {scripts.map(node => (
               <li
-                key={node.id}
+                key={node.internalId}
                 className={`${node.active ? 'active' : ''} ${
                   node.activatable ? 'activatable' : ''
                 }`}
                 onClick={() =>
-                  node.activatable ? activateScript(node.id) : undefined
+                  node.activatable ? activateScript(node.internalId) : undefined
                 }
-                title={node.id}
+                title={`Script ID: ${node.id}${
+                  node.activatable
+                    ? ''
+                    : ' – this script must be edited with a child script. Choose or add a new child script to edit this script.'
+                }`}
               >
                 {getScriptTooltipIcon(node.type)}
                 {node.name}
@@ -250,13 +286,13 @@ export const ProjectExplorer = connect(
                   <ul>
                     {node.children.map(child => (
                       <li
-                        key={child.id}
+                        key={child.internalId}
                         className={`${child.active ? 'active' : ''} ${
                           child.activatable ? 'activatable' : ''
                         }`}
                         onClick={() =>
                           child.activatable
-                            ? activateScript(child.id)
+                            ? activateScript(child.internalId)
                             : undefined
                         }
                         title={child.id}

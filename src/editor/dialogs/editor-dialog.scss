@@ -1,0 +1,98 @@
+.editor-dialog,
+.bp3-dialog,
+.bp3-dark.editor-dialog,
+.bp3-dark .editor-dialog {
+  font-family: var(--standard-font-family);
+  color: #fffc;
+  background: var(--editor-background-color);
+
+  .bp3-dialog-header {
+    background: var(--interface-background-color);
+    .bp3-icon {
+      color: #fff6;
+    }
+  }
+  .bp3-heading {
+    color: #fff8;
+    font-weight: normal;
+    font-size: 14px;
+  }
+
+  .divider {
+    width: 100%;
+    height: 0;
+    border-bottom: 2px dashed #fff1;
+    margin: 24px 0;
+  }
+
+  select,
+  .bp3-input,
+  .bp3-button {
+    background: var(--interface-background-color);
+    color: #fffc;
+    &:hover {
+      background: #273136;
+    }
+    &.bp3-disabled {
+      background: var(--interface-background-color);
+      color: #fff3;
+      &:hover {
+        background: var(--interface-background-color);
+      }
+    }
+    &.bp3-intent-danger {
+      background-color: #db3737;
+      &:hover {
+        background-color: #c23030;
+      }
+    }
+  }
+
+  code {
+    background-color: var(--stack-vis-background-color);
+    border-radius: 2px;
+    margin: 0 2px;
+    padding: 0 2px;
+    border: 1px solid var(--interface-background-color);
+  }
+
+  .bp3-label {
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  .bp3-dialog-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .bp3-button {
+    flex-shrink: 0;
+  }
+
+  .error {
+    display: flex;
+    align-items: center;
+
+    .bp3-icon {
+      margin-right: 6px;
+      margin-bottom: 2px;
+    }
+    code {
+      padding: 2px 4px;
+      margin: 0 4px;
+    }
+  }
+}
+
+.delete-item-button {
+  background: none transparent !important;
+  border: 1px solid #fff1 !important;
+  color: #fff5 !important;
+
+  .bp3-icon {
+    margin: 0 8px 4px 0 !important;
+    color: #fff3 !important;
+  }
+}

@@ -1,23 +1,6 @@
 import { AppState, ActiveDialog } from './types';
 import { IDEMode } from './types';
-import { CompilationData } from '../bitauth-script/resolve';
 import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
-
-// TODO: fetch this from a backend eventually
-const latestKnownBlock = 561171;
-const latestKnownBlockTimeUTC = 1549166880000; // static for now for determinism
-/**
- * bigIntToScriptNumber(BigInt(60 * 60 * 24 * 30))
- */
-const thirtyDaysInSeconds = Uint8Array.from([0, 141, 39]);
-
-const privateKeys = {
-  first: new Uint8Array(32).fill(1),
-  second: new Uint8Array(32).fill(2),
-  trusted: new Uint8Array(32).fill(3),
-
-  my: new Uint8Array(32).fill(4)
-};
 
 export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] = [
   'BCH_2018_11',
@@ -26,95 +9,96 @@ export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] 
   'BTC_2017_08'
 ];
 
-const defaultVariableData: CompilationData = {
-  keys: {
-    /**
-     * TODO: Cutting corners here – during development, these should actually be
-     * derived from their respective `mock` field in the `AuthenticationTemplate`.
-     */
-    privateKeys
-  },
-  walletData: {
-    /**
-     * TODO: also cutting corners here – in a generalized wallet, this would be provided as a BitAuth Script (i.e. the number as a string: '2592000')
-     */
-    delay_seconds: thirtyDaysInSeconds
-  },
-  currentBlockTime: new Date(latestKnownBlockTimeUTC),
-  currentBlockHeight: latestKnownBlock
-};
-
 const defaultNewTemplate: AppState['currentTemplate'] = {
   name: '2-of-2 with Business Continuity',
   description:
     'A 2-of-2 wallet, which after a specified delay, can be recovered by either of the original two keys and a signature from a trusted user (e.g. an attorney).\nThis scheme is described in more detail in BIP-65.',
   supportedVirtualMachines,
-  entitiesById: {
-    signer_1: {
+  entitiesByInternalId: {
+    '1586fd21-998b-4107-b617-e6cf10743c87': {
       name: 'Signer 1',
+      id: 'signer_1',
+      internalId: '1586fd21-998b-4107-b617-e6cf10743c87',
       description: '',
-      scriptIds: ['checksum', 'spend', 'recover_1'],
-      variableIds: ['first', 'block_time', 'delay_seconds']
+      usesAllScripts: true,
+      scriptInternalIds: [],
+      variableInternalIds: [
+        'ef11bc39-1f0e-4229-bedf-657b94a35d83',
+        '06b4ba26-7fc4-4818-9ae5-15e2d81c08c5',
+        'beb0a8ed-acef-4922-81a9-8dfb72755fdb'
+      ]
     },
-    signer_2: {
+    '3d0c5824-be9f-4c4a-9191-bcdbb324588f': {
       name: 'Signer 2',
+      id: 'signer_2',
+      internalId: '3d0c5824-be9f-4c4a-9191-bcdbb324588f',
       description: '',
-      scriptIds: ['checksum', 'spend', 'recover_2'],
-      variableIds: ['second']
+      usesAllScripts: true,
+      scriptInternalIds: [],
+      variableInternalIds: ['3553e5bb-f523-41a3-ad15-b69388b4795a']
     },
-    trusted_party: {
+    '6d53b584-21a5-45de-9f7e-94c4088598a1': {
       name: 'Trusted Party',
+      id: 'trusted_party',
+      internalId: '6d53b584-21a5-45de-9f7e-94c4088598a1',
       description: '',
-      scriptIds: ['checksum', 'recover_1', 'recover_2'],
-      variableIds: ['trusted']
+      usesAllScripts: true,
+      scriptInternalIds: [],
+      variableInternalIds: ['70649ebd-960d-4183-9c53-5ef5d358e2a2']
     }
   },
-  variablesById: {
-    first: {
+  variablesByInternalId: {
+    'ef11bc39-1f0e-4229-bedf-657b94a35d83': {
       id: 'first',
       // derivationHardened: false,
       // derivationIndex: 0,
       // type: 'HDKey',
       type: 'Key',
-      mock: '0x01',
+      mock: '1111111111111111111111111111111111111111111111111111111111111111',
       name: "Signer 1's HDKey",
       description: ''
     },
-    block_time: {
+    '06b4ba26-7fc4-4818-9ae5-15e2d81c08c5': {
       id: 'block_time',
-      type: 'CurrentBlockTime'
+      type: 'CurrentBlockTime',
+      description: '',
+      mock: '',
+      name: ''
     },
-    delay_seconds: {
+    'beb0a8ed-acef-4922-81a9-8dfb72755fdb': {
       id: 'delay_seconds',
       description:
-        'The waiting period (from the time the wallet is created) after which the Trusted Party can assist with delayed recoveries. The delay is measured in seconds, e.g. 1 day is `86400`.',
+        'The waiting period (from the time the wallet is created) after which the Trusted Party can assist with delayed recoveries. The delay is measured in seconds, e.g. 1 day is 86400. Here we set the delay to 30 days (008d27).',
       name: 'Recovery Delay (Seconds)',
-      type: 'WalletData'
+      type: 'WalletData',
+      mock: '008d27'
     },
-    second: {
+    '3553e5bb-f523-41a3-ad15-b69388b4795a': {
       id: 'second',
       // derivationHardened: false,
       // derivationIndex: 0,
       // type: 'HDKey',
       type: 'Key',
-      mock: '0x02',
+      mock: '1111111111111111111111111111111111111111111111111111111111111112',
       name: "Signer 2's HDKey",
       description: ''
     },
-    trusted: {
+    '70649ebd-960d-4183-9c53-5ef5d358e2a2': {
       id: 'trusted',
       // derivationHardened: false,
       // derivationIndex: 0,
       // type: 'HDKey',
       type: 'Key',
-      mock: '0x03',
+      mock: '1111111111111111111111111111111111111111111111111111111111111113',
       name: "Trusted Party's HDKey",
       description: ''
     }
   },
-  scriptsById: {
-    checksum: {
+  scriptsByInternalId: {
+    '6d53b584-21a5-45de-9f7e-94c4088598a1': {
       type: 'isolated',
+      id: 'checksum',
+      internalId: '6d53b584-21a5-45de-9f7e-94c4088598a1',
       name: 'Create Safety Number',
       //       script: `$(
       //   <first.public_key>
@@ -141,8 +125,10 @@ const defaultNewTemplate: AppState['currentTemplate'] = {
   OP_HASH160
 `
     },
-    lock: {
+    'b1331918-8ac8-460e-8243-3a8c3ca2d856': {
       type: 'locking',
+      id: 'lock',
+      internalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856',
       name: '2-of-2 Vault',
       script: `OP_IF
   <$(
@@ -159,32 +145,42 @@ OP_ENDIF
 <first.public_key> <second.public_key> <2>
 OP_CHECKMULTISIG`,
       isP2SH: true,
-      childIds: ['spend', 'recover_1', 'recover_2']
+      childInternalIds: [
+        '92064a05-d097-4f11-92ba-119ccb686a58',
+        '000bf50d-7f30-4811-971b-cbe7f983363d',
+        '21222d0a-6120-4628-8901-0237e1745036'
+      ]
     },
-    spend: {
+    '92064a05-d097-4f11-92ba-119ccb686a58': {
       type: 'unlocking',
+      id: 'spend',
+      internalId: '92064a05-d097-4f11-92ba-119ccb686a58',
       name: 'Standard Spend',
       script: '<0>\n<first.signature_all>\n<second.signature_all>\n<0>',
-      parentId: 'lock'
+      parentInternalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856'
     },
-    recover_1: {
+    '000bf50d-7f30-4811-971b-cbe7f983363d': {
       type: 'unlocking',
+      id: 'recover_1',
+      internalId: '000bf50d-7f30-4811-971b-cbe7f983363d',
       name: 'Recover – Signer 1',
       script: '<0>\n<first.signature_all>\n<trusted.signature_all>\n<1>',
-      parentId: 'lock'
+      parentInternalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856'
     },
-    recover_2: {
+    '21222d0a-6120-4628-8901-0237e1745036': {
       type: 'unlocking',
+      id: 'recover_2',
+      internalId: '21222d0a-6120-4628-8901-0237e1745036',
       name: 'Recover – Signer 2',
       script: '<0>\n<second.signature_all>\n<trusted.signature_all>\n<1>',
-      parentId: 'lock'
+      parentInternalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856'
     }
   }
 };
 
 export const defaultState: AppState = {
   ideMode: IDEMode.editor,
-  currentlyEditingId: 'recover_1',
+  currentlyEditingInternalId: '000bf50d-7f30-4811-971b-cbe7f983363d',
   currentEditingMode: 'script',
   // TODO: from local storage
   savedTemplates: [],
@@ -192,6 +188,6 @@ export const defaultState: AppState = {
   currentVmId: 'BCH_2018_11',
   authenticationVirtualMachines: null,
   crypto: null,
-  compilationData: defaultVariableData,
+  // compilationData: defaultVariableData,
   activeDialog: ActiveDialog.none
 };

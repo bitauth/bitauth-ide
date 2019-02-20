@@ -6,37 +6,3 @@
     background-color: var(--editor-background-color);
   }
 }
-
-.bp3-dialog {
-  font-family: var(--standard-font-family);
-  background: var(--editor-background-color);
-  color: #fffc;
-  .bp3-dialog-header {
-    background: var(--interface-background-color);
-    .bp3-icon {
-      color: #fff6;
-    }
-  }
-  .bp3-heading {
-    color: #fff8;
-    font-weight: normal;
-    font-size: 14px;
-  }
-
-  select,
-  .bp3-input,
-  .bp3-button {
-    background: var(--interface-background-color);
-    color: #fffc;
-    &:hover {
-      background: #273136;
-    }
-    &.bp3-disabled {
-      background: var(--interface-background-color);
-      color: #fff3;
-      &:hover {
-        background: var(--interface-background-color);
-      }
-    }
-  }
-}

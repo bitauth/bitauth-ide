@@ -9,7 +9,7 @@ import {
   EvaluationViewerLine,
   IDESupportedProgramState
 } from '../editor-types';
-import { Tooltip } from '@blueprintjs/core';
+import { Tooltip, Popover } from '@blueprintjs/core';
 import { unknownValue } from '../../utils';
 
 enum Errors {
@@ -23,6 +23,14 @@ enum Errors {
    */
   past
 }
+
+const stackItem = (itemIndex: number, hex: string, content: JSX.Element) => (
+  <Popover key={itemIndex} content={hex} portalClassName="stack-popover">
+    <Tooltip content={hex} portalClassName="stack-tooltip">
+      {content}
+    </Tooltip>
+  </Popover>
+);
 
 const EvaluationLine = ({
   line,
@@ -70,39 +78,24 @@ const EvaluationLine = ({
           const name = lookup(item);
           const hex = `0x${binToHex(item)}`;
           if (name !== false) {
-            return (
-              <Tooltip
-                key={itemIndex}
-                content={hex}
-                portalClassName="stack-tooltip"
-                targetClassName="stack-tooltip-target"
-              >
-                <span className="stack-item named">{name}</span>
-              </Tooltip>
+            return stackItem(
+              itemIndex,
+              hex,
+              <span className="stack-item named">{name}</span>
             );
           }
           const number = parseBytesAsScriptNumber(item);
           if (typeof number === 'bigint') {
-            return (
-              <Tooltip
-                key={itemIndex}
-                content={hex}
-                portalClassName="stack-tooltip"
-                targetClassName="stack-tooltip-target"
-              >
-                <span className="stack-item number">{`${number}`}</span>
-              </Tooltip>
+            return stackItem(
+              itemIndex,
+              hex,
+              <span className="stack-item number">{`${number}`}</span>
             );
           }
-          return (
-            <Tooltip
-              key={itemIndex}
-              content={hex}
-              portalClassName="stack-tooltip"
-              targetClassName="stack-tooltip-target"
-            >
-              <span className="stack-item hex">{hex}</span>
-            </Tooltip>
+          return stackItem(
+            itemIndex,
+            hex,
+            <span className="stack-item hex">{hex}</span>
           );
         })
       )
