@@ -43,7 +43,8 @@ import {
   StackItemIdentifyFunction,
   ProjectEditorMode,
   Evaluation,
-  IDESupportedProgramState
+  IDESupportedProgramState,
+  EvaluationViewerHighlight
 } from './editor-types';
 import { ActionCreators } from '../state/reducer';
 import { compileScript, CompilationResult } from '../bitauth-script/compile';
@@ -406,7 +407,7 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       const reduced: Evaluation<ProgramState> = reduceSpacedTraceSamples<
         ProgramState
       >(spaced, createEmptyProgramState, nextLine);
-      nextLine = reduced[reduced.length - 1];
+      nextLine = { ...reduced[reduced.length - 1] };
       evaluations.push(reduced);
 
       if (next.success === false) {
@@ -430,6 +431,27 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       compilation: evaluationOrderedCompilationResults[i],
       evaluation: evaluations[i]
     }));
+
+    /**
+     * Add our highlights if more than 1 frame is present:
+     */
+    if (scriptEditorFrames.length > 1) {
+      const evaluation =
+        scriptEditorFrames[scriptEditorFrames.length - 1].evaluation;
+      if (evaluation !== undefined) {
+        const lastLine = evaluation[evaluation.length - 1];
+        console.log(lastLine);
+        if (lastLine.state.stack[lastLine.state.stack.length - 1][0] === 1) {
+          if (lastLine.state.stack.length > 1) {
+            lastLine.highlight = EvaluationViewerHighlight.dirtyStack;
+          } else {
+            lastLine.highlight = EvaluationViewerHighlight.success;
+          }
+        } else {
+          lastLine.highlight = EvaluationViewerHighlight.fail;
+        }
+      }
+    }
 
     const identifyStackItems =
       evaluationOrderedCompilationResults.length === 0

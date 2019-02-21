@@ -78,11 +78,23 @@ export enum EvaluationViewerSpacer {
   skippedConditional = 'skippedConditional'
 }
 
+/**
+ * TODO: highlights (and descriptions) for the other failure scenarios
+ */
 export enum EvaluationViewerHighlight {
   /**
    * Highlight applied to the final line of a successful evaluation.
    */
-  success
+  success = 'success',
+  /**
+   * Highlight applied to the final line of a failed evaluation.
+   */
+  fail = 'fail',
+  /**
+   * Highlight applied to the final line of an evaluation which may be valid,
+   * but violates the "clean stack" requirement.
+   */
+  dirtyStack = 'dirtyStack'
 }
 
 export interface EvaluationViewerLine<
@@ -98,39 +110,3 @@ export interface ProjectExplorerTreeNode {
   id: AuthenticationTemplateScript['id'];
   children?: ProjectExplorerTreeNode[];
 }
-
-// TODO: update
-// export interface EditorState<ProgramState extends IDESupportedProgramState> {
-//   editorMode: ProjectEditorMode;
-//   // TODO: does this need to be in state? or can it be local to a reducer?
-//   // identifyStackItem: StackItemIdentifyFunction;
-//   pairEditorState: {
-//     isP2sh: boolean;
-//     scriptsState: {
-//       unlockingScript: string;
-//       lockingScript: string;
-//       unlockingScriptName: string;
-//       lockingScriptName: string;
-//     };
-//     evaluationState: {
-//       unlockingEvaluation: Evaluation<ProgramState>;
-//       lockingEvaluation: Evaluation<ProgramState>;
-//     };
-//   };
-//   isolatedEditorState: {
-//     hasTest: boolean;
-//     scriptsState: {
-//       setupScript: string;
-//       checkScript: string;
-//       script: string;
-//     };
-//     evaluationState: {
-//       setupEvaluation: Evaluation<ProgramState>;
-//       scriptEvaluation: Evaluation<ProgramState>;
-//       checkEvaluation: Evaluation<ProgramState>;
-//     };
-//   };
-//   projectExplorerState: {
-//     tree: ProjectExplorerTreeNode;
-//   };
-// }

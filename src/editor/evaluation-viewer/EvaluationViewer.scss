@@ -38,9 +38,7 @@ $hex-color: #5bb498;
     height: 18px;
     padding-left: 12px;
 
-    &.success {
-      background-color: #14691e33;
-      border-left: 2px solid #14691e;
+    &.highlight {
       padding-left: 10px;
       height: 16px;
 
@@ -48,6 +46,15 @@ $hex-color: #5bb498;
         background-color: transparent;
       }
     }
+
+    &.success {
+      background-color: #14691e33;
+      border-left: 2px solid #14691e;
+    }
+
+    // TODO: can failure highlighting not be annoying?
+    // &.dirty-stack {}
+    // &.fail {}
   }
 
   .stack-item {

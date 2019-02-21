@@ -68,7 +68,11 @@ const EvaluationLine = ({
   <div
     className={
       line.highlight === EvaluationViewerHighlight.success
-        ? 'state success'
+        ? 'state highlight success'
+        : line.highlight === EvaluationViewerHighlight.dirtyStack
+        ? 'state highlight dirty-stack'
+        : line.highlight === EvaluationViewerHighlight.fail
+        ? 'state highlight fail'
         : 'state'
     }
     onClick={() => {
