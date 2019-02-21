@@ -1,20 +1,8 @@
 .EntityVariableEditor {
-  display: flex;
-  flex-direction: column;
   background-color: var(--stack-vis-background-color);
 
   h2 {
-    flex-shrink: 0;
-    font-weight: normal;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: 8px 14px;
     background: var(--editor-background-color);
-    height: 14px;
-    box-sizing: content-box;
-    box-sizing: initial;
   }
 
   .entity-variables {

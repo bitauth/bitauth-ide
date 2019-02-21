@@ -50,9 +50,9 @@ export const EntitySettingsEditor = connect(
 )((props: EntitySettingsProps & EntitySettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
   return (
-    <div className="EntitySettingsEditor">
+    <div className="EntitySettingsEditor EditorPane">
       <h2>Entity Settings</h2>
-      <div className="entity-settings">
+      <div className="EditorPaneContents">
         <h3 className="name">
           <EditableText
             maxLength={100}

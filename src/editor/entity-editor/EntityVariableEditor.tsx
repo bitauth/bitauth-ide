@@ -79,7 +79,7 @@ export const EntityVariableEditor = connect(
     AuthenticationTemplateVariable | undefined
   >(undefined);
   return (
-    <div className="EntityVariableEditor">
+    <div className="EntityVariableEditor EditorPane">
       <h2>Entity Variables</h2>
       <div className="entity-variables">
         {props.entity.variableInternalIds.map(internalId => {
@@ -88,6 +88,7 @@ export const EntityVariableEditor = connect(
           // const description =
           return (
             <Card
+              key={internalId}
               className="variable"
               interactive={true}
               elevation={Elevation.TWO}

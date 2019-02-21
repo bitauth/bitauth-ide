@@ -183,7 +183,7 @@ export const ProjectExplorer = connect(
     openTemplateSettings: ActionCreators.openTemplateSettings,
     activateEntity: ActionCreators.activateEntity,
     activateScript: ActionCreators.activateScript,
-    changeTemplate: ActionCreators.changeTemplate,
+    changeTemplate: ActionCreators.importTemplate,
     newEntity: ActionCreators.newEntity,
     newScript: ActionCreators.newScript
   }
@@ -209,18 +209,22 @@ export const ProjectExplorer = connect(
     openTemplateSettings: typeof ActionCreators.openTemplateSettings;
     activateEntity: typeof ActionCreators.activateEntity;
     activateScript: typeof ActionCreators.activateScript;
-    changeTemplate: typeof ActionCreators.changeTemplate;
+    changeTemplate: typeof ActionCreators.importTemplate;
     newEntity: typeof ActionCreators.newEntity;
     newScript: typeof ActionCreators.newScript;
   }) => {
     return (
       <div className="ProjectExplorer">
-        <h1 className="title-area">
+        <h1
+          className={
+            currentEditingMode === 'template-settings'
+              ? 'title-area active'
+              : 'title-area'
+          }
+          onClick={() => openTemplateSettings()}
+        >
           <span className="title">{templateName}</span>
-          <div
-            className="settings-button"
-            onClick={() => openTemplateSettings()}
-          >
+          <div className="settings-button">
             {wrapInterfaceTooltip(
               <Icon icon={IconNames.COG} iconSize={10} />,
               'Authentication Template Settings'

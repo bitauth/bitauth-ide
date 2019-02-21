@@ -1,0 +1,22 @@
+.ImportExportDialog {
+  max-width: 800px;
+  width: 100% !important;
+
+  .actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .action {
+    margin: 12px 12px 24px 0;
+  }
+  .import-input {
+    .bp3-file-upload-input::after {
+      background: var(--interface-background-color);
+    }
+  }
+}
+.import-export-editor {
+  height: 400px;
+}

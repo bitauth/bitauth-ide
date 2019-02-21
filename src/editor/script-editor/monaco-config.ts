@@ -288,3 +288,9 @@ export const registerBitauthScript = (monaco: typeof Monaco) => {
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);
 };
+
+export const prepMonaco = (monaco: typeof Monaco) => {
+  if (monaco.languages.getLanguages().length < 3) {
+    registerBitauthScript(monaco);
+  }
+};

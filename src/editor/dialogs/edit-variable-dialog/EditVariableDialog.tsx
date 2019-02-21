@@ -377,7 +377,6 @@ export const EditVariableDialog = ({
               variableType === 'ExternalOperation'
             }
             onClick={() => {
-              console.dir(currentVariables);
               /**
                * TODO: we should really be tracking all "usedIds" together rather than
                * tracking variable, entity, and script IDs separately. Entity ID's can
@@ -387,7 +386,6 @@ export const EditVariableDialog = ({
               const usedIds = currentVariables
                 .map(v => v.id)
                 .filter(id => variable === undefined || variable.id !== id);
-              console.dir(usedIds);
               if (usedIds.indexOf(variableId) !== -1) {
                 setNonUniqueId(variableId);
               } else {

@@ -142,9 +142,11 @@ export type IDETemplateScript =
 
 export type DisableId = true;
 
-type IDESupportedVms = { [key in AuthenticationVirtualMachineIdentifier]: any };
+export type IDESupportedVM = AuthenticationVirtualMachineIdentifier;
 
-export interface IDELoadedVMs extends IDESupportedVms {
+export type IDESupportedVmStore = { [key in IDESupportedVM]: any };
+
+export interface IDELoadedVMs extends IDESupportedVmStore {
   BCH_2018_11: AuthenticationVirtualMachine<
     BitcoinCashAuthenticationProgramState
   >;
@@ -170,6 +172,9 @@ export interface IDELoadedVMsAndCrypto {
   vms: IDELoadedVMs;
 }
 
+/**
+ * The application dialogs which are managed by Redux.
+ */
 export enum ActiveDialog {
   none,
   /**
@@ -183,7 +188,11 @@ export enum ActiveDialog {
   /**
    * The dialog to create a new entity in the current template.
    */
-  newEntity
+  newEntity,
+  /**
+   * The authentication template import/export dialog.
+   */
+  importExport
 }
 
 export interface AppState {

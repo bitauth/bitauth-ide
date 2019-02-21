@@ -12,7 +12,8 @@ import {
   BaseScriptType,
   IDETemplateLockingScript,
   IDETemplateIsolatedScript,
-  IDETemplateTestedScript
+  IDETemplateTestedScript,
+  IDESupportedVM
 } from './types';
 import { editor } from 'monaco-editor';
 import { defaultState } from './defaults';
@@ -30,6 +31,31 @@ class App extends ImmerReducer<AppState> {
   }
   openTemplateSettings() {
     this.draftState.currentEditingMode = 'template-settings';
+  }
+  updateTemplateName(name: string) {
+    this.draftState.currentTemplate.name = name;
+  }
+  updateTemplateDescription(description: string) {
+    this.draftState.currentTemplate.description = description;
+  }
+  updateTemplateSupportedVM(vm: IDESupportedVM, enable: boolean) {
+    const vms = this.draftState.currentTemplate.supportedVirtualMachines.filter(
+      id => id !== vm
+    );
+    this.draftState.currentTemplate.supportedVirtualMachines = enable
+      ? [...vms, vm]
+      : vms;
+  }
+  importExport() {
+    this.draftState.activeDialog = ActiveDialog.importExport;
+  }
+  resetTemplate() {
+    this.draftState.currentTemplate.name = '';
+    this.draftState.currentTemplate.description = '';
+    this.draftState.currentTemplate.entitiesByInternalId = {};
+    this.draftState.currentTemplate.variablesByInternalId = {};
+    this.draftState.currentTemplate.scriptsByInternalId = {};
+    this.draftState.currentTemplate.supportedVirtualMachines = [];
   }
   newEntity() {
     this.draftState.activeDialog = ActiveDialog.newEntity;
@@ -327,7 +353,7 @@ class App extends ImmerReducer<AppState> {
   closeDialog() {
     this.draftState.activeDialog = ActiveDialog.none;
   }
-  changeTemplate(template: AppState['currentTemplate']) {
+  importTemplate(template: AppState['currentTemplate']) {
     this.draftState.currentTemplate = template;
     this.draftState.currentlyEditingInternalId = undefined;
     this.draftState.currentEditingMode = undefined;

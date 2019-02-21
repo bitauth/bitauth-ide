@@ -25,6 +25,7 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+    cursor: pointer;
 
     .title {
       flex-grow: 1;
@@ -57,10 +58,18 @@
     }
   }
 
+  .title-area,
+  li {
+    border-left: 2px solid transparent;
+
+    &.active {
+      border-left-color: #2a5b8b;
+    }
+  }
+
   li {
     list-style: none;
     padding: 0.5em 1em;
-    border-left: 2px solid transparent;
 
     .icon {
       color: #fff4;
@@ -73,10 +82,6 @@
       &:hover {
         background-color: rgba(255, 255, 255, 0.1);
       }
-    }
-
-    &.active {
-      border-color: #2a5b8b;
     }
   }
 

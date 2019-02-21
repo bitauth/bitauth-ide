@@ -53,6 +53,8 @@ import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
 import { getCurrentScripts, getCurrentEntities } from './common';
 import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
 import { EditScriptDialog } from './dialogs/edit-script-dialog/EditScriptDialog';
+import { TemplateSettings } from './template-settings/TemplateSettings';
+import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
 
 const getEditorMode = (
   currentEditingMode: 'entity' | 'script' | 'template-settings',
@@ -626,7 +628,7 @@ export const Editor = connect(
                 <div className="loading" />
               );
             case Pane.templateSettingsEditor:
-              return <div className="loading" />;
+              return <TemplateSettings />;
             case Pane.loading:
               return <div className="loading" />;
             default:
@@ -782,6 +784,10 @@ export const Editor = connect(
         closeDialog={props.closeDialog}
         currentScripts={props.currentScripts}
         createScript={props.createScript}
+      />
+      <ImportExportDialog
+        activeDialog={props.activeDialog}
+        closeDialog={props.closeDialog}
       />
     </div>
   );

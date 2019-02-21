@@ -19,7 +19,8 @@ const defaultNewTemplate: AppState['currentTemplate'] = {
       name: 'Signer 1',
       id: 'signer_1',
       internalId: '1586fd21-998b-4107-b617-e6cf10743c87',
-      description: '',
+      description:
+        'One of the two co-owners of this wallet. If Signer 1 is unable to sign, Signer 2 and Trusted Party can recover funds after 30 days.',
       usesAllScripts: true,
       scriptInternalIds: [],
       variableInternalIds: [
@@ -32,7 +33,8 @@ const defaultNewTemplate: AppState['currentTemplate'] = {
       name: 'Signer 2',
       id: 'signer_2',
       internalId: '3d0c5824-be9f-4c4a-9191-bcdbb324588f',
-      description: '',
+      description:
+        'One of the two co-owners of this wallet. If Signer 2 is unable to sign, Signer 1 and Trusted Party can recover funds after 30 days.',
       usesAllScripts: true,
       scriptInternalIds: [],
       variableInternalIds: ['3553e5bb-f523-41a3-ad15-b69388b4795a']
@@ -41,7 +43,8 @@ const defaultNewTemplate: AppState['currentTemplate'] = {
       name: 'Trusted Party',
       id: 'trusted_party',
       internalId: '6d53b584-21a5-45de-9f7e-94c4088598a1',
-      description: '',
+      description:
+        "A trusted party, like a lawyer or trusted employee. If either Signer is unable to sign, after 30 days, Trusted Party can help to recover funds by co-signing on that Signer's behalf.",
       usesAllScripts: true,
       scriptInternalIds: [],
       variableInternalIds: ['70649ebd-960d-4183-9c53-5ef5d358e2a2']

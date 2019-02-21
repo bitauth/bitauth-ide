@@ -5,7 +5,7 @@ import {
   bitauthScript,
   bitauthDark,
   monacoOptions,
-  registerBitauthScript
+  prepMonaco
 } from './monaco-config';
 import './ScriptEditor.scss';
 import { ActionCreators } from '../../state/reducer';
@@ -18,12 +18,6 @@ import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
 import { wrapInterfaceTooltip } from '../common';
-
-const prepMonaco = (monaco: typeof monacoEditor) => {
-  if (monaco.languages.getLanguages().length < 2) {
-    registerBitauthScript(monaco);
-  }
-};
 
 interface ScriptEditorProps {
   isP2SH: boolean;

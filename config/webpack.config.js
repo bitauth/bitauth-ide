@@ -592,7 +592,7 @@ module.exports = function(webpackEnv) {
           silent: true,
           formatter: typescriptFormatter
         }),
-      new MonacoWebpackPlugin({ languages: [] })
+      new MonacoWebpackPlugin({ languages: ['json'] })
     ].filter(Boolean),
     // Some libraries import Node modules but don't use them in the browser.
     // Tell Webpack to provide empty mocks for them so importing them works.

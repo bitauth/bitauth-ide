@@ -1,6 +1,7 @@
 import React from 'react';
 import './EvaluationViewer.scss';
-import { binToHex, parseBytesAsScriptNumber } from 'bitcoin-ts';
+import { binToHex, parseBytesAsScriptNumber, stringify } from 'bitcoin-ts';
+import * as bitcoinTs from 'bitcoin-ts';
 import {
   Evaluation,
   EvaluationViewerHighlight,
@@ -11,6 +12,27 @@ import {
 } from '../editor-types';
 import { Tooltip, Popover } from '@blueprintjs/core';
 import { unknownValue } from '../../utils';
+
+(window as any).b = bitcoinTs;
+console.log(
+  `%cWelcome to BitAuth IDE!
+  
+%cThe %cbitcoin-ts%c library is available at %cb%c (%cwindow.b%c).
+%cTip: to quickly stringify an object which %cJSON.stringify%c doesn't support, try %cb.stringify%c.`,
+  'font-weight: bold;',
+  '',
+  'color: #2a5b8b; font-weight: bold;',
+  '',
+  'color: #cb1b15; font-weight: bold;',
+  '',
+  'color: #cb1b15; font-weight: bold;',
+  '',
+  'color: #888; font-style: italic;',
+  'color: #cb1b15; font-weight: bold; font-style: italic;',
+  'color: #888; font-style: italic;',
+  'color: #cb1b15; font-weight: bold; font-style: italic;',
+  'color: #888; font-style: italic;'
+);
 
 enum Errors {
   none,
@@ -34,9 +56,11 @@ const stackItem = (itemIndex: number, hex: string, content: JSX.Element) => (
 
 const EvaluationLine = ({
   line,
+  lineIndex,
   error,
   lookup
 }: {
+  lineIndex: number;
   line: EvaluationViewerLine<IDESupportedProgramState>;
   error: Errors;
   lookup: StackItemIdentifyFunction;
@@ -47,6 +71,10 @@ const EvaluationLine = ({
         ? 'state success'
         : 'state'
     }
+    onClick={() => {
+      console.log(`ProgramState after line #${lineIndex}:`);
+      console.dir(line.state);
+    }}
   >
     {line.spacers &&
       line.spacers.map((type, index) => (
@@ -171,6 +199,7 @@ export class EvaluationViewer extends React.Component<
               >
                 <EvaluationLine
                   line={this.state.evaluation[0]}
+                  lineIndex={0}
                   error={Errors.none}
                   lookup={this.state.lookup}
                 />
@@ -185,6 +214,7 @@ export class EvaluationViewer extends React.Component<
                   .map((line, lineIndex, lines) => (
                     <EvaluationLine
                       key={lineIndex}
+                      lineIndex={lineIndex + 1}
                       line={line}
                       error={
                         line.state && line.state.error
