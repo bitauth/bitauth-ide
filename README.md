@@ -1,44 +1,27 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# bitauth-ide
 
-## Available Scripts
+**[BitAuth IDE](https://bitauth.com/ide)** is an integrated development environment for bitcoin authentication. You can [find a full walk-through and video about it in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).
 
-In the project directory, you can run:
+![bitauth-ide-dark](https://user-images.githubusercontent.com/904007/53257400-021e9b80-3698-11e9-86ca-c87f3b8f0bf1.png)
 
-### `npm start`
+### Debug Unlocking and Locking Scripts Together
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+![unlocking-and-locking-script](https://user-images.githubusercontent.com/904007/53257569-7eb17a00-3698-11e9-8fc8-3f55942d0325.png)
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+### Inspect the Evaluation in DevTools
 
-### `npm test`
+![unlocking-and-locking-script](https://user-images.githubusercontent.com/904007/53257628-a7d20a80-3698-11e9-851a-ae17bd675de4.png)
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Create and Manage Entities and Variables
 
-### `npm run build`
+![entities-and-variables](https://user-images.githubusercontent.com/904007/53257756-eb2c7900-3698-11e9-836c-e84fa753ae4b.png)
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Describe and Document BitAuth Templates
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+![template-settings](https://user-images.githubusercontent.com/904007/53258105-ca185800-3699-11e9-9fe3-09ef0a937e1c.png)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Import and Export JSON BitAuth Templates
 
-### `npm run eject`
+![import-export](https://user-images.githubusercontent.com/904007/53257997-858cbc80-3699-11e9-9361-1db9a57d12e9.png)
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Read more about it in [the blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).

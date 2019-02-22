@@ -29,6 +29,37 @@
     />
   </head>
   <body>
+    <div id="unsupported-browser">
+      <style>
+        #unsupported-browser {
+          display: none;
+          width: 300px;
+          margin: 20px auto;
+        }
+        #unsupported-browser a {
+          color: #fff;
+          color: #fffa;
+          display: block;
+          font-size: 20px;
+          text-decoration: underline;
+          margin: 20px 0;
+        }
+      </style>
+      <script>
+        if (typeof BigInt === 'undefined') {
+          document.getElementById('unsupported-browser').style.display =
+            'block';
+          window.alert(
+            'Sorry, BitAuth IDE requires native BigInt support in your browser to work properly\n\n' +
+              "If you're using Firefox, you can also try to enable the 'bigint' feature flag. Otherwise please try visiting on using Chrome or Opera."
+          );
+        }
+      </script>
+      <a href="https://bitauth.com/">Back to BitAuth.com</a
+      ><a href="https://github.com/bitjson/bitauth-ide"
+        >View BitAuth IDE on GitHub</a
+      >
+    </div>
     <noscript> Please to enable JavaScript to use BitAuth IDE. </noscript>
     <div id="root"></div>
     <!--

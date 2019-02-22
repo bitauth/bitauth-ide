@@ -18,6 +18,8 @@ console.log(
   `%cWelcome to BitAuth IDE!
   
 %cThe %cbitcoin-ts%c library is available at %cb%c (%cwindow.b%c).
+You can click a line in the evaluation viewer to inspect the program state at that point in the evaluation.
+
 %cTip: to quickly stringify an object which %cJSON.stringify%c doesn't support, try %cb.stringify%c.`,
   'font-weight: bold;',
   '',

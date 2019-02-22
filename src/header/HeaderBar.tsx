@@ -1,9 +1,12 @@
 import React from 'react';
 import './HeaderBar.scss';
-import { Button, MenuItem } from '@blueprintjs/core';
+import { Button, MenuItem, Icon } from '@blueprintjs/core';
 import { ItemRenderer, Select } from '@blueprintjs/select';
 import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 import { IDEMode } from '../state/types';
+import GitHubLogo from './github-logo.svg';
+import { IconNames } from '@blueprintjs/icons';
+import { wrapInterfaceTooltip } from '../editor/common';
 
 interface IDESupportedModes {
   id: IDEMode;
@@ -73,6 +76,26 @@ export const HeaderBar = () => {
         </h1>
         <span className="status-badge">alpha</span>
         {/* TODO: email icon link with red notification dot before first click – tooltip: "We're building more development tools like BitAuth IDE. Interested in updates? Click to sign up." */}
+
+        <a
+          className="link github-logo"
+          href="https://github.com/bitjson/bitauth-ide"
+          target="_blank"
+          title="View BitAuth IDE on GitHub"
+        >
+          <img src={GitHubLogo} alt="logo" />
+          Bugs
+        </a>
+        {wrapInterfaceTooltip(
+          <a
+            className="link updates"
+            href="https://bitauth.com/"
+            target="_blank"
+          >
+            <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Updates
+          </a>,
+          'Get email updates when we launch new tools like BitAuth IDE →'
+        )}
       </div>
       <div className="right-section">
         <div className="ide-mode-select">

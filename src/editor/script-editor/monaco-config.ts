@@ -229,6 +229,7 @@ export const bitauthScriptMonarchLanguage = {
   otherOpcodes: [
     'OP_PICK',
     'OP_ADD',
+    'OP_DUP',
     'OP_DROP',
     'OP_SWAP',
     'OP_EQUAL',

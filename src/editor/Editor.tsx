@@ -440,7 +440,6 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
         scriptEditorFrames[scriptEditorFrames.length - 1].evaluation;
       if (evaluation !== undefined) {
         const lastLine = evaluation[evaluation.length - 1];
-        console.log(lastLine);
         if (lastLine.state.stack[lastLine.state.stack.length - 1][0] === 1) {
           if (lastLine.state.stack.length > 1) {
             lastLine.highlight = EvaluationViewerHighlight.dirtyStack;
@@ -453,6 +452,7 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       }
     }
 
+    console.dir(scriptEditorFrames);
     const identifyStackItems =
       evaluationOrderedCompilationResults.length === 0
         ? undefined

@@ -98,36 +98,24 @@ const defaultNewTemplate: AppState['currentTemplate'] = {
     }
   },
   scriptsByInternalId: {
-    '6d53b584-21a5-45de-9f7e-94c4088598a1': {
-      type: 'isolated',
-      id: 'checksum',
-      internalId: '6d53b584-21a5-45de-9f7e-94c4088598a1',
-      name: 'Create Safety Number',
-      //       script: `$(
-      //   <first.public_key>
-      //   OP_SHA256
-      //   <second.public_key>
-      //   OP_SHA256
-      //   <trusted.public_key>
-      //   OP_SHA256
-      //   OP_CAT
-      //   OP_SHA256
-      //   OP_CAT
-      //   OP_HASH160
-      // )`
-      script: `
-  <first.public_key>
-  OP_SHA256
-  <second.public_key>
-  OP_SHA256
-  <trusted.public_key>
-  OP_SHA256
-  OP_CAT
-  OP_SHA256
-  OP_CAT
-  OP_HASH160
-`
-    },
+    //     '6d53b584-21a5-45de-9f7e-94c4088598a1': {
+    //       type: 'isolated',
+    //       id: 'checksum',
+    //       internalId: '6d53b584-21a5-45de-9f7e-94c4088598a1',
+    //       name: 'Create Safety Number',
+    //       script: `
+    //   <first.public_key>
+    //   OP_SHA256
+    //   <second.public_key>
+    //   OP_SHA256
+    //   <trusted.public_key>
+    //   OP_SHA256
+    //   OP_CAT
+    //   OP_SHA256
+    //   OP_CAT
+    //   OP_HASH160
+    // `
+    //     },
     'b1331918-8ac8-460e-8243-3a8c3ca2d856': {
       type: 'locking',
       id: 'lock',
