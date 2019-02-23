@@ -43,6 +43,7 @@ const renderMode: ItemRenderer<IDESupportedModes> = (
     <MenuItem
       active={modifiers.active}
       key={ideMode.id}
+      label={ideMode.disabled ? '(Not Yet Available)' : ''}
       onClick={handleClick}
       text={ideMode.name}
       disabled={ideMode.disabled}
@@ -58,7 +59,7 @@ const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
     <MenuItem
       active={modifiers.active}
       key={vm.id}
-      label={vm.disabled ? 'Not Yet Available' : ''}
+      label={vm.disabled ? '(Not Yet Available)' : ''}
       onClick={handleClick}
       text={vm.name}
       disabled={vm.disabled}
