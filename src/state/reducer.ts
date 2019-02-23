@@ -248,6 +248,7 @@ class App extends ImmerReducer<AppState> {
         this.draftState.currentlyEditingInternalId = script.internalId;
         return;
       case 'locking':
+        const childUnlockingId = createInsecureUuidV4();
         this.draftState.currentTemplate.scriptsByInternalId[
           script.internalId
         ] = {
@@ -256,8 +257,18 @@ class App extends ImmerReducer<AppState> {
           script: '',
           id: script.id,
           name: script.name,
-          childInternalIds: [],
+          childInternalIds: [childUnlockingId],
           isP2SH: true
+        };
+        this.draftState.currentTemplate.scriptsByInternalId[
+          childUnlockingId
+        ] = {
+          internalId: childUnlockingId,
+          type: 'unlocking',
+          script: '',
+          id: `unlock_${script.id}`,
+          name: 'Unlock',
+          parentInternalId: script.internalId
         };
         this.draftState.currentlyEditingInternalId = undefined;
         return;
