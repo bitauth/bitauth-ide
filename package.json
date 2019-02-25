@@ -47,7 +47,6 @@
     "monaco-editor-webpack-plugin": "^1.7.0",
     "node-sass": "^4.11.0",
     "optimize-css-assets-webpack-plugin": "5.0.1",
-    "parse-atl": "../parse-atl",
     "parsimmon": "^1.12.0",
     "pnp-webpack-plugin": "1.1.0",
     "postcss-flexbugs-fixes": "4.1.0",
