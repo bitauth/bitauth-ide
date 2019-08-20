@@ -32,7 +32,7 @@ const variableTypes: {
   { label: 'Current Block Time', value: 'CurrentBlockTime' },
   { label: 'HD Key (Not Yet Available)', value: 'HDKey', disabled: true },
   { label: 'Key', value: 'Key' },
-  { label: 'Transaction Data', value: 'TransactionData' },
+  { label: 'Transaction Data', value: 'AddressData' },
   { label: 'Wallet Data', value: 'WalletData' }
 ];
 
@@ -79,16 +79,15 @@ const variableTypeDescriptions: {
       </p>
     </span>
   ),
-  TransactionData: (
+  AddressData: (
     <span>
       <p>
-        Transaction Data is the most low-level variable type. It must be
-        collected and stored each time a script is generated (usually, a locking
-        script).
+        Address Data is the most low-level variable type. It must be collected
+        and stored each time a script is generated (usually, a locking script).
       </p>
       <p>
-        Transaction Data can include any type of data, and can be used in any
-        way. For more persistent data, use Wallet Data.
+        Address Data can include any type of data, and can be used in any way.
+        For more persistent data, use Wallet Data.
       </p>
     </span>
   ),
@@ -204,7 +203,7 @@ export const EditVariableDialog = ({
                   setVariableName(`${entity.name}'s Key`);
                   setVariableId(`${entity.id}_key`);
                   break;
-                case 'TransactionData':
+                case 'AddressData':
                 case 'WalletData':
                   setVariableName('');
                   setVariableId('');
@@ -286,9 +285,9 @@ export const EditVariableDialog = ({
                       A testing value for the Wallet Data, encoded as a
                       hexadecimal value.
                     </p>
-                  ) : variableType === 'TransactionData' ? (
+                  ) : variableType === 'AddressData' ? (
                     <p>
-                      A testing value for the Transaction Data, encoded as a
+                      A testing value for the Address Data, encoded as a
                       hexadecimal value.
                     </p>
                   ) : (

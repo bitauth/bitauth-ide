@@ -242,7 +242,7 @@ const getIDECompilationData = (
       case 'HDKey':
         throw new Error('Not yet implemented.');
       case 'Key':
-      case 'TransactionData':
+      case 'AddressData':
       case 'WalletData':
         const mock = compileScriptMock(variable.mock);
         if (mock === undefined) {
@@ -260,12 +260,12 @@ const getIDECompilationData = (
                 }
               }
             };
-          case 'TransactionData':
-            const transactionData = data.transactionData || {};
+          case 'AddressData':
+            const addressData = data.addressData || {};
             return {
               ...data,
-              transactionData: {
-                ...transactionData,
+              addressData: {
+                ...addressData,
                 [variable.id]: mock
               }
             };

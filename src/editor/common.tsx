@@ -79,7 +79,7 @@ export const variableIcon = (type: IDEVariable['type']) => {
       return IconNames.DIAGRAM_TREE;
     case 'Key':
       return IconNames.KEY;
-    case 'TransactionData':
+    case 'AddressData':
       return IconNames.FLOW_LINEAR;
     case 'WalletData':
       return IconNames.FLOW_BRANCH;

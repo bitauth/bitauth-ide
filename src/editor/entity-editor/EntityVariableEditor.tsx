@@ -27,7 +27,7 @@ const variableName = (variable: IDEVariable) =>
 const variableInitialDescription = (type: IDEVariable['type']) => {
   switch (type) {
     case 'WalletData':
-    case 'TransactionData':
+    case 'AddressData':
       return '';
     case 'CurrentBlockHeight':
       return '';
