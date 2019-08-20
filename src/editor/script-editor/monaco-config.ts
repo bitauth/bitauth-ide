@@ -1,5 +1,9 @@
-// import * as monacoEditor, { editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import {
+  languageBCH,
+  bitauthScriptHoverProviderBCH,
+  bitauthScriptCompletionItemProviderBCH
+} from './bch-language';
 
 export const bitauthScript = 'bitauth-script';
 export const bitauthDark = 'bitauth-dark';
@@ -44,6 +48,9 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
   rules: [
     { token: 'delimiter.evaluation', foreground: vibrantYellow },
     { token: 'delimiter.push', foreground: subtleGray },
+    { token: 'opcode.push', foreground: subtleGray },
+    { token: 'opcode.push-number', foreground: lightOlive },
+    { token: 'opcode.disabled', foreground: red },
     { token: 'opcode.signature', foreground: fuchsia },
     { token: 'opcode.flow-control', foreground: salmon },
     { token: 'opcode.blocking', foreground: oak },
@@ -57,99 +64,6 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
     // "editorCursor.foreground": "#586677",
     // "editor.lineHighlightBackground": "#f9fcff",
     'editor.background': '#1D2023'
-  }
-};
-
-export const bitauthScriptHoverProvider: Monaco.languages.HoverProvider = {
-  provideHover: (model, position) => {
-    const query = model.getWordAtPosition(position);
-
-    // TODO: bitauth script hover provider
-    if (query !== null) {
-      switch (query.word) {
-        case 'OP_0':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_0**' },
-              { value: 'Push the Script Number `0` onto the stack.' }
-            ]
-          });
-        case 'OP_1':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_1**' },
-              { value: 'Push the Script Number `1` onto the stack.' }
-            ]
-          });
-        case 'OP_DROP':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_DROP**' },
-              { value: 'Pop the top element from the stack and discard it.' }
-            ]
-          });
-        case 'OP_ADD':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_ADD**' },
-              {
-                value:
-                  'Pop the top two elements off the stack as Script Numbers. Add them, then push the result.'
-              }
-            ]
-          });
-        case 'OP_CHECKSIG':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_CHECKSIG**' },
-              {
-                value:
-                  'Pop the top two elements off the stack. Treat the first as a public key and the second as a signature. If the signature is valid, push a Script Number 1, otherwise push a Script Number 0.'
-              }
-            ]
-          });
-        case 'OP_CHECKMULTISIG':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_CHECKMULTISIG**' },
-              {
-                value:
-                  'Pop elements off the stack: first pop the Script Number of public keys, then pop each of those public keys. Next, pop the Script Number of required signatures, then pop each of those signatures. Finally, pop a final Script Number which must be 0 due to a protocol bug. Checking each signature against each public key in order, if all signatures are valid – and the required number of signatures have been provided – push a Script Number 1, otherwise push a Script Number 0.'
-              }
-            ]
-          });
-        case 'OP_HASH160':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_HASH160**' },
-              {
-                value:
-                  'Pop the top element off the stack and pass it through sha256, then ripemd160, pushing the result onto the stack.'
-              }
-            ]
-          });
-        case 'OP_VERIFY':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_VERIFY**' },
-              {
-                value:
-                  'Pop the top element from the stack and error if it isn\'t "truthy".'
-              }
-            ]
-          });
-        case 'OP_EQUAL':
-          return Promise.resolve({
-            contents: [
-              { value: '**OP_EQUAL**' },
-              {
-                value:
-                  'Pop the top two elements off the stack and compare them byte-by-byte. If they are the same, push a Script Number 1, otherwise push a Script Number 0.'
-              }
-            ]
-          });
-      }
-    }
   }
 };
 
@@ -208,33 +122,23 @@ export const bitauthScriptMonarchLangaugeConfiguration = (
 });
 
 export const bitauthScriptMonarchLanguage = {
-  // defaultToken: 'invalid', // set to 'invalid' debug tokenization problems
+  // defaultToken: 'invalid', // set to 'invalid' to debug tokenization problems
   tokenPostfix: '.bitauth',
   brackets: [
     { open: '$(', close: ')', token: 'delimiter.evaluation' },
     { open: '<', close: '>', token: 'delimiter.push' }
   ],
-  flowControlOpcodes: ['OP_IF', 'OP_NOTIF', 'OP_ENDIF', 'OP_ELSE'],
-  signatureOpcodes: ['OP_CHECKSIG', 'OP_CHECKDATASIG'],
-  blockingOpcodes: [
-    'OP_RETURN',
-    'OP_VERIFY',
-    'OP_EQUALVERIFY',
-    'OP_NUMEQUALVERIFY',
-    'OP_CHECKSIGVERIFY',
-    'OP_CHECKMULTISIGVERIFY',
-    'OP_CHECKLOCKTIMEVERIFY',
-    'OP_CHECKSEQUENCEVERIFY'
+  flowControlOpcodes: languageBCH.flowControlOpcodes,
+  signatureCheckingOpcodes: languageBCH.signatureCheckingOpcodes,
+  blockingOpcodes: languageBCH.blockingOpcodes,
+  pushBytesOpcodes: languageBCH.pushBytesOpcodes,
+  pushNumberOpcodes: languageBCH.pushNumberOpcodes,
+  disabledOpcodes: [
+    ...languageBCH.disabledOpcodes,
+    ...languageBCH.unknownOpcodes,
+    ...languageBCH.nopOpcodes
   ],
-  otherOpcodes: [
-    'OP_PICK',
-    'OP_ADD',
-    'OP_DUP',
-    'OP_DROP',
-    'OP_SWAP',
-    'OP_EQUAL',
-    'OP_HASH160'
-  ],
+  otherOpcodes: languageBCH.otherOpcodes,
   bigint: /\d+(_+\d+)*/,
   hex: /[[0-9a-fA-F]+(_+[0-9a-fA-F]+)*/,
   tokenizer: {
@@ -246,8 +150,11 @@ export const bitauthScriptMonarchLanguage = {
         {
           cases: {
             '@flowControlOpcodes': 'opcode.flow-control',
-            '@signatureOpcodes': 'opcode.signature',
+            '@signatureCheckingOpcodes': 'opcode.signature',
             '@blockingOpcodes': 'opcode.blocking',
+            '@pushBytesOpcodes': 'opcode.push',
+            '@pushNumberOpcodes': 'opcode.push-number',
+            '@disabledOpcodes': 'opcode.disabled',
             '@otherOpcodes': 'opcode.other',
             '@default': 'identifier'
           }
@@ -285,7 +192,11 @@ export const registerBitauthScript = (monaco: typeof Monaco) => {
   );
   monaco.languages.registerHoverProvider(
     bitauthScript,
-    bitauthScriptHoverProvider
+    bitauthScriptHoverProviderBCH
+  );
+  monaco.languages.registerCompletionItemProvider(
+    bitauthScript,
+    bitauthScriptCompletionItemProviderBCH
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);
 };

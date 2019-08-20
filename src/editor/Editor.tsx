@@ -337,7 +337,6 @@ const computeEditorState = <
     version: 0
   };
   const data = getIDECompilationData(state);
-  console.log(data);
   const createCreateStateWithStack = <Opcodes, Errors>(stack: Uint8Array[]) => (
     instructions: ReadonlyArray<AuthenticationInstruction<Opcodes>>
   ) =>
@@ -386,11 +385,9 @@ const computeEditorState = <
      * also be useful for some eccentric `tested` scripts.
      */
     const signingOrderedScripts = evaluationOrderedScripts.slice().reverse();
-    console.log('signingOrderedScripts', signingOrderedScripts);
     const compilationResults = signingOrderedScripts.reduce<
       CompilationResult[]
     >((results, source, i) => {
-      console.log('results', results);
       const previousResult = results[i - 1];
       const coveredBytecode =
         previousResult &&
@@ -418,10 +415,6 @@ const computeEditorState = <
     let nextStack: Uint8Array[] = [];
     let evaluations: Evaluation<ProgramState>[] = [];
     let nextLine = undefined;
-    console.log(
-      'evaluationOrderedCompilationResults',
-      evaluationOrderedCompilationResults
-    );
     for (const result of evaluationOrderedCompilationResults) {
       if (result.success !== true) {
         /**
@@ -482,7 +475,6 @@ const computeEditorState = <
       const evaluation =
         scriptEditorFrames[scriptEditorFrames.length - 1].evaluation;
       if (evaluation !== undefined) {
-        console.log('evaluation', evaluation);
         const lastLine = evaluation[evaluation.length - 1];
         if (
           lastLine.state.stack.length > 0 &&
