@@ -16,19 +16,19 @@ import { ActionCreators } from '../../state/reducer';
 import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 
 const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
-  BCH_2018_11: (
-    <span className="vm">
-      <code>BCH_2018_11</code>
-      <span className="chain">Bitcoin Cash</span>
-      <span className="version">2018 November Update</span>
-      <span className="tag live">live</span>
-    </span>
-  ),
   BCH_2019_05: (
     <span className="vm">
       <code>BCH_2019_05</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2019 May Proposal</span>
+      <span className="version">2019 May Update</span>
+      <span className="tag live">live</span>
+    </span>
+  ),
+  BCH_2019_11: (
+    <span className="vm">
+      <code>BCH_2019_11</code>
+      <span className="chain">Bitcoin Cash</span>
+      <span className="version">2019 November Proposal</span>
       <span className="tag spec">Spec</span>
     </span>
   ),

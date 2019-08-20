@@ -1,5 +1,5 @@
-import { ResolvedScript } from './resolve';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
+import { ResolvedScript } from 'bitcoin-ts';
 
 export interface MonacoMarkerDataRequired {
   severity: monacoEditor.MarkerSeverity;

@@ -5,11 +5,11 @@ import {
 } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 import {
   AuthenticationVirtualMachine,
-  BitcoinCashAuthenticationProgramState,
   Sha256,
-  Secp256k1
+  Secp256k1,
+  AuthenticationProgramBCH,
+  AuthenticationProgramStateBCH
 } from 'bitcoin-ts';
-import { CompilationData } from '../bitauth-script/resolve';
 
 export enum IDEMode {
   /**
@@ -38,6 +38,10 @@ export interface IDETemplateEntity {
   variableInternalIds: string[];
 }
 
+export type IDEVariable = Required<AuthenticationTemplateVariable> & {
+  id: string;
+};
+
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';
 
 export type BaseScriptType =
@@ -53,7 +57,7 @@ export interface IDETemplateScriptBase {
    */
   name: string;
   /**
-   * The script, in the BitAuth templating language.
+   * The script, in the BitAuth Templating Language (BTL).
    */
   script: string;
   /**
@@ -147,18 +151,22 @@ export type IDESupportedVM = AuthenticationVirtualMachineIdentifier;
 export type IDESupportedVmStore = { [key in IDESupportedVM]: any };
 
 export interface IDELoadedVMs extends IDESupportedVmStore {
-  BCH_2018_11: AuthenticationVirtualMachine<
-    BitcoinCashAuthenticationProgramState
+  BCH_2019_05: AuthenticationVirtualMachine<
+    AuthenticationProgramBCH,
+    AuthenticationProgramStateBCH
   >;
   // TODO: fix these if necessary
-  BCH_2019_05: AuthenticationVirtualMachine<
-    BitcoinCashAuthenticationProgramState
+  BCH_2019_11: AuthenticationVirtualMachine<
+    AuthenticationProgramBCH,
+    AuthenticationProgramStateBCH
   >;
   BSV_2018_11: AuthenticationVirtualMachine<
-    BitcoinCashAuthenticationProgramState
+    AuthenticationProgramBCH,
+    AuthenticationProgramStateBCH
   >;
   BTC_2017_08: AuthenticationVirtualMachine<
-    BitcoinCashAuthenticationProgramState
+    AuthenticationProgramBCH,
+    AuthenticationProgramStateBCH
   >;
 }
 
@@ -224,12 +232,8 @@ export interface AppState {
     scriptsByInternalId: {
       [internalId: string]: IDETemplateScript;
     };
-    /**
-     * Note, we leave the type here as `AuthenticationTemplateVariable`, rather
-     * than a custom internal type.
-     */
     variablesByInternalId: {
-      [internalId: string]: Required<AuthenticationTemplateVariable>;
+      [internalId: string]: IDEVariable;
     };
   };
   currentVmId: keyof IDELoadedVMs;

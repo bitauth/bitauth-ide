@@ -4,10 +4,9 @@ import { connect } from 'react-redux';
 import {
   AppState,
   IDETemplateEntity,
-  CurrentVariables
+  CurrentVariables,
+  IDEVariable
 } from '../../state/types';
-import { AuthenticationTemplateVariable } from 'bitcoin-ts/build/main/lib/auth/templates/types';
-import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../../utils';
 import { Card, Elevation, Icon } from '@blueprintjs/core';
 import { EditVariableDialog } from '../dialogs/edit-variable-dialog/EditVariableDialog';
@@ -18,16 +17,14 @@ import {
 } from '../common';
 import { ActionCreators } from '../../state/reducer';
 
-const variableName = (variable: AuthenticationTemplateVariable) =>
+const variableName = (variable: IDEVariable) =>
   variable.type === 'CurrentBlockHeight'
     ? 'Current Block Height'
     : variable.type === 'CurrentBlockTime'
     ? 'Current Block Time'
     : variable.name;
 
-const variableInitialDescription = (
-  type: AuthenticationTemplateVariable['type']
-) => {
+const variableInitialDescription = (type: IDEVariable['type']) => {
   switch (type) {
     case 'WalletData':
     case 'TransactionData':
@@ -35,8 +32,6 @@ const variableInitialDescription = (
     case 'CurrentBlockHeight':
       return '';
     case 'CurrentBlockTime':
-      return '';
-    case 'ExternalOperation':
       return '';
     case 'HDKey':
       return '';
@@ -76,7 +71,7 @@ export const EntityVariableEditor = connect(
     string | undefined
   >(undefined);
   const [currentVariable, setCurrentVariable] = useState<
-    AuthenticationTemplateVariable | undefined
+    IDEVariable | undefined
   >(undefined);
   return (
     <div className="EntityVariableEditor EditorPane">

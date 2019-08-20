@@ -1,3 +1,4 @@
+import { Range } from 'bitcoin-ts';
 import React, { Component } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
@@ -9,15 +10,14 @@ import {
 } from './monaco-config';
 import './ScriptEditor.scss';
 import { ActionCreators } from '../../state/reducer';
-import { CompilationResult } from '../../bitauth-script/compile';
-import { MonacoMarkerDataRequired } from '../../bitauth-script/editor-tooling';
-import { Range } from '../../bitauth-script/resolve';
+import { MonacoMarkerDataRequired } from '../../btl-utils/editor-tooling';
 import { ScriptType, CurrentScripts } from '../../state/types';
 import { getScriptTooltipIcon } from '../project-explorer/ProjectExplorer';
 import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
 import { wrapInterfaceTooltip } from '../common';
+import { CompilationResult } from 'bitcoin-ts';
 
 interface ScriptEditorProps {
   isP2SH: boolean;

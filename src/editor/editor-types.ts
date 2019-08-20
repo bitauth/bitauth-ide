@@ -1,11 +1,12 @@
 import { AuthenticationTemplateScript } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 import {
-  CommonState,
   StackState,
   ExecutionStackState,
   ErrorState,
-  MinimumProgramState
+  MinimumProgramState,
+  AuthenticationProgramCommon
 } from 'bitcoin-ts';
+import { IDETemplateScript } from '../state/types';
 
 export enum ProjectEditorMode {
   /**
@@ -34,7 +35,7 @@ export enum ProjectEditorMode {
   templateSettingsEditor = 'templateSettingsEditor',
   /**
    * The state of the editor before async dependencies (VMs and crypto) have
-   * loaded.
+   * loaded, or if nothing is currently selected for editing.
    */
   loading = 'loading'
 }
@@ -54,6 +55,9 @@ export interface IDESupportedProgramState
     StackState,
     ExecutionStackState,
     ErrorState<string> {}
+
+export interface IDESupportedAuthenticationProgram
+  extends AuthenticationProgramCommon {}
 
 /**
  * Visual indicators which indicate nesting – the end of the line being
@@ -107,6 +111,6 @@ export interface EvaluationViewerLine<
 
 export interface ProjectExplorerTreeNode {
   active: boolean;
-  id: AuthenticationTemplateScript['id'];
+  id: IDETemplateScript['id'];
   children?: ProjectExplorerTreeNode[];
 }

@@ -311,7 +311,7 @@ export const ProjectExplorer = connect(
             ))}
           </ul>
         </div>
-        <div className="demo-control">
+        {/* <div className="demo-control">
           <button
             onClick={() => {
               const otherTemplate =
@@ -323,7 +323,7 @@ export const ProjectExplorer = connect(
           >
             toggle demo
           </button>
-        </div>
+        </div> */}
       </div>
     );
   }

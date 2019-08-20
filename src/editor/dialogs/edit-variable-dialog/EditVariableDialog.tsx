@@ -2,7 +2,11 @@ import '../editor-dialog.scss';
 import './EditVariableDialog.scss';
 import React, { useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import { IDETemplateEntity, CurrentVariables } from '../../../state/types';
+import {
+  IDETemplateEntity,
+  CurrentVariables,
+  IDEVariable
+} from '../../../state/types';
 import {
   Classes,
   Dialog,
@@ -17,21 +21,15 @@ import {
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { sanitizeId, variableIcon, wrapInterfaceTooltip } from '../../common';
-import { AuthenticationTemplateVariable } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 import { unknownValue } from '../../../utils';
 
 const variableTypes: {
   label: string;
-  value: AuthenticationTemplateVariable['type'];
+  value: IDEVariable['type'];
   disabled?: boolean;
 }[] = [
   { label: 'Current Block Height', value: 'CurrentBlockHeight' },
   { label: 'Current Block Time', value: 'CurrentBlockTime' },
-  {
-    label: 'External Operation (Not Yet Available)',
-    value: 'ExternalOperation',
-    disabled: true
-  },
   { label: 'HD Key (Not Yet Available)', value: 'HDKey', disabled: true },
   { label: 'Key', value: 'Key' },
   { label: 'Transaction Data', value: 'TransactionData' },
@@ -39,7 +37,7 @@ const variableTypes: {
 ];
 
 const variableTypeDescriptions: {
-  [key in AuthenticationTemplateVariable['type']]: React.ReactNode
+  [key in IDEVariable['type']]: React.ReactNode
 } = {
   CurrentBlockHeight: (
     <span>
@@ -67,7 +65,6 @@ const variableTypeDescriptions: {
       </p>
     </span>
   ),
-  ExternalOperation: '',
   HDKey:
     'The HD Key (Hierarchical-Deterministic Key) type automatically manages key generation and mapping in a standard way. For greater control, use a Key. NOTE: HDKey is not yet supported by this IDE.',
   Key: (
@@ -137,7 +134,7 @@ export const EditVariableDialog = ({
   entity: IDETemplateEntity;
   currentVariables: CurrentVariables;
   variableInternalId?: string;
-  variable?: AuthenticationTemplateVariable;
+  variable?: IDEVariable;
   isOpen: boolean;
   closeDialog: () => any;
   upsertVariable: typeof ActionCreators.upsertVariable;
@@ -188,8 +185,7 @@ export const EditVariableDialog = ({
             options={variableTypes}
             value={variableType}
             onChange={e => {
-              const type = e.currentTarget
-                .value as AuthenticationTemplateVariable['type'];
+              const type = e.currentTarget.value as IDEVariable['type'];
               setVariableType(type);
               switch (type) {
                 case 'CurrentBlockHeight':
@@ -208,7 +204,6 @@ export const EditVariableDialog = ({
                   setVariableName(`${entity.name}'s Key`);
                   setVariableId(`${entity.id}_key`);
                   break;
-                case 'ExternalOperation':
                 case 'TransactionData':
                 case 'WalletData':
                   setVariableName('');
@@ -373,8 +368,7 @@ export const EditVariableDialog = ({
               !isValidHex(variableMock) ||
               (variableType === 'Key' &&
                 !isValidEnoughPrivateKey(variableMock)) ||
-              variableType === 'HDKey' ||
-              variableType === 'ExternalOperation'
+              variableType === 'HDKey'
             }
             onClick={() => {
               /**

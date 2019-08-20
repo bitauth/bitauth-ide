@@ -13,13 +13,13 @@ import {
   IDETemplateLockingScript,
   IDETemplateIsolatedScript,
   IDETemplateTestedScript,
-  IDESupportedVM
+  IDESupportedVM,
+  IDEVariable
 } from './types';
 import { editor } from 'monaco-editor';
 import { defaultState } from './defaults';
 import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
-import { AuthenticationTemplateVariable } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {
@@ -149,7 +149,7 @@ class App extends ImmerReducer<AppState> {
     description: string;
     id: string;
     mock: string;
-    type: AuthenticationTemplateVariable['type'];
+    type: IDEVariable['type'];
   }) {
     const variableInternalId = internalId || createInsecureUuidV4();
     const variable =

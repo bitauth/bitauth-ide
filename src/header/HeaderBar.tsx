@@ -26,8 +26,8 @@ const ideModes: IDESupportedModes[] = [
 ];
 
 const vms: IDESupportedVirtualMachine[] = [
-  { id: 'BCH_2018_11', name: 'BCH 2018-11 VM', disabled: false },
-  { id: 'BCH_2019_05', name: 'BCH 2019-05 VM', disabled: true },
+  { id: 'BCH_2019_05', name: 'BCH 2019-05 VM', disabled: false },
+  { id: 'BCH_2019_11', name: 'BCH 2019-11 VM', disabled: true },
   { id: 'BTC_2017_08', name: 'BTC 2017-08 VM', disabled: true },
   { id: 'BSV_2018_11', name: 'BSV 2018-11 VM', disabled: true }
 ];
@@ -59,7 +59,7 @@ const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
     <MenuItem
       active={modifiers.active}
       key={vm.id}
-      label={vm.disabled ? '(Not Yet Available)' : ''}
+      label={vm.disabled ? '(See GitHub Issues)' : ''}
       onClick={handleClick}
       text={vm.name}
       disabled={vm.disabled}
@@ -90,12 +90,12 @@ export const HeaderBar = () => {
         {wrapInterfaceTooltip(
           <a
             className="link updates"
-            href="https://bitauth.com/"
+            href="https://twitter.com/bitauth"
             target="_blank"
           >
             <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Updates
           </a>,
-          'Get email updates when we launch new tools like BitAuth IDE →'
+          'Get updates about BitAuth IDE on Twitter →'
         )}
       </div>
       <div className="right-section">
@@ -103,7 +103,7 @@ export const HeaderBar = () => {
           <ModeSelect
             itemRenderer={renderMode}
             items={ideModes}
-            onItemSelect={() => console.log('TODO: build wallet mode 👀')}
+            onItemSelect={e => console.log('TODO: build wallet mode 👀', e)}
             activeItem={ideModes[0]}
             filterable={false}
           >

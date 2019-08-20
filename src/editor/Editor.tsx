@@ -18,27 +18,30 @@ import {
   CurrentEntities
 } from '../state/types';
 import {
-  BitcoinCashOpcodes,
-  AuthenticationVirtualMachine,
+  OpcodesBCH,
   AuthenticationInstruction,
-  hexToBin
+  hexToBin,
+  CompilationResult,
+  CompilationData,
+  sampledEvaluateReductionTraceNodes,
+  CompilerOperationDataBCH,
+  createAuthenticationProgramExternalStateCommonEmpty,
+  createCompiler,
+  createAuthenticationProgramStateCommon,
+  AuthenticationProgramStateBCH,
+  SampledEvaluationResult,
+  getCompilerOperationsBCH,
+  compileScriptText
 } from 'bitcoin-ts';
-import {
-  CompilationEnvironment,
-  CompilationData
-} from '../bitauth-script/resolve';
 import {
   getResolvedVariables,
   ResolvedVariable
-} from '../bitauth-script/editor-tooling';
+} from '../btl-utils/editor-tooling';
 import {
-  createProgramStateGenerator,
-  sampledEvaluateReductionTraceNodes,
   extractSamplesFromReductionTrace,
   addSpacersToTraceSamples,
-  reduceSpacedTraceSamples,
-  emptySignatureGenerationData
-} from '../bitauth-script/reduce';
+  reduceSpacedTraceSamples
+} from '../btl-utils/reduce';
 import {
   StackItemIdentifyFunction,
   ProjectEditorMode,
@@ -47,13 +50,11 @@ import {
   EvaluationViewerHighlight
 } from './editor-types';
 import { ActionCreators } from '../state/reducer';
-import { compileScript, CompilationResult } from '../bitauth-script/compile';
 import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
 import { EntitySettingsEditor } from './entity-editor/EntitySettingsEditor';
 import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
 import { getCurrentScripts, getCurrentEntities } from './common';
 import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
-import { EditScriptDialog } from './dialogs/edit-script-dialog/EditScriptDialog';
 import { TemplateSettings } from './template-settings/TemplateSettings';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
 
@@ -84,7 +85,7 @@ const getEditorMode = (
   }
 };
 
-const bitcoinCashOpcodeIdentifiers = Object.entries(BitcoinCashOpcodes)
+const bitcoinCashOpcodeIdentifiers = Object.entries(OpcodesBCH)
   .filter(([_, value]) => typeof value === 'number')
   .reduce(
     (identifiers, pair) => ({
@@ -218,52 +219,66 @@ const getSourceScripts = (
   }
 };
 
-// TODO: fetch this from a backend eventually
+// TODO: user-set "scenarios", snapshots which can be toggled between for debugging
 const currentBlock = 561171;
-const currentTimeUTC = 1549166880000; // static onload for determinism
+const currentTimeUTC = 1549166880000; // "current" – just a reasonable, static time for determinism
 
-const getIDECompilationData = (state: AppState): CompilationData => {
+export const compileScriptMock = (script: string) => {
+  const result = compileScriptText(script, {}, { scripts: {} });
+  return result.success ? result.bytecode : undefined;
+};
+
+const getIDECompilationData = (
+  state: AppState
+): CompilationData<CompilerOperationDataBCH> => {
   return Object.values(state.currentTemplate.variablesByInternalId).reduce<
-    CompilationData
+    CompilationData<CompilerOperationDataBCH>
   >((data, variable) => {
     switch (variable.type) {
       case 'CurrentBlockHeight':
         return { ...data, currentBlockHeight: currentBlock };
       case 'CurrentBlockTime':
         return { ...data, currentBlockTime: new Date(currentTimeUTC) };
-      case 'ExternalOperation':
-        throw new Error('Not yet implemented.');
       case 'HDKey':
         throw new Error('Not yet implemented.');
       case 'Key':
-        const privateKeys = (data.keys && data.keys.privateKeys) || {};
-        return {
-          ...data,
-          keys: {
-            privateKeys: {
-              ...privateKeys,
-              [variable.id]: hexToBin(variable.mock)
-            }
-          }
-        };
       case 'TransactionData':
-        const transactionData = data.transactionData || {};
-        return {
-          ...data,
-          transactionData: {
-            ...transactionData,
-            [variable.id]: hexToBin(variable.mock)
-          }
-        };
       case 'WalletData':
-        const walletData = data.walletData || {};
-        return {
-          ...data,
-          walletData: {
-            ...walletData,
-            [variable.id]: hexToBin(variable.mock)
-          }
-        };
+        const mock = compileScriptMock(variable.mock);
+        if (mock === undefined) {
+          return data;
+        }
+        switch (variable.type) {
+          case 'Key':
+            const privateKeys = (data.keys && data.keys.privateKeys) || {};
+            return {
+              ...data,
+              keys: {
+                privateKeys: {
+                  ...privateKeys,
+                  [variable.id]: mock
+                }
+              }
+            };
+          case 'TransactionData':
+            const transactionData = data.transactionData || {};
+            return {
+              ...data,
+              transactionData: {
+                ...transactionData,
+                [variable.id]: mock
+              }
+            };
+          case 'WalletData':
+            const walletData = data.walletData || {};
+            return {
+              ...data,
+              walletData: {
+                ...walletData,
+                [variable.id]: mock
+              }
+            };
+        }
       default:
         unknownValue(variable);
         return data;
@@ -271,7 +286,17 @@ const getIDECompilationData = (state: AppState): CompilationData => {
   }, {});
 };
 
-const computeEditorState = <ProgramState extends IDESupportedProgramState>(
+/**
+ * TODO: this method needs to be refactored to use the new VM APIs – currently,
+ * part of the `vm.evaluate` logic is re-implemented below, but for
+ * unlocking/locking script pairs, the standard `vm.debug` should be use to
+ * generate fully-correct results (e.g. bytecode length errors, push-only check,
+ * SegWit recovery check, etc.).
+ */
+const computeEditorState = <
+  // AuthenticationProgram extends IDESupportedAuthenticationProgram,
+  ProgramState extends IDESupportedProgramState
+>(
   state: AppState
 ): ComputedEditorState<ProgramState> => {
   const {
@@ -288,12 +313,7 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
   ) {
     return { editorMode: ProjectEditorMode.loading };
   }
-  /**
-   * TODO: remove cast once we have other VMs included in `IDELoadedVMs`
-   */
-  const vm = (authenticationVirtualMachines[
-    state.currentVmId
-  ] as unknown) as AuthenticationVirtualMachine<ProgramState>;
+  const vm = authenticationVirtualMachines[state.currentVmId];
   const editorMode = getEditorMode(
     currentEditingMode,
     currentlyEditingInternalId,
@@ -309,16 +329,27 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
     currentlyEditingInternalId,
     state.currentTemplate
   );
-  ///
-  const data: CompilationData = getIDECompilationData(state);
-  // TODO: remove cast once we have other VMs implemented
-  const stateGeneratorGenerator = (stack: Uint8Array[]) =>
-    (createProgramStateGenerator(stack) as unknown) as (
-      instructions: ReadonlyArray<AuthenticationInstruction<{}>>
-    ) => ProgramState;
-  const createState = stateGeneratorGenerator([]);
-  const environment: CompilationEnvironment = {
+
+  const externalState = {
+    ...createAuthenticationProgramExternalStateCommonEmpty(),
+    locktime: currentTimeUTC,
+    sequenceNumber: 0,
+    version: 0
+  };
+  const data = getIDECompilationData(state);
+  console.log(data);
+  const createCreateStateWithStack = <Opcodes, Errors>(stack: Uint8Array[]) => (
+    instructions: ReadonlyArray<AuthenticationInstruction<Opcodes>>
+  ) =>
+    createAuthenticationProgramStateCommon<Opcodes, Errors>(
+      instructions,
+      stack,
+      externalState
+    );
+  const createState = createCreateStateWithStack([]);
+  const compiler = createCompiler<CompilerOperationDataBCH, ProgramState>({
     opcodes: bitcoinCashOpcodeIdentifiers,
+    operations: getCompilerOperationsBCH(),
     variables: Object.values(
       state.currentTemplate.variablesByInternalId
     ).reduce(
@@ -339,7 +370,7 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
     sha256: crypto.sha256,
     vm,
     createState
-  };
+  });
 
   /**
    * The compiler is still very alpha – it shouldn't throw, but if it does, we
@@ -355,36 +386,42 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
      * also be useful for some eccentric `tested` scripts.
      */
     const signingOrderedScripts = evaluationOrderedScripts.slice().reverse();
+    console.log('signingOrderedScripts', signingOrderedScripts);
     const compilationResults = signingOrderedScripts.reduce<
       CompilationResult[]
     >((results, source, i) => {
+      console.log('results', results);
       const previousResult = results[i - 1];
-      const coveredScript =
+      const coveredBytecode =
         previousResult &&
         previousResult.success === true &&
         previousResult.bytecode;
-      const compilationResult = compileScript(
-        source.script,
-        {
-          ...data,
-          ...(coveredScript && {
-            signatureGenerationData: {
-              ...emptySignatureGenerationData,
-              coveredScript
-            }
-          })
-        },
-        environment
-      );
+      const compilationResult = compiler.debug(source.id, {
+        ...data,
+        ...(coveredBytecode && {
+          operationData: {
+            ...externalState,
+            coveredBytecode
+          }
+        })
+      });
       return [...results, compilationResult];
     }, []);
-    const createEmptyProgramState = () => createState([]);
+    /**
+     * TODO: generalize, remove cast when multiple VMs are supported
+     */
+    const createEmptyProgramState = ((() =>
+      createState([])) as unknown) as () => ProgramState;
     const evaluationOrderedCompilationResults = compilationResults
       .slice()
       .reverse();
     let nextStack: Uint8Array[] = [];
     let evaluations: Evaluation<ProgramState>[] = [];
     let nextLine = undefined;
+    console.log(
+      'evaluationOrderedCompilationResults',
+      evaluationOrderedCompilationResults
+    );
     for (const result of evaluationOrderedCompilationResults) {
       if (result.success !== true) {
         /**
@@ -392,11 +429,17 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
          */
         break;
       }
-      const next = sampledEvaluateReductionTraceNodes(
+      /**
+       * TODO: generalize, remove cast when multiple VMs are supported
+       */
+      const next = (sampledEvaluateReductionTraceNodes<
+        OpcodesBCH,
+        AuthenticationProgramStateBCH
+      >(
         result.reduce.source,
         vm,
-        stateGeneratorGenerator(nextStack)
-      );
+        createCreateStateWithStack(nextStack)
+      ) as unknown) as SampledEvaluationResult<ProgramState>;
       const extractedSamples = extractSamplesFromReductionTrace<ProgramState>(
         result.reduce
       );
@@ -439,8 +482,12 @@ const computeEditorState = <ProgramState extends IDESupportedProgramState>(
       const evaluation =
         scriptEditorFrames[scriptEditorFrames.length - 1].evaluation;
       if (evaluation !== undefined) {
+        console.log('evaluation', evaluation);
         const lastLine = evaluation[evaluation.length - 1];
-        if (lastLine.state.stack[lastLine.state.stack.length - 1][0] === 1) {
+        if (
+          lastLine.state.stack.length > 0 &&
+          lastLine.state.stack[lastLine.state.stack.length - 1][0] === 1
+        ) {
           if (lastLine.state.stack.length > 1) {
             lastLine.highlight = EvaluationViewerHighlight.dirtyStack;
           } else {

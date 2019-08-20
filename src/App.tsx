@@ -12,9 +12,9 @@ import { connect } from 'react-redux';
 import { ActionCreators } from './state/reducer';
 import { AppState } from './state/types';
 import {
-  instantiateBitcoinCashVirtualMachine,
   instantiateSecp256k1,
-  instantiateSha256
+  instantiateSha256,
+  instantiateVirtualMachineBCH
 } from 'bitcoin-ts';
 
 const AsyncLoader = connect(
@@ -42,17 +42,17 @@ const AsyncLoader = connect(
     ) {
       setTimeout(() => {
         Promise.all([
-          instantiateBitcoinCashVirtualMachine(),
+          instantiateVirtualMachineBCH(),
           instantiateSecp256k1(),
           instantiateSha256()
-        ]).then(([bch2018, secp256k1, sha256]) => {
+        ]).then(([BCH_2019_05, secp256k1, sha256]) => {
           loadVMsAndCrypto({
             vms: {
-              BCH_2018_11: bch2018,
+              BCH_2019_05: BCH_2019_05,
               // TODO: add other VMs
-              BCH_2019_05: bch2018,
-              BTC_2017_08: bch2018,
-              BSV_2018_11: bch2018
+              BCH_2019_11: BCH_2019_05,
+              BTC_2017_08: BCH_2019_05,
+              BSV_2018_11: BCH_2019_05
             },
             crypto: {
               sha256,

@@ -3,8 +3,8 @@ import { IDEMode } from './types';
 import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 
 export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] = [
-  'BCH_2018_11',
   'BCH_2019_05',
+  'BCH_2019_11',
   'BSV_2018_11',
   'BTC_2017_08'
 ];
@@ -71,10 +71,10 @@ const defaultNewTemplate: AppState['currentTemplate'] = {
     'beb0a8ed-acef-4922-81a9-8dfb72755fdb': {
       id: 'delay_seconds',
       description:
-        'The waiting period (from the time the wallet is created) after which the Trusted Party can assist with delayed recoveries. The delay is measured in seconds, e.g. 1 day is 86400. Here we set the delay to 30 days (008d27).',
+        'The waiting period (from the time the wallet is created) after which the Trusted Party can assist with delayed recoveries. The delay is measured in seconds, e.g. 1 day is 86400. Here we set the delay to 30 days (2592000).',
       name: 'Recovery Delay (Seconds)',
       type: 'WalletData',
-      mock: '008d27'
+      mock: '2592000'
     },
     '3553e5bb-f523-41a3-ad15-b69388b4795a': {
       id: 'second',
@@ -147,7 +147,8 @@ OP_CHECKMULTISIG`,
       id: 'spend',
       internalId: '92064a05-d097-4f11-92ba-119ccb686a58',
       name: 'Standard Spend',
-      script: '<0>\n<first.signature_all>\n<second.signature_all>\n<0>',
+      script:
+        '<0>\n<first.signature.all_outputs>\n<second.signature.all_outputs>\n<0>',
       parentInternalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856'
     },
     '000bf50d-7f30-4811-971b-cbe7f983363d': {
@@ -155,7 +156,8 @@ OP_CHECKMULTISIG`,
       id: 'recover_1',
       internalId: '000bf50d-7f30-4811-971b-cbe7f983363d',
       name: 'Recover – Signer 1',
-      script: '<0>\n<first.signature_all>\n<trusted.signature_all>\n<1>',
+      script:
+        '<0>\n<first.signature.all_outputs>\n<trusted.signature.all_outputs>\n<1>',
       parentInternalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856'
     },
     '21222d0a-6120-4628-8901-0237e1745036': {
@@ -163,7 +165,8 @@ OP_CHECKMULTISIG`,
       id: 'recover_2',
       internalId: '21222d0a-6120-4628-8901-0237e1745036',
       name: 'Recover – Signer 2',
-      script: '<0>\n<second.signature_all>\n<trusted.signature_all>\n<1>',
+      script:
+        '<0>\n<second.signature.all_outputs>\n<trusted.signature.all_outputs>\n<1>',
       parentInternalId: 'b1331918-8ac8-460e-8243-3a8c3ca2d856'
     }
   }
@@ -176,7 +179,7 @@ export const defaultState: AppState = {
   // TODO: from local storage
   savedTemplates: [],
   currentTemplate: defaultNewTemplate,
-  currentVmId: 'BCH_2018_11',
+  currentVmId: 'BCH_2019_05',
   authenticationVirtualMachines: null,
   crypto: null,
   // compilationData: defaultVariableData,

@@ -119,7 +119,7 @@ OP_CHECKSIG`,
       id: '_6',
       internalId: '211f02a3-7e06-4b3e-a593-2e895d8747a7',
       type: 'unlocking',
-      script: `<my.signature_all>`,
+      script: `<my.signature.all_outputs>`,
       parentInternalId: '4723bd42-9d73-4b27-b860-9f9a70a79159'
     },
     '5e5962b3-7805-4478-b79a-557ff8a82d6a': {

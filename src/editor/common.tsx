@@ -3,9 +3,9 @@ import {
   AppState,
   CurrentScripts,
   CurrentEntities,
-  CurrentVariables
+  CurrentVariables,
+  IDEVariable
 } from '../state/types';
-import { AuthenticationTemplateVariable } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../utils';
 import { Tooltip, Position } from '@blueprintjs/core';
@@ -69,14 +69,12 @@ export const wrapInterfaceTooltip = (
   </Tooltip>
 );
 
-export const variableIcon = (type: AuthenticationTemplateVariable['type']) => {
+export const variableIcon = (type: IDEVariable['type']) => {
   switch (type) {
     case 'CurrentBlockHeight':
       return IconNames.NUMERICAL;
     case 'CurrentBlockTime':
       return IconNames.TIME;
-    case 'ExternalOperation':
-      return IconNames.CODE_BLOCK;
     case 'HDKey':
       return IconNames.DIAGRAM_TREE;
     case 'Key':
