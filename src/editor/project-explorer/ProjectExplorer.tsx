@@ -12,10 +12,9 @@ import {
 import { ActionCreators } from '../../state/reducer';
 import { defaultState } from '../../state/defaults';
 import { demoTemplate } from '../../state/demo';
-import { Icon, Tooltip, Position } from '@blueprintjs/core';
+import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../../utils';
-import { type } from 'os';
 import { wrapInterfaceTooltip } from '../common';
 
 interface ProjectExplorerTreeNode {
@@ -185,7 +184,8 @@ export const ProjectExplorer = connect(
     activateScript: ActionCreators.activateScript,
     changeTemplate: ActionCreators.importTemplate,
     newEntity: ActionCreators.newEntity,
-    newScript: ActionCreators.newScript
+    newScript: ActionCreators.newScript,
+    importScript: ActionCreators.importScript
   }
 )(
   ({
@@ -199,7 +199,8 @@ export const ProjectExplorer = connect(
     activateScript,
     changeTemplate,
     newEntity,
-    newScript
+    newScript,
+    importScript
   }: {
     currentEditingMode: AppState['currentEditingMode'];
     currentlyEditingId: AppState['currentlyEditingInternalId'];
@@ -212,6 +213,7 @@ export const ProjectExplorer = connect(
     changeTemplate: typeof ActionCreators.importTemplate;
     newEntity: typeof ActionCreators.newEntity;
     newScript: typeof ActionCreators.newScript;
+    importScript: typeof ActionCreators.importScript;
   }) => {
     return (
       <div className="ProjectExplorer">
@@ -265,6 +267,12 @@ export const ProjectExplorer = connect(
               {wrapInterfaceTooltip(
                 <Icon icon={IconNames.PLUS} iconSize={12} />,
                 'New Script...'
+              )}
+            </div>
+            <div className="add-button" onClick={() => importScript()}>
+              {wrapInterfaceTooltip(
+                <Icon icon={IconNames.IMPORT} iconSize={12} />,
+                'Import Script...'
               )}
             </div>
           </h3>

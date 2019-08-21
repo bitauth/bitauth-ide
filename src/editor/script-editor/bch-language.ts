@@ -19,7 +19,9 @@ const disabledOpcodes = [
   'OP_RESERVED2',
   'OP_2MUL',
   'OP_2DIV',
-  'OP_MUL'
+  'OP_MUL',
+  'OP_LSHIFT',
+  'OP_RSHIFT'
 ];
 
 const pushBytesOpcodes = opcodeNames

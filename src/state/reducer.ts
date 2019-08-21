@@ -204,6 +204,9 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentEditingMode = 'script';
     this.draftState.currentlyEditingInternalId = internalId;
   }
+  importScript() {
+    this.draftState.activeDialog = ActiveDialog.importScript;
+  }
   newScript() {
     this.draftState.activeDialog = ActiveDialog.newScript;
   }
@@ -232,6 +235,7 @@ class App extends ImmerReducer<AppState> {
     name: string;
     type: BaseScriptType;
     parentInternalId?: string;
+    contents?: string;
   }) {
     this.draftState.currentEditingMode = 'script';
     switch (script.type) {
@@ -241,7 +245,7 @@ class App extends ImmerReducer<AppState> {
         ] = {
           internalId: script.internalId,
           type: script.type,
-          script: '',
+          script: script.contents || '',
           id: script.id,
           name: script.name
         };

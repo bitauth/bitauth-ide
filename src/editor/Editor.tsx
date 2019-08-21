@@ -57,6 +57,7 @@ import { getCurrentScripts, getCurrentEntities } from './common';
 import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
 import { TemplateSettings } from './template-settings/TemplateSettings';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
+import { ImportScriptDialog } from './dialogs/import-script-dialog/ImportScriptDialog';
 
 const getEditorMode = (
   currentEditingMode: 'entity' | 'script' | 'template-settings',
@@ -841,6 +842,12 @@ export const Editor = connect(
         createEntity={props.createEntity}
       />
       <NewScriptDialog
+        activeDialog={props.activeDialog}
+        closeDialog={props.closeDialog}
+        currentScripts={props.currentScripts}
+        createScript={props.createScript}
+      />
+      <ImportScriptDialog
         activeDialog={props.activeDialog}
         closeDialog={props.closeDialog}
         currentScripts={props.currentScripts}

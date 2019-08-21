@@ -1,0 +1,12 @@
+.ImportScriptDialog {
+  .preview {
+    display: block;
+    padding: 1em;
+  }
+  .preview-token {
+    max-width: 200px;
+    text-overflow: ellipsis;
+    display: inline-block;
+    overflow: hidden;
+  }
+}

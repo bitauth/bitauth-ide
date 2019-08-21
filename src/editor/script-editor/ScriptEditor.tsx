@@ -40,14 +40,12 @@ interface ScriptEditorState {
   editScriptDialogIsOpen?: boolean;
 }
 
-const cursorIsInsideOfRange = (
+const cursorIsAtEndOfRange = (
   cursor: { column: number; lineNumber: number },
   range: Range
 ) =>
-  cursor.lineNumber >= range.startLineNumber &&
-  cursor.lineNumber <= range.endLineNumber &&
-  cursor.column >= range.startColumn &&
-  cursor.column <= range.endColumn;
+  cursor.lineNumber === range.endLineNumber &&
+  cursor.column === range.endColumn;
 
 export class ScriptEditor extends Component<
   ScriptEditorProps,
@@ -86,7 +84,11 @@ export class ScriptEditor extends Component<
           markers =
             cursor === null
               ? raw
-              : raw.filter(marker => !cursorIsInsideOfRange(cursor, marker));
+              : /**
+                 * Hide the error if the cursor is currently at the end of its
+                 * range (to be less annoying while typing).
+                 */
+                raw.filter(marker => !cursorIsAtEndOfRange(cursor, marker));
         }
         this.state.monaco.editor.setModelMarkers(model, '', markers);
       }
@@ -102,10 +104,9 @@ export class ScriptEditor extends Component<
   }
 
   /**
+   * https://github.com/bitauth/bitauth-ide/issues/1
    * TODO: Autocomplete for all opcodes and variables
-   *
-   * TODO: hover information for all opcodes and variables
-   *
+   * TODO: hover information for all variables
    * TODO: construct a tree of "reduction values" – anything you hover should
    * also show you the bytecode to which it reduced
    */

@@ -200,7 +200,11 @@ export enum ActiveDialog {
   /**
    * The authentication template import/export dialog.
    */
-  importExport
+  importExport,
+  /**
+   * The dialog to create a new script by importing.
+   */
+  importScript
 }
 
 export interface AppState {
