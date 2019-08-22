@@ -65,7 +65,6 @@ export const ImportExportDialog = connect(
   const [fileName, updateFileName] = useState('');
   const [template, updateTemplate] = useState(props.authenticationTemplate);
   const [hasErrors, setHasErrors] = useState(false);
-  const [promptTemplateReplace, setPromptTemplateReplace] = useState(false);
   const [importedTemplate, setImportedTemplate] = useState<
     AppState['currentTemplate'] | undefined
   >(undefined);

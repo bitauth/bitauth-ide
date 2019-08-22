@@ -370,8 +370,8 @@ class App extends ImmerReducer<AppState> {
   }
   importTemplate(template: AppState['currentTemplate']) {
     this.draftState.currentTemplate = template;
-    this.draftState.currentlyEditingInternalId = undefined;
-    this.draftState.currentEditingMode = undefined;
+    this.draftState.currentlyEditingInternalId = '';
+    this.draftState.currentEditingMode = 'template-settings';
   }
 }
 

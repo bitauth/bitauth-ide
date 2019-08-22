@@ -7,7 +7,8 @@ import {
   IDETemplateEntity,
   IDETemplateScript,
   IDETemplateUnlockingScript,
-  IDETemplateTestCheckScript
+  IDETemplateTestCheckScript,
+  IDEVariable
 } from '../../../state/types';
 import {
   AuthenticationTemplateScript,
@@ -154,40 +155,44 @@ const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
 
 export const extractTemplate = (
   currentTemplate: AppState['currentTemplate']
-): AuthenticationTemplate => {
-  return {
-    description: currentTemplate.description,
-    name: currentTemplate.name,
-    entities: Object.values(currentTemplate.entitiesByInternalId)
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .reduce(
-        (collected, ideEntity) => ({
-          ...collected,
-          [ideEntity.id]: {
-            name: ideEntity.name,
-            description: ideEntity.description,
-            scripts: ideEntity.usesAllScripts
-              ? Object.values(currentTemplate.scriptsByInternalId).map(
-                  ideScript => ideScript.id
-                )
-              : ideEntity.scriptInternalIds.map(
-                  internalId =>
-                    currentTemplate.scriptsByInternalId[internalId].id
-                ),
-            variables: ideEntity.variableInternalIds.map(
-              internalId => currentTemplate.variablesByInternalId[internalId]
-            )
-          }
-        }),
-        {}
-      ),
-    scripts: extractTemplateScripts(currentTemplate),
-    supported: currentTemplate.supportedVirtualMachines.sort((a, b) =>
-      a.localeCompare(b)
+): AuthenticationTemplate => ({
+  description: currentTemplate.description,
+  name: currentTemplate.name,
+  entities: Object.values(currentTemplate.entitiesByInternalId)
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .reduce(
+      (collected, ideEntity) => ({
+        ...collected,
+        [ideEntity.id]: {
+          name: ideEntity.name,
+          description: ideEntity.description,
+          scripts: ideEntity.usesAllScripts
+            ? Object.values(currentTemplate.scriptsByInternalId).map(
+                ideScript => ideScript.id
+              )
+            : ideEntity.scriptInternalIds.map(
+                internalId => currentTemplate.scriptsByInternalId[internalId].id
+              ),
+          variables: ideEntity.variableInternalIds.reduce((all, internalId) => {
+            const variable = currentTemplate.variablesByInternalId[internalId];
+            // const id = variable.id;
+            // delete variable.id;
+            const exported = { ...variable, id: undefined };
+            return {
+              ...all,
+              [variable.id]: exported
+            };
+          }, {})
+        }
+      }),
+      {}
     ),
-    version: 0
-  };
-};
+  scripts: extractTemplateScripts(currentTemplate),
+  supported: currentTemplate.supportedVirtualMachines.sort((a, b) =>
+    a.localeCompare(b)
+  ),
+  version: 0
+});
 
 export const importAuthenticationTemplate = (
   template: Partial<AuthenticationTemplate>
@@ -249,7 +254,12 @@ export const importAuthenticationTemplate = (
   const templateScripts = scripts;
   const p2shScripts = matchedLockingScripts.reduce<IDETemplateScript[]>(
     (scripts, script) => {
+      const redeemScriptId = `${script.id}${magicSuffix}`;
       const lockingId = createInsecureUuidV4();
+      const matchingScript = templateScripts.find(s => s.id === redeemScriptId);
+      if (matchingScript === undefined) {
+        throw 'Could not find matching locking script.';
+      }
       const children = templateScripts
         .filter(s => s.unlocks === script.id)
         .map<IDETemplateUnlockingScript>(unlocking => ({
@@ -258,21 +268,22 @@ export const importAuthenticationTemplate = (
           internalId: createInsecureUuidV4(),
           name: unlocking.name || 'Unnamed',
           parentInternalId: lockingId,
-          script: unlocking.script || ''
+          script: unlocking.script
+            ? unlocking.script
+                .replace(
+                  new RegExp(`<\s*${redeemScriptId.replace('.', '\\.')}\s*>`),
+                  ''
+                )
+                .trim()
+            : ''
         }));
-      const matchingScript = templateScripts.find(
-        s => s.id === `${script.id}${magicSuffix}`
-      );
-      if (matchingScript === undefined) {
-        throw 'Could not find matching locking script.';
-      }
       const locking: IDETemplateLockingScript = {
         type: 'locking',
         id: script.id,
         name: script.name || 'Unnamed',
         script: matchingScript.script,
         childInternalIds: children.map(c => c.internalId),
-        internalId: createInsecureUuidV4(),
+        internalId: lockingId,
         isP2SH: true
       };
       return [...scripts, locking, ...children];
@@ -349,11 +360,18 @@ export const importAuthenticationTemplate = (
   const allIDEScripts = [...p2shScripts, ...isolatedAndTestedScripts];
 
   const templateEntities = entities.map(entity => {
-    const variables = !Array.isArray(entity.variables)
-      ? []
-      : (entity.variables as AuthenticationTemplateVariable[]).map<
-          [string, AuthenticationTemplateVariable]
-        >((config: any) => [createInsecureUuidV4(), config]);
+    const variables =
+      entity.variables === undefined
+        ? []
+        : Object.entries(entity.variables).map<[string, IDEVariable]>(
+            ([id, variableConfig]) => [
+              createInsecureUuidV4(),
+              {
+                id,
+                ...variableConfig
+              } as IDEVariable
+            ]
+          );
     const ideEntity: IDETemplateEntity = {
       id: entity.id,
       internalId: createInsecureUuidV4(),
