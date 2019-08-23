@@ -58,12 +58,16 @@ import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
 import { TemplateSettings } from './template-settings/TemplateSettings';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
 import { ImportScriptDialog } from './dialogs/import-script-dialog/ImportScriptDialog';
+import { WelcomePane } from './welcome-pane/WelcomePane';
 
 const getEditorMode = (
-  currentEditingMode: 'entity' | 'script' | 'template-settings',
+  currentEditingMode: 'welcome' | 'entity' | 'script' | 'template-settings',
   currentlyEditingInternalId: string,
   template: AppState['currentTemplate']
 ) => {
+  if (currentEditingMode === 'welcome') {
+    return ProjectEditorMode.welcome;
+  }
   if (currentEditingMode === 'template-settings') {
     return ProjectEditorMode.templateSettingsEditor;
   }
@@ -127,6 +131,7 @@ interface ScriptEditorFrame<ProgramState extends IDESupportedProgramState> {
 }
 
 type ComputedEditorState<ProgramState extends IDESupportedProgramState> =
+  | EditorStateWelcomeMode
   | EditorStateTemplateSettingsMode
   | EditorStateEntityMode
   | EditorStateScriptMode<ProgramState>
@@ -134,6 +139,10 @@ type ComputedEditorState<ProgramState extends IDESupportedProgramState> =
 
 interface EditorStateEntityMode {
   editorMode: ProjectEditorMode.entityEditor;
+}
+
+interface EditorStateWelcomeMode {
+  editorMode: ProjectEditorMode.welcome;
 }
 
 interface EditorStateTemplateSettingsMode {
@@ -320,12 +329,14 @@ const computeEditorState = <
     currentlyEditingInternalId,
     state.currentTemplate
   );
-  if (editorMode === ProjectEditorMode.templateSettingsEditor) {
+  if (
+    editorMode === ProjectEditorMode.welcome ||
+    editorMode === ProjectEditorMode.templateSettingsEditor ||
+    editorMode === ProjectEditorMode.entityEditor
+  ) {
     return { editorMode };
   }
-  if (editorMode === ProjectEditorMode.entityEditor) {
-    return { editorMode };
-  }
+
   const { sourceScripts: evaluationOrderedScripts, isP2sh } = getSourceScripts(
     currentlyEditingInternalId,
     state.currentTemplate
@@ -523,7 +534,8 @@ enum Pane {
   templateSettingsEditor = 'templateSettingsEditorPane',
   entitySettingsEditor = 'entitySettingsEditorPane',
   entityVariableEditor = 'entityVariableEditorPane',
-  loading = 'loading'
+  loading = 'loading',
+  welcome = 'welcome'
 }
 
 export enum ScriptEditorPane {
@@ -558,6 +570,7 @@ export enum ScriptEvaluationViewerPane {
 }
 
 interface EditorDispatch {
+  importTemplate: typeof ActionCreators.importTemplate;
   updateScript: typeof ActionCreators.updateScript;
   closeDialog: typeof ActionCreators.closeDialog;
   createScript: typeof ActionCreators.createScript;
@@ -585,6 +598,7 @@ export const Editor = connect(
   }),
   {
     closeDialog: ActionCreators.closeDialog,
+    importTemplate: ActionCreators.importTemplate,
     updateScript: ActionCreators.updateScript,
     createScript: ActionCreators.createScript,
     editScript: ActionCreators.editScript,
@@ -691,6 +705,8 @@ export const Editor = connect(
               );
             case Pane.templateSettingsEditor:
               return <TemplateSettings />;
+            case Pane.welcome:
+              return <WelcomePane />;
             case Pane.loading:
               return <div className="loading" />;
             default:
@@ -700,78 +716,84 @@ export const Editor = connect(
               );
           }
         }}
-        value={{
-          direction: 'row',
-          first: Pane.projectExplorer,
-          second:
-            props.computed.editorMode === ProjectEditorMode.loading
-              ? Pane.loading
-              : props.computed.editorMode ===
-                ProjectEditorMode.templateSettingsEditor
-              ? Pane.templateSettingsEditor
-              : props.computed.editorMode === ProjectEditorMode.entityEditor
-              ? {
-                  direction: 'row',
-                  first: Pane.entitySettingsEditor,
-                  second: Pane.entityVariableEditor,
-                  splitPercentage: settingsWidth
-                }
-              : props.computed.editorMode ===
-                ProjectEditorMode.isolatedScriptEditor
-              ? {
-                  direction: 'row',
-                  first: ScriptEditorPane.zero,
-                  second: ScriptEvaluationViewerPane.zero,
-                  splitPercentage: scriptEditorWidths
-                }
-              : props.computed.editorMode === ProjectEditorMode.scriptPairEditor
-              ? {
-                  direction: 'row',
-                  first: {
-                    direction: 'column',
-                    first: ScriptEditorPane.zero,
-                    second: ScriptEditorPane.one,
-                    splitPercentage: frames2SplitHeight
-                  },
-                  second: {
-                    direction: 'column',
-                    first: ScriptEvaluationViewerPane.zero,
-                    second: ScriptEvaluationViewerPane.one,
-                    splitPercentage: frames2SplitHeight
-                  },
-                  splitPercentage: scriptEditorWidths
-                }
-              : props.computed.editorMode ===
-                ProjectEditorMode.testedScriptEditor
-              ? {
-                  direction: 'row',
-                  first: {
-                    direction: 'column',
-                    first: ScriptEditorPane.zero,
-                    second: {
-                      direction: 'column',
-                      first: ScriptEditorPane.one,
-                      second: ScriptEditorPane.two,
-                      splitPercentage: frames3BottomSplitHeight
-                    },
-                    splitPercentage: frames3TopSplitHeight
-                  },
-                  second: {
-                    direction: 'column',
-                    first: ScriptEvaluationViewerPane.zero,
-                    second: {
-                      direction: 'column',
-                      first: ScriptEvaluationViewerPane.one,
-                      second: ScriptEvaluationViewerPane.two,
-                      splitPercentage: frames3BottomSplitHeight
-                    },
-                    splitPercentage: frames3TopSplitHeight
-                  },
-                  splitPercentage: scriptEditorWidths
-                }
-              : unknownValue(props.computed.editorMode),
-          splitPercentage: projectExplorerWidth
-        }}
+        value={
+          props.computed.editorMode === ProjectEditorMode.welcome
+            ? Pane.welcome
+            : {
+                direction: 'row',
+                first: Pane.projectExplorer,
+                second:
+                  props.computed.editorMode === ProjectEditorMode.loading
+                    ? Pane.loading
+                    : props.computed.editorMode ===
+                      ProjectEditorMode.templateSettingsEditor
+                    ? Pane.templateSettingsEditor
+                    : props.computed.editorMode ===
+                      ProjectEditorMode.entityEditor
+                    ? {
+                        direction: 'row',
+                        first: Pane.entitySettingsEditor,
+                        second: Pane.entityVariableEditor,
+                        splitPercentage: settingsWidth
+                      }
+                    : props.computed.editorMode ===
+                      ProjectEditorMode.isolatedScriptEditor
+                    ? {
+                        direction: 'row',
+                        first: ScriptEditorPane.zero,
+                        second: ScriptEvaluationViewerPane.zero,
+                        splitPercentage: scriptEditorWidths
+                      }
+                    : props.computed.editorMode ===
+                      ProjectEditorMode.scriptPairEditor
+                    ? {
+                        direction: 'row',
+                        first: {
+                          direction: 'column',
+                          first: ScriptEditorPane.zero,
+                          second: ScriptEditorPane.one,
+                          splitPercentage: frames2SplitHeight
+                        },
+                        second: {
+                          direction: 'column',
+                          first: ScriptEvaluationViewerPane.zero,
+                          second: ScriptEvaluationViewerPane.one,
+                          splitPercentage: frames2SplitHeight
+                        },
+                        splitPercentage: scriptEditorWidths
+                      }
+                    : props.computed.editorMode ===
+                      ProjectEditorMode.testedScriptEditor
+                    ? {
+                        direction: 'row',
+                        first: {
+                          direction: 'column',
+                          first: ScriptEditorPane.zero,
+                          second: {
+                            direction: 'column',
+                            first: ScriptEditorPane.one,
+                            second: ScriptEditorPane.two,
+                            splitPercentage: frames3BottomSplitHeight
+                          },
+                          splitPercentage: frames3TopSplitHeight
+                        },
+                        second: {
+                          direction: 'column',
+                          first: ScriptEvaluationViewerPane.zero,
+                          second: {
+                            direction: 'column',
+                            first: ScriptEvaluationViewerPane.one,
+                            second: ScriptEvaluationViewerPane.two,
+                            splitPercentage: frames3BottomSplitHeight
+                          },
+                          splitPercentage: frames3TopSplitHeight
+                        },
+                        splitPercentage: scriptEditorWidths
+                      }
+                    : unknownValue(props.computed.editorMode),
+                splitPercentage: projectExplorerWidth
+              }
+        }
         onChange={node => {
           if (node && typeof node === 'object') {
             if (projectExplorerWidth !== node.splitPercentage) {

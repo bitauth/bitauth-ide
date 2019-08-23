@@ -25,7 +25,6 @@ import { disassembleBytecodeBCH, hexToBin } from 'bitcoin-ts';
 const disassembleHex = (hex: string) => disassembleBytecodeBCH(hexToBin(hex));
 const tokenizeHex = (hex: string) => {
   const splitAtErrors = disassembleHex(hex).split('[');
-  console.log(splitAtErrors);
   return [
     ...splitAtErrors[0].split(' '),
     ...(splitAtErrors.length > 1 ? [`[${splitAtErrors[1]}`] : [])

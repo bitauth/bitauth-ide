@@ -57,6 +57,9 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentTemplate.scriptsByInternalId = {};
     this.draftState.currentTemplate.supportedVirtualMachines = [];
   }
+  showWelcomePane() {
+    this.draftState.currentEditingMode = 'welcome';
+  }
   newEntity() {
     this.draftState.activeDialog = ActiveDialog.newEntity;
   }

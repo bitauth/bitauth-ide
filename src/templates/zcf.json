@@ -1,0 +1,22 @@
+{
+  "description": "",
+  "name": "Zero-Confirmation Forfeit",
+  "entities": {},
+  "scripts": {
+    "test": {
+      "name": "test",
+      "script": "OP_HASH160 <$(<test.redeem_script> OP_HASH160)> OP_EQUAL"
+    },
+    "test.redeem_script": {
+      "name": "test Redeem Script",
+      "script": ""
+    },
+    "unlock_test": {
+      "name": "Unlock",
+      "script": " <test.redeem_script>",
+      "unlocks": "test"
+    }
+  },
+  "supported": [],
+  "version": 0
+}

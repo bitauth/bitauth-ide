@@ -207,6 +207,23 @@ export enum ActiveDialog {
   importScript
 }
 
+export interface IDETemplate {
+  name: string;
+  description: string;
+  supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
+  entitiesByInternalId: { [internalId: string]: IDETemplateEntity };
+  /**
+   * In AppState, scripts are stored in a tree structure, rather than the flat
+   * list used by `AuthenticationTemplate`.
+   */
+  scriptsByInternalId: {
+    [internalId: string]: IDETemplateScript;
+  };
+  variablesByInternalId: {
+    [internalId: string]: IDEVariable;
+  };
+}
+
 export interface AppState {
   ideMode: IDEMode;
   /**
@@ -217,29 +234,19 @@ export interface AppState {
    * `tested` can only be edited with one of their "children" scripts.
    */
   currentlyEditingInternalId: string | undefined;
-  currentEditingMode: 'script' | 'entity' | 'template-settings' | undefined;
+  currentEditingMode:
+    | 'welcome'
+    | 'script'
+    | 'entity'
+    | 'template-settings'
+    | undefined;
   savedTemplates: { template: AuthenticationTemplate; savedDate: Date }[];
   /**
    * The state of the BitAuth template currently open in the IDE. This is stored
    * in a significantly different structure than `AuthenticationTemplate`, so it
    * must be serialized and deserialized when copying in and out of the IDE.
    */
-  currentTemplate: {
-    name: string;
-    description: string;
-    supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
-    entitiesByInternalId: { [internalId: string]: IDETemplateEntity };
-    /**
-     * In AppState, scripts are stored in a tree structure, rather than the flat
-     * list used by `AuthenticationTemplate`.
-     */
-    scriptsByInternalId: {
-      [internalId: string]: IDETemplateScript;
-    };
-    variablesByInternalId: {
-      [internalId: string]: IDEVariable;
-    };
-  };
+  currentTemplate: IDETemplate;
   currentVmId: keyof IDELoadedVMs;
   authenticationVirtualMachines: IDELoadedVMs | null;
   crypto: IDELoadedCrypto | null;

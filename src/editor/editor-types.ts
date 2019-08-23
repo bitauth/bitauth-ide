@@ -10,6 +10,10 @@ import { IDETemplateScript } from '../state/types';
 
 export enum ProjectEditorMode {
   /**
+   * The first visible view when the IDE loads.
+   */
+  welcome = 'welcome',
+  /**
    * Isolated script editing mode – view and edit an isolated script and its
    * associated tests.
    */

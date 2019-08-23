@@ -1,0 +1,36 @@
+{
+  "description": "A standard single-factor authentication template which uses Pay-to-Public-Key-Hash (P2PKH).\n\nThis is currently the most common template in use on the network.",
+  "name": "Single Signature (P2PKH)",
+  "entities": {
+    "owner": {
+      "name": "Owner",
+      "description": "The individual who can spend from this wallet.",
+      "scripts": ["p2pkh_lock", "unlock_p2pkh_lock"],
+      "variables": {
+        "owner": {
+          "description": "The private key which controls this wallet.",
+          "mock": "1111111111111111111111111111111111111111111111111111111111111111",
+          "name": "Key",
+          "type": "Key"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "p2pkh_lock": {
+      "name": "P2PKH Lock",
+      "script": "OP_HASH160 <$(<p2pkh_lock.redeem_script> OP_HASH160)> OP_EQUAL"
+    },
+    "p2pkh_lock.redeem_script": {
+      "name": "P2PKH Lock Redeem Script",
+      "script": "OP_DUP\nOP_HASH160 <$( <owner.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
+    },
+    "unlock_p2pkh_lock": {
+      "name": "Unlock",
+      "script": "<owner.schnorr_signature.all_outputs>\n<owner.public_key> <p2pkh_lock.redeem_script>",
+      "unlocks": "p2pkh_lock"
+    }
+  },
+  "supported": ["BCH_2019_05", "BCH_2019_11", "BSV_2018_11", "BTC_2017_08"],
+  "version": 0
+}

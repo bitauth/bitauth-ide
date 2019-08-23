@@ -62,6 +62,7 @@ interface TemplateSettingsDispatch {
   updateTemplateSupportedVM: typeof ActionCreators.updateTemplateSupportedVM;
   resetTemplate: typeof ActionCreators.resetTemplate;
   importExport: typeof ActionCreators.importExport;
+  showWelcomePane: typeof ActionCreators.showWelcomePane;
 }
 
 export const TemplateSettings = connect(
@@ -75,7 +76,8 @@ export const TemplateSettings = connect(
     updateTemplateDescription: ActionCreators.updateTemplateDescription,
     updateTemplateSupportedVM: ActionCreators.updateTemplateSupportedVM,
     resetTemplate: ActionCreators.resetTemplate,
-    importExport: ActionCreators.importExport
+    importExport: ActionCreators.importExport,
+    showWelcomePane: ActionCreators.showWelcomePane
   }
 )((props: TemplateSettingsProps & TemplateSettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
@@ -152,7 +154,7 @@ export const TemplateSettings = connect(
           onClick={() => setPromptDelete(true)}
         >
           <Icon icon={IconNames.TRASH} iconSize={10} />
-          Reset to Blank Template
+          Reset Template...
         </Button>
         <Alert
           cancelButtonText="Cancel"
@@ -165,11 +167,12 @@ export const TemplateSettings = connect(
           onConfirm={() => {
             props.resetTemplate();
             setPromptDelete(false);
+            props.showWelcomePane();
           }}
         >
           <p>
-            Are you sure you want to delete this entire project and start with
-            an empty authentication template?
+            Are you sure you want to delete this entire project and start with a
+            new authentication template?
           </p>
           <p>This cannot be undone.</p>
         </Alert>

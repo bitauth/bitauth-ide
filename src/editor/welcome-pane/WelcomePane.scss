@@ -1,0 +1,40 @@
+.WelcomePane {
+  background-color: var(--editor-background-color);
+  .welcome-box {
+    width: 600px;
+    border-radius: 6px;
+    padding: 40px 60px;
+    background-color: var(--interface-background-color);
+    margin: 20px auto;
+    p {
+      font-size: 14px;
+      line-height: 24px;
+      color: #ffffff99;
+      margin: 0;
+    }
+    .instructions {
+      font-size: 16px;
+      margin: 0 0 22px 0;
+      font-weight: bold;
+    }
+    .starter-template {
+      &:hover {
+        background-color: #ffffff11;
+      }
+      cursor: pointer;
+      border: 1px solid #ffffff11;
+      border-radius: 4px;
+      margin: 12px 0;
+      padding: 16px 20px;
+      h4 {
+        margin: 6px 0;
+        font-size: 16px;
+        display: flex;
+        align-items: baseline;
+      }
+      .bp3-icon {
+        margin-right: 12px;
+      }
+    }
+  }
+}
