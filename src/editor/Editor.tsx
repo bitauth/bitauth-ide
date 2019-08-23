@@ -211,16 +211,12 @@ const getSourceScripts = (
     return {
       isP2sh: false,
       sourceScripts: [
-        formatScript(
-          internalId,
-          currentScript,
-          `${currentScript.name} (Setup)`
-        ),
+        formatScript(internalId, currentScript, currentScript.name),
         formatScript(testedInternalId, testedScript),
         formatScript(
           currentScript.testCheckInternalId,
           template.scriptsByInternalId[currentScript.testCheckInternalId],
-          `${currentScript.name} (Check)`
+          currentScript.name
         )
       ]
     };
@@ -503,7 +499,6 @@ const computeEditorState = <
       }
     }
 
-    console.dir(scriptEditorFrames);
     const identifyStackItems =
       evaluationOrderedCompilationResults.length === 0
         ? undefined

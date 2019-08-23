@@ -118,7 +118,7 @@ export interface IDETemplateTestSetupScript extends IDETemplateScriptBase {
 export interface IDETemplateTestCheckScript extends IDETemplateScriptBase {
   /**
    * `test-check` scripts share the name of their `test-setup` sibling, since
-   * they are both part of the same "test". ()
+   * they are both part of the same "test".
    */
   name: '';
   type: 'test-check';

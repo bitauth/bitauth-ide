@@ -110,7 +110,7 @@ const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
         {
           id: testedScript.id,
           name: testedScript.name,
-          script: testedScript.name,
+          script: testedScript.script,
           tests: testedScript.childInternalIds.map(internalId => {
             const testSetup = ideTemplate.scriptsByInternalId[
               internalId
@@ -194,6 +194,11 @@ export const extractTemplate = (
   version: 0
 });
 
+/**
+ * TODO: tech debt:
+ * This method was original written for a template format with arrays for
+ * `entities` and `scripts`. It can probably be majorly simplified.
+ */
 export const importAuthenticationTemplate = (
   template: Partial<AuthenticationTemplate>
 ): AppState['currentTemplate'] | string => {
@@ -314,7 +319,7 @@ export const importAuthenticationTemplate = (
             const checkId = createInsecureUuidV4();
             const setup: IDETemplateTestSetupScript = {
               type: 'test-setup',
-              id: '',
+              id: setupId.replace(/-/g, '_'),
               internalId: setupId,
               name: test.name || 'Unnamed',
               parentInternalId,
@@ -323,7 +328,7 @@ export const importAuthenticationTemplate = (
             };
             const check: IDETemplateTestCheckScript = {
               type: 'test-check',
-              id: '',
+              id: checkId.replace(/-/g, '_'),
               internalId: checkId,
               name: '',
               script: test.check || '',

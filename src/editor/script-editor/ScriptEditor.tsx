@@ -117,6 +117,8 @@ export class ScriptEditor extends Component<
         <h2 className="title">
           {getScriptTooltipIcon(this.props.scriptType)}
           {this.props.name}
+          {this.props.scriptType === 'test-setup' && <span>&nbsp;(Setup)</span>}
+          {this.props.scriptType === 'test-check' && <span>&nbsp;(Check)</span>}
           {this.props.isP2SH && (
             <span
               className="p2sh-tag"

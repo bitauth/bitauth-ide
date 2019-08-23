@@ -14,7 +14,8 @@ import {
   IDETemplateIsolatedScript,
   IDETemplateTestedScript,
   IDESupportedVM,
-  IDEVariable
+  IDEVariable,
+  IDETemplateTestCheckScript
 } from './types';
 import { editor } from 'monaco-editor';
 import { defaultState } from './defaults';
@@ -224,6 +225,18 @@ class App extends ImmerReducer<AppState> {
     id: string;
     isP2SH?: boolean;
   }) {
+    if (
+      this.draftState.currentTemplate.scriptsByInternalId[internalId].type ===
+      'test-check'
+    ) {
+      const realInternalId = (this.draftState.currentTemplate
+        .scriptsByInternalId[internalId] as IDETemplateTestCheckScript)
+        .testSetupInternalId;
+      this.draftState.currentTemplate.scriptsByInternalId[
+        realInternalId
+      ].name = name;
+      return;
+    }
     this.draftState.currentTemplate.scriptsByInternalId[internalId].name = name;
     this.draftState.currentTemplate.scriptsByInternalId[internalId].id = id;
     if (isP2SH !== undefined) {

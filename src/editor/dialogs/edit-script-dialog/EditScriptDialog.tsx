@@ -44,6 +44,7 @@ export const EditScriptDialog = ({
   const [scriptIsP2SH, setScriptIsP2SH] = useState(isP2SH);
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
+  const isTest = scriptType === 'test-setup' || scriptType === 'test-check';
   const usedIds = currentScripts
     .map(script => script.id)
     .filter(scriptId => scriptId !== id);
@@ -65,8 +66,10 @@ export const EditScriptDialog = ({
     >
       <div className={Classes.DIALOG_BODY}>
         <FormGroup
-          helperText="A single-line, human-readable name for this script."
-          label="Script Name"
+          helperText={`A single-line, human-readable name for this ${
+            isTest ? 'test' : 'script'
+          }.`}
+          label={`${isTest ? 'Test' : 'Script'} Name`}
           labelFor="script-name"
           inline={true}
         >
@@ -81,30 +84,32 @@ export const EditScriptDialog = ({
             }}
           />
         </FormGroup>
-        <FormGroup
-          helperText={
-            <span>
-              A unique script identifier (must begin with a-z, A-Z, or
-              <code>_</code>, remaining characters may include numbers,
-              <code>.</code>, and
-              <code>-</code>). This is used to reference the script during
-              compilation and from within other scripts.
-            </span>
-          }
-          label="Script ID"
-          labelFor="script-id"
-          inline={true}
-        >
-          <InputGroup
-            id="script-id"
-            value={scriptId}
-            autoComplete="off"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value;
-              setScriptId(sanitizeId(value));
-            }}
-          />
-        </FormGroup>
+        {!isTest && (
+          <FormGroup
+            helperText={
+              <span>
+                A unique script identifier (must begin with a-z, A-Z, or
+                <code>_</code>, remaining characters may include numbers,
+                <code>.</code>, and
+                <code>-</code>). This is used to reference the script during
+                compilation and from within other scripts.
+              </span>
+            }
+            label="Script ID"
+            labelFor="script-id"
+            inline={true}
+          >
+            <InputGroup
+              id="script-id"
+              value={scriptId}
+              autoComplete="off"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const value = e.target.value;
+                setScriptId(sanitizeId(value));
+              }}
+            />
+          </FormGroup>
+        )}
         {scriptType === 'locking' && (
           <FormGroup
             helperText={<span>P2SH</span>}
@@ -128,7 +133,7 @@ export const EditScriptDialog = ({
           }}
         >
           <Icon icon={IconNames.TRASH} iconSize={10} />
-          Delete Script
+          Delete {isTest ? 'Test' : 'Script'}
         </Button>
         <Alert
           cancelButtonText="Cancel"
@@ -164,9 +169,13 @@ export const EditScriptDialog = ({
             )}
           </div>
           <Button
-            disabled={scriptName === '' || scriptId === ''}
+            disabled={
+              scriptName === '' ||
+              scriptName === name ||
+              (!isTest && scriptId === '')
+            }
             onClick={() => {
-              if (usedIds.indexOf(scriptId) !== -1) {
+              if (!isTest && usedIds.indexOf(scriptId) !== -1) {
                 setNonUniqueId(scriptId);
               } else {
                 editScript({

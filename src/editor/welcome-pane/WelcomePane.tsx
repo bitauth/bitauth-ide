@@ -33,9 +33,9 @@ const defaultTemplates = {
   single: assertValidTemplate(
     importAuthenticationTemplate(single as AuthenticationTemplate)
   ),
-  // multi: assertValidTemplate(
-  //   importAuthenticationTemplate(multi as AuthenticationTemplate)
-  // ),
+  multi: assertValidTemplate(
+    importAuthenticationTemplate(multi as AuthenticationTemplate)
+  ),
   continuity: assertValidTemplate(
     importAuthenticationTemplate(continuity as AuthenticationTemplate)
   ),
@@ -78,10 +78,10 @@ export const WelcomePane = connect(
             </h4>
             <p>Transactions are signed by only a single key.</p>
           </div>
-          {/* <div
+          <div
             className="starter-template"
             onClick={() => {
-              // props.importTemplate(defaultTemplates.multi);
+              props.importTemplate(defaultTemplates.multi);
               props.openTemplateSettings();
             }}
           >
@@ -90,7 +90,7 @@ export const WelcomePane = connect(
               2-of-3 Multi-Signature &rarr;
             </h4>
             <p>Transactions require any two of three co-owners to sign.</p>
-          </div> */}
+          </div>
           <div
             className="starter-template"
             onClick={() => {
