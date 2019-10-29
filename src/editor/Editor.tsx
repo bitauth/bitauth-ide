@@ -95,7 +95,7 @@ const bitcoinCashOpcodeIdentifiers = Object.entries(OpcodesBCH)
   .reduce(
     (identifiers, pair) => ({
       ...identifiers,
-      [pair[0]]: Uint8Array.of(pair[1])
+      [pair[0]]: Uint8Array.of(pair[1] as number)
     }),
     {}
   ) as {

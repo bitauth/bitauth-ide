@@ -13,7 +13,7 @@ import { AppState, IDESupportedVM } from '../../state/types';
 import { connect } from 'react-redux';
 import { IconNames } from '@blueprintjs/icons';
 import { ActionCreators } from '../../state/reducer';
-import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
+import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
 
 const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
   BCH_2019_05: (

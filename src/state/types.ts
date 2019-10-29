@@ -1,14 +1,12 @@
 import {
-  AuthenticationTemplate,
-  AuthenticationVirtualMachineIdentifier,
-  AuthenticationTemplateVariable
-} from 'bitcoin-ts/build/main/lib/auth/templates/types';
-import {
-  AuthenticationVirtualMachine,
-  Sha256,
-  Secp256k1,
   AuthenticationProgramBCH,
-  AuthenticationProgramStateBCH
+  AuthenticationProgramStateBCH,
+  AuthenticationTemplate,
+  AuthenticationTemplateVariable,
+  AuthenticationVirtualMachine,
+  AuthenticationVirtualMachineIdentifier,
+  Sha256,
+  Secp256k1
 } from 'bitcoin-ts';
 
 export enum IDEMode {

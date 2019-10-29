@@ -11,11 +11,10 @@ import {
   IDEVariable
 } from '../../../state/types';
 import {
-  AuthenticationTemplateScript,
   AuthenticationTemplate,
-  AuthenticationTemplateScriptTest,
-  AuthenticationTemplateVariable
-} from 'bitcoin-ts/build/main/lib/auth/templates/types';
+  AuthenticationTemplateScript,
+  AuthenticationTemplateScriptTest
+} from 'bitcoin-ts';
 import { createInsecureUuidV4 } from '../../../state/utils';
 
 const extractPattern = (string: string, pattern: RegExp) => {

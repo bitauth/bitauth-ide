@@ -1,4 +1,3 @@
-import { AuthenticationTemplateScript } from 'bitcoin-ts/build/main/lib/auth/templates/types';
 import {
   StackState,
   ExecutionStackState,

@@ -1,6 +1,6 @@
 import { AppState, ActiveDialog } from './types';
 import { IDEMode } from './types';
-import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
+import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
 
 export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] = [
   'BCH_2019_05',

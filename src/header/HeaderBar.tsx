@@ -2,7 +2,7 @@ import React from 'react';
 import './HeaderBar.scss';
 import { Button, MenuItem, Icon } from '@blueprintjs/core';
 import { ItemRenderer, Select } from '@blueprintjs/select';
-import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts/build/main/lib/auth/templates/types';
+import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
 import { IDEMode } from '../state/types';
 import GitHubLogo from './github-logo.svg';
 import { IconNames } from '@blueprintjs/icons';
