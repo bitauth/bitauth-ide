@@ -250,6 +250,10 @@ export interface AppState {
   crypto: IDELoadedCrypto | null;
   // compilationData: CompilationData; // TODO: delete
   activeDialog: ActiveDialog;
+  /**
+   * Date from the moment this instance of the app was initialized.
+   */
+  appLoadTime: Date;
 }
 
 export type CurrentScripts = {

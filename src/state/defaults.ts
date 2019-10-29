@@ -26,5 +26,6 @@ export const defaultState: AppState = {
   currentVmId: 'BCH_2019_05',
   authenticationVirtualMachines: null,
   crypto: null,
-  activeDialog: ActiveDialog.none
+  activeDialog: ActiveDialog.none,
+  appLoadTime: new Date()
 };
