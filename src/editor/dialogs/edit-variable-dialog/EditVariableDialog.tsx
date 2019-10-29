@@ -32,12 +32,12 @@ const variableTypes: {
   { label: 'Current Block Time', value: 'CurrentBlockTime' },
   { label: 'HD Key (Not Yet Available)', value: 'HDKey', disabled: true },
   { label: 'Key', value: 'Key' },
-  { label: 'Transaction Data', value: 'AddressData' },
+  { label: 'Address Data', value: 'AddressData' },
   { label: 'Wallet Data', value: 'WalletData' }
 ];
 
 const variableTypeDescriptions: {
-  [key in IDEVariable['type']]: React.ReactNode
+  [key in IDEVariable['type']]: React.ReactNode;
 } = {
   CurrentBlockHeight: (
     <span>
@@ -100,7 +100,7 @@ const variableTypeDescriptions: {
       <p>
         Wallet Data is persisted for the life of the wallet, rather than
         changing from locking script to locking script. For transaction-specific
-        data, use Transaction Data.
+        data, use Address Data.
       </p>
     </span>
   )
