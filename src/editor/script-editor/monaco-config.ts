@@ -24,7 +24,7 @@ export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
     enabled: false
   },
   folding: false,
-  wordWrap: 'on',
+  wordWrap: 'off', // TODO: identify lines which wrap and match the wrapping in the stack viewer (so we can set this back to `on`)
   wrappingIndent: 'same',
   scrollbar: {
     verticalScrollbarSize: 3
