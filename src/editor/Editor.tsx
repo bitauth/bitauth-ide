@@ -230,8 +230,10 @@ const currentBlock = 561171;
 const currentTimeUTC = 1549166880000; // "current" – just a reasonable, static time for determinism
 
 export const compileScriptMock = (script: string) => {
-  const result = compileScriptText(script, {}, { scripts: {} });
-  return result.success ? result.bytecode : undefined;
+  const result = compileScriptText(`0x${script}`, {}, { scripts: {} });
+  return result.success
+    ? result.bytecode
+    : console.error('compileScriptMock failure:', result);
 };
 
 const getIDECompilationData = (
