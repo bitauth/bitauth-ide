@@ -132,6 +132,12 @@
     ]
   },
   "devDependencies": {
-    "@types/webpack-env": "^1.13.7"
+    "@types/webpack-env": "^1.13.7",
+    "cz-conventional-changelog": "^3.0.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
