@@ -14,6 +14,8 @@ import { Tooltip, Popover } from '@blueprintjs/core';
 import { unknownValue } from '../../utils';
 
 (window as any).b = bitcoinTs;
+
+// cspell:ignore cbitcoin cwindow
 console.log(
   `%cWelcome to BitAuth IDE!
   

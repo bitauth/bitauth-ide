@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
+  "version": "0.1",
+  "language": "en",
+  "words": ["Bitauth"],
+  "flagWords": [],
+  "ignorePaths": ["package.json", "yarn.lock", "tsconfig.json"]
+}

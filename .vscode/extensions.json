@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "gruntfuggly.todo-tree",
+    "wix.vscode-import-cost",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
