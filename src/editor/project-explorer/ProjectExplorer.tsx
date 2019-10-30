@@ -10,8 +10,6 @@ import {
   ScriptType
 } from '../../state/types';
 import { ActionCreators } from '../../state/reducer';
-import { defaultState } from '../../state/defaults';
-import { demoTemplate } from '../../state/demo';
 import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../../utils';
@@ -319,19 +317,6 @@ export const ProjectExplorer = connect(
             ))}
           </ul>
         </div>
-        {/* <div className="demo-control">
-          <button
-            onClick={() => {
-              const otherTemplate =
-                templateName === demoTemplate.name
-                  ? defaultState.currentTemplate
-                  : demoTemplate;
-              changeTemplate(otherTemplate);
-            }}
-          >
-            toggle demo
-          </button>
-        </div> */}
       </div>
     );
   }
