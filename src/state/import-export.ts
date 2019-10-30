@@ -9,13 +9,14 @@ import {
   IDETemplateUnlockingScript,
   IDETemplateTestCheckScript,
   IDEVariable
-} from '../../../state/types';
+} from './types';
 import {
   AuthenticationTemplate,
   AuthenticationTemplateScript,
   AuthenticationTemplateScriptTest
 } from 'bitcoin-ts';
-import { createInsecureUuidV4 } from '../../../state/utils';
+import { createInsecureUuidV4 } from './utils';
+import { bitauthAuthenticationTemplateSchema } from '../editor/script-editor/constants';
 
 const extractPattern = (string: string, pattern: RegExp) => {
   const result = pattern.exec(string);
@@ -155,6 +156,7 @@ const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
 export const extractTemplate = (
   currentTemplate: AppState['currentTemplate']
 ): AuthenticationTemplate => ({
+  $schema: bitauthAuthenticationTemplateSchema,
   description: currentTemplate.description,
   name: currentTemplate.name,
   entities: Object.values(currentTemplate.entitiesByInternalId)

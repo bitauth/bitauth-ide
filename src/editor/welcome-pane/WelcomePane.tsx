@@ -17,7 +17,7 @@ import single from '../../templates/single-sig.json';
 import multi from '../../templates/2-of-3-template.json';
 import continuity from '../../templates/2-of-2-continuity.json';
 import zcf from '../../templates/zcf.json';
-import { importAuthenticationTemplate } from '../dialogs/import-export-dialog/import-export';
+import { importAuthenticationTemplate } from '../../state/import-export';
 import { AuthenticationTemplate, stringify } from 'bitcoin-ts';
 
 const isValidTemplate = (result: IDETemplate | string): result is IDETemplate =>

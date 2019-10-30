@@ -4,6 +4,8 @@ import {
   bitauthScriptHoverProviderBCH,
   bitauthScriptCompletionItemProviderBCH
 } from './bch-language';
+import schemaJson from './authentication-template-v0.schema.json';
+import { bitauthAuthenticationTemplateSchema } from './constants';
 
 export const bitauthScript = 'bitauth-script';
 export const bitauthDark = 'bitauth-dark';
@@ -199,6 +201,15 @@ export const registerBitauthScript = (monaco: typeof Monaco) => {
     bitauthScriptCompletionItemProviderBCH
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);
+  monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+    validate: true,
+    schemas: [
+      {
+        uri: bitauthAuthenticationTemplateSchema,
+        schema: schemaJson
+      }
+    ]
+  });
 };
 
 export const prepMonaco = (monaco: typeof Monaco) => {

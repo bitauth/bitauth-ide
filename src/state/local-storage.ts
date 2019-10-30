@@ -1,16 +1,10 @@
 import { Middleware } from 'redux';
-import { extractTemplate } from '../editor/dialogs/import-export-dialog/import-export';
+import { extractTemplate } from './import-export';
 import { AppState } from './types';
+import { emptyTemplate } from './defaults';
 
 let hasLogged = false;
-const emptyTemplate = JSON.stringify({
-  description: '',
-  name: '',
-  entities: {},
-  scripts: {},
-  supported: [],
-  version: 0
-});
+const emptyTemplateString = JSON.stringify(emptyTemplate);
 
 export const automaticallySaveTemplateToLocalStorage: Middleware<
   {},
@@ -29,7 +23,7 @@ export const automaticallySaveTemplateToLocalStorage: Middleware<
   /**
    * Avoid polluting local storage if the user doesn't touch anything.
    */
-  if (template !== emptyTemplate) {
+  if (template !== emptyTemplateString) {
     localStorage.setItem(saveKey, template);
   }
   return result;

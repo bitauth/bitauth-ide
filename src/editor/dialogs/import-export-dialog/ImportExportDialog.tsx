@@ -21,7 +21,10 @@ import {
 } from '../../script-editor/monaco-config';
 import { connect } from 'react-redux';
 import { stringify, utf8ToBin, binToBase64 } from 'bitcoin-ts';
-import { extractTemplate, importAuthenticationTemplate } from './import-export';
+import {
+  extractTemplate,
+  importAuthenticationTemplate
+} from '../../../state/import-export';
 
 const beginDownload = (filename: string, content: string) => {
   const e = document.createElement('a');
