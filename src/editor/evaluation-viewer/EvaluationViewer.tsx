@@ -143,6 +143,7 @@ const EvaluationLine = ({
 
 interface EvaluationViewerProps {
   evaluation?: Evaluation;
+  evaluationTrace: string[];
   id: string;
   lookup?: StackItemIdentifyFunction;
   script: string;
@@ -156,7 +157,7 @@ interface EvaluationViewerState extends EvaluationViewerProps {
 /**
  * EvaluationViewers are slightly stateful in that they remember the last
  * evaluation and continue displaying it (slightly dimmed) when parse and
- * resolve errors errors are occurring.
+ * resolve errors are occurring.
  */
 export class EvaluationViewer extends React.Component<
   EvaluationViewerProps,
@@ -164,6 +165,7 @@ export class EvaluationViewer extends React.Component<
 > {
   state: EvaluationViewerState = {
     evaluation: [],
+    evaluationTrace: [''],
     id: '',
     script: '',
     lookup: () => false,
@@ -176,6 +178,7 @@ export class EvaluationViewer extends React.Component<
     if (props.evaluation === undefined && state !== undefined) {
       return {
         evaluation: (state.id === props.id && state.evaluation) || [],
+        evaluationTrace: state.evaluationTrace,
         id: state.id,
         lookup: state.lookup,
         script: state.script,
@@ -184,6 +187,7 @@ export class EvaluationViewer extends React.Component<
     } else {
       return {
         evaluation: props.evaluation || [],
+        evaluationTrace: props.evaluationTrace,
         id: props.id,
         lookup: props.lookup || (() => false),
         script: props.script,
@@ -196,7 +200,13 @@ export class EvaluationViewer extends React.Component<
     return (
       <div className="EvaluationViewer">
         <div
-          className={this.props.script === this.state.script ? '' : 'cached'}
+          className={
+            this.props.script === this.state.script &&
+            this.state.evaluationTrace.join() ===
+              this.props.evaluationTrace.join()
+              ? ''
+              : 'cached'
+          }
         >
           {this.state.evaluation.length > 0 && (
             <div>

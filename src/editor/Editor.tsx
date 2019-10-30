@@ -159,6 +159,7 @@ interface EditorStateScriptMode<ProgramState extends IDESupportedProgramState> {
     | ProjectEditorMode.testedScriptEditor
     | ProjectEditorMode.scriptPairEditor;
   scriptEditorFrames: ScriptEditorFrame<ProgramState>[];
+  scriptEditorEvaluationTrace: string[];
   isP2sh: boolean;
   /**
    * Set to `undefined` if no compilations were successful (so the previous
@@ -466,6 +467,9 @@ const computeEditorState = <
       nextStack = next.samples[next.samples.length - 1].state.stack;
     }
 
+    const scriptEditorEvaluationTrace = evaluationOrderedScripts.map(
+      script => script.internalId
+    );
     const scriptEditorFrames = evaluationOrderedScripts.map<
       ScriptEditorFrame<ProgramState>
     >((source, i) => ({
@@ -518,6 +522,7 @@ const computeEditorState = <
       editorMode,
       isP2sh,
       identifyStackItems,
+      scriptEditorEvaluationTrace,
       scriptEditorFrames
     };
   } catch (e) {
@@ -677,6 +682,7 @@ export const Editor = connect(
               ) : (
                 <EvaluationViewer
                   evaluation={computed.scriptEditorFrames[i].evaluation}
+                  evaluationTrace={computed.scriptEditorEvaluationTrace}
                   id={computed.scriptEditorFrames[i].id}
                   script={computed.scriptEditorFrames[i].script}
                   lookup={computed.identifyStackItems}
