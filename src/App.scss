@@ -39,6 +39,10 @@ body {
 /**
  * Globally match the scrollbar style of Monaco editor.
  */
+html {
+  scrollbar-color: rgba(122, 122, 122, 0.4) transparent;
+  scrollbar-width: thin;
+}
 *::-webkit-scrollbar {
   width: 10px !important;
   height: 10px !important;
