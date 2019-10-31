@@ -27,7 +27,7 @@ import {
   compileScriptMock
 } from '../../common';
 import { unknownValue } from '../../../utils';
-import { CompilationResultError, binToHex } from 'bitcoin-ts';
+import { binToHex } from 'bitcoin-ts';
 
 const variableTypes: {
   label: string;
@@ -121,18 +121,6 @@ const isValidEnoughPrivateKey = (key: string) => true;
 
 const onesKey =
   '0x1111111111111111111111111111111111111111111111111111111111111111';
-
-const compilationErrorToString = (
-  errors: CompilationResultError<{}>['errors']
-) =>
-  errors
-    .map(
-      ({ error, range }) =>
-        `${error} (${
-          range.startLineNumber !== 1 ? `Line: ${range.startLineNumber} ` : ''
-        }Column: ${range.startColumn})`
-    )
-    .join(', ');
 
 export const EditVariableDialog = ({
   entity,
@@ -343,11 +331,15 @@ export const EditVariableDialog = ({
                     setVariableMockError('');
                     setVariableMockHex(binToHex(compiled.bytecode));
                   } else {
-                    console.error(compiled);
                     setVariableMockError(
                       `Compilation error${
                         compiled.errors.length > 1 ? 's' : ''
-                      }: ${compilationErrorToString(compiled.errors)}`
+                      }: ${compiled.errors
+                        .map(
+                          ({ error, range }) =>
+                            `${error} [${range.startLineNumber}, ${range.startColumn}]`
+                        )
+                        .join(', ')}`
                     );
                   }
                 }}

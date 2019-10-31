@@ -9,6 +9,7 @@ $hex-color: #5bb498;
   overflow-y: hidden;
 
   .content {
+    height: 100%;
     white-space: nowrap;
   }
 
@@ -16,10 +17,37 @@ $hex-color: #5bb498;
     opacity: 0.5;
   }
 
+  .compilation-error-without-cache {
+    width: 100%;
+    white-space: normal;
+    overflow-y: scroll;
+    height: 100%;
+    .header-bar-content {
+      margin-left: 1em;
+    }
+    .list {
+      font-family: var(--monospace-font-family);
+      padding: 1em 1.5em;
+      margin: 0;
+      & > li {
+        margin-bottom: 0.5em;
+        list-style: none;
+        & > .error-message {
+          color: #fff;
+          line-height: 1.3em;
+        }
+        & > .line-and-column {
+          margin-left: 2px;
+          opacity: 0.5;
+        }
+      }
+    }
+  }
+
   $initialStateVerticalPadding: 8;
   $initialStateHeight: 14;
 
-  .initial-state {
+  .header-bar {
     margin: 0 0 4px;
     padding: #{$initialStateVerticalPadding}px 0;
     height: #{$initialStateHeight}px;
@@ -32,11 +60,11 @@ $hex-color: #5bb498;
       background: var(--editor-background-color);
       position: fixed;
       margin-top: -8px;
-      z-index: 0;
+      z-index: 5;
     }
-    & > .state {
-      z-index: 1;
-      position: relative;
+    & > .header-bar-content {
+      z-index: 10;
+      position: fixed;
     }
   }
 

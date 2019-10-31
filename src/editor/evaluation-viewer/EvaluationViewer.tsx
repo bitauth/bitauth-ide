@@ -1,6 +1,11 @@
 import React from 'react';
 import './EvaluationViewer.scss';
-import { binToHex, parseBytesAsScriptNumber, stringify } from 'bitcoin-ts';
+import {
+  binToHex,
+  parseBytesAsScriptNumber,
+  stringify,
+  CompilationResult
+} from 'bitcoin-ts';
 import * as bitcoinTs from 'bitcoin-ts';
 import {
   Evaluation,
@@ -67,7 +72,7 @@ const EvaluationLine = ({
   lineIndex: number;
   line: EvaluationViewerLine<IDESupportedProgramState>;
   error: Errors;
-  lookup: StackItemIdentifyFunction;
+  lookup?: StackItemIdentifyFunction;
 }) => (
   <div
     className={
@@ -111,7 +116,7 @@ const EvaluationLine = ({
         <span className="unchanged" />
       ) : (
         line.state.stack.map((item, itemIndex) => {
-          const name = lookup(item);
+          const name = lookup ? lookup(item) : false;
           const hex = `0x${binToHex(item)}`;
           if (name !== false) {
             return stackItem(
@@ -142,6 +147,7 @@ const EvaluationLine = ({
 );
 
 interface EvaluationViewerProps {
+  compilation: CompilationResult;
   evaluation?: Evaluation;
   evaluationTrace: string[];
   id: string;
@@ -150,84 +156,81 @@ interface EvaluationViewerProps {
   scrollOffset: number;
 }
 
-interface EvaluationViewerState extends EvaluationViewerProps {
-  evaluation: Evaluation;
-  lookup: StackItemIdentifyFunction;
+interface EvaluationViewerState {
+  cachedEvaluationTrace: string[];
+  cachedEvaluation: Evaluation;
+  cachedLookup?: StackItemIdentifyFunction;
 }
-/**
- * EvaluationViewers are slightly stateful in that they remember the last
- * evaluation and continue displaying it (slightly dimmed) when parse and
- * resolve errors are occurring.
- */
+
 export class EvaluationViewer extends React.Component<
   EvaluationViewerProps,
   EvaluationViewerState
 > {
   state: EvaluationViewerState = {
-    evaluation: [],
-    evaluationTrace: [''],
-    id: '',
-    script: '',
-    lookup: () => false,
-    scrollOffset: 0
+    cachedEvaluation: [],
+    cachedEvaluationTrace: ['']
   };
-  static getDerivedStateFromProps(
-    props: EvaluationViewerProps,
-    state: EvaluationViewerState
-  ): EvaluationViewerState {
-    if (props.evaluation === undefined && state !== undefined) {
+  /**
+   * EvaluationViewers are slightly stateful in that they remember the last
+   * evaluation and continue displaying it (slightly dimmed) when parse and
+   * resolve errors are occurring.
+   *
+   * The cached content gets completely reset when the evaluationTrace changes
+   * (so we don't show cached evaluations against the wrong scripts).
+   */
+  static getDerivedStateFromProps: React.GetDerivedStateFromProps<
+    EvaluationViewerProps,
+    EvaluationViewerState
+  > = (props: EvaluationViewerProps, state: EvaluationViewerState) => {
+    if (props.evaluationTrace.join() !== state.cachedEvaluationTrace.join()) {
       return {
-        evaluation: (state.id === props.id && state.evaluation) || [],
-        evaluationTrace: state.evaluationTrace,
-        id: state.id,
-        lookup: state.lookup,
-        script: state.script,
-        scrollOffset: props.scrollOffset
-      };
-    } else {
-      return {
-        evaluation: props.evaluation || [],
-        evaluationTrace: props.evaluationTrace,
-        id: props.id,
-        lookup: props.lookup || (() => false),
-        script: props.script,
-        scrollOffset: props.scrollOffset
+        cachedEvaluation: props.evaluation || [],
+        cachedEvaluationTrace: props.evaluationTrace,
+        cachedLookup: props.lookup
       };
     }
-  }
+    if (props.evaluation && props.evaluation.length !== 0) {
+      return {
+        cachedEvaluation: props.evaluation,
+        cachedLookup: props.lookup
+      };
+    }
+    return null;
+  };
 
   render() {
     return (
       <div className="EvaluationViewer">
         <div
-          className={
-            this.props.script === this.state.script &&
-            this.state.evaluationTrace.join() ===
-              this.props.evaluationTrace.join()
-              ? 'content'
-              : 'content cached'
-          }
+          className={`content${
+            typeof this.props.evaluation === 'undefined' &&
+            this.state.cachedEvaluation.length !== 0
+              ? ' cached'
+              : ''
+          }`}
         >
-          {this.state.evaluation.length > 0 && (
+          {this.state.cachedEvaluation.length > 0 ? (
             <div>
               <div
-                className={`initial-state ${
-                  this.state.scrollOffset !== 0 ? 'scroll-decoration' : ''
+                className={`header-bar ${
+                  this.props.scrollOffset !== 0 ? 'scroll-decoration' : ''
                 }`}
               >
-                <EvaluationLine
-                  line={this.state.evaluation[0]}
-                  lineIndex={0}
-                  error={Errors.none}
-                  lookup={this.state.lookup}
-                />
+                <div className="header-bar-content">
+                  <EvaluationLine
+                    line={this.state.cachedEvaluation[0]}
+                    lineIndex={0}
+                    error={Errors.none}
+                    lookup={this.state.cachedLookup}
+                  />
+                </div>
               </div>
 
               <div
                 className="evaluation"
-                style={{ marginTop: -this.state.scrollOffset }}
+                style={{ marginTop: -this.props.scrollOffset }}
               >
-                {this.state.evaluation
+                {this.state.cachedEvaluation
                   .slice(1)
                   .map((line, lineIndex, lines) => (
                     <EvaluationLine
@@ -243,11 +246,33 @@ export class EvaluationViewer extends React.Component<
                             : Errors.current
                           : Errors.none
                       }
-                      lookup={this.state.lookup}
+                      lookup={this.state.cachedLookup}
                     />
                   ))}
               </div>
             </div>
+          ) : this.props.compilation.success === false ? (
+            <div className="compilation-error-without-cache">
+              <div className="header-bar">
+                <div className="header-bar-content">
+                  There{' '}
+                  {this.props.compilation.errors.length === 1
+                    ? 'is an error'
+                    : `are ${this.props.compilation.errors.length} errors`}{' '}
+                  preventing compilation:
+                </div>
+              </div>
+              <ul className="list">
+                {this.props.compilation.errors.map(({ error, range }) => (
+                  <li key={error}>
+                    <span className="error-message">{error}</span>
+                    <span className="line-and-column">{`[${range.startLineNumber},${range.startColumn}]`}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="header-bar"></div>
           )}
         </div>
       </div>

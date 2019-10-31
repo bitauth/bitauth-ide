@@ -684,6 +684,7 @@ export const Editor = connect(
                 />
               ) : (
                 <EvaluationViewer
+                  compilation={computed.scriptEditorFrames[i].compilation}
                   evaluation={computed.scriptEditorFrames[i].evaluation}
                   evaluationTrace={computed.scriptEditorEvaluationTrace}
                   id={computed.scriptEditorFrames[i].id}
