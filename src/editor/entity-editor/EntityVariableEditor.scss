@@ -24,6 +24,8 @@
 
     .description {
       padding: 24px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .add-variable {
