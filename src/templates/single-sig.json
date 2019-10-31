@@ -1,4 +1,5 @@
 {
+  "$schema": "https://bitauth.com/schemas/authentication-template-v0.schema.json",
   "description": "A standard single-factor authentication template which uses Pay-to-Public-Key-Hash (P2PKH).\n\nThis is currently the most common template in use on the network.",
   "name": "Single Signature (P2PKH)",
   "entities": {

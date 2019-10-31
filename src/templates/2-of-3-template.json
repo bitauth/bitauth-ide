@@ -1,4 +1,5 @@
 {
+  "$schema": "https://bitauth.com/schemas/authentication-template-v0.schema.json",
   "description": "Transactions require any two of three co-owners to sign (using a simple 2-of-3 multi-signature P2SH script).",
   "name": "2-of-3 Multi-Signature",
   "entities": {
@@ -8,7 +9,7 @@
       "scripts": ["safety_number", "lock", "1_and_2", "1_and_3"],
       "variables": {
         "key1": {
-          "mock": "1111111111111111111111111111111111111111111111111111111111111111",
+          "mock": "0x1111111111111111111111111111111111111111111111111111111111111111",
           "name": "Cosigner 1's Key",
           "type": "Key"
         }
@@ -20,7 +21,7 @@
       "scripts": ["safety_number", "lock", "1_and_2", "2_and_3"],
       "variables": {
         "key2": {
-          "mock": "1111111111111111111111111111111111111111111111111111111111111112",
+          "mock": "0x1111111111111111111111111111111111111111111111111111111111111112",
           "name": "Cosigner 2's Key",
           "type": "Key"
         }
@@ -32,7 +33,7 @@
       "scripts": ["safety_number", "lock", "1_and_3", "2_and_3"],
       "variables": {
         "key3": {
-          "mock": "1111111111111111111111111111111111111111111111111111111111111113",
+          "mock": "0x1111111111111111111111111111111111111111111111111111111111111113",
           "name": "Cosigner 3's Key",
           "type": "Key"
         }
