@@ -9,10 +9,11 @@ import {
   Icon,
   FileInput,
   Alert,
-  Intent
+  Intent,
+  HTMLSelect
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { ActiveDialog, AppState } from '../../../state/types';
+import { ActiveDialog, AppState, IDETemplate } from '../../../state/types';
 import MonacoEditor from 'react-monaco-editor';
 import {
   monacoOptions,
@@ -20,11 +21,18 @@ import {
   prepMonaco
 } from '../../script-editor/monaco-config';
 import { connect } from 'react-redux';
-import { stringify, utf8ToBin, binToBase64 } from 'bitcoin-ts';
+import {
+  stringify,
+  utf8ToBin,
+  binToBase64,
+  AuthenticationTemplate
+} from 'bitcoin-ts';
 import {
   extractTemplate,
   importAuthenticationTemplate
 } from '../../../state/import-export';
+import { emptyTemplate } from '../../../state/defaults';
+import { localStorageBackupPrefix, backupWarningLimit } from '../../constants';
 
 const beginDownload = (filename: string, content: string) => {
   const e = document.createElement('a');
@@ -44,6 +52,9 @@ const beginDownload = (filename: string, content: string) => {
 interface ImportExportDialogProps {
   name: string;
   authenticationTemplate: string;
+  isEmptyTemplate: boolean;
+  backups: IDEBackup[];
+  restoreOptions: BackupOption[];
   activeDialog: ActiveDialog;
   closeDialog: () => any;
 }
@@ -52,12 +63,54 @@ interface ImportExportDialogDispatch {
   importTemplate: typeof ActionCreators.importTemplate;
 }
 
+type IDEBackup = {
+  date: Date;
+  template: AuthenticationTemplate;
+};
+
+type BackupOption = { label: string; value: number };
+
 export const ImportExportDialog = connect(
   (state: AppState) => {
     const template = extractTemplate(state.currentTemplate);
+    const templateAsString = stringify(template);
+    const emptyTemplateAsString = stringify(emptyTemplate);
+    const backups = Object.entries(localStorage)
+      .filter(([key, _]) => key.indexOf(localStorageBackupPrefix) === 0)
+      .map(([key, value]) => {
+        try {
+          const date = new Date(key.replace(localStorageBackupPrefix, ''));
+          const template = JSON.parse(value);
+          const attemptedParse = importAuthenticationTemplate(template);
+          if (typeof attemptedParse === 'string') {
+            throw attemptedParse;
+          }
+          return { date, template };
+        } catch (e) {
+          console.error(
+            `There seems to be a corrupted '${localStorageBackupPrefix}' value in local storage. If you need this backup, try manually editing it to ensure it is a valid Bitauth Authentication Template. Parse error:`,
+            e
+          );
+          return undefined;
+        }
+      })
+      .filter((template): template is IDEBackup => template !== undefined)
+      .sort((a, b) => b.date.getTime() - a.date.getTime()); // new to old
+    if (backups.length > backupWarningLimit) {
+      console.warn(
+        `Looks like you've been using Bitauth IDE a lot! Just a heads up – you have over ${backupWarningLimit} auto-saved backups stored in local storage. That can slow down template imports and exports. Once you've exported everything you need, we recommend you clean things up by clearing your local storage:\nlocalStorage.clear();`
+      );
+    }
+    const restoreOptions: BackupOption[] = backups.map((backup, i) => ({
+      label: `${backup.date.toLocaleString()} – ${backup.template.name}`,
+      value: i
+    }));
     return {
       name: template.name || 'unnamed',
-      authenticationTemplate: stringify(template)
+      authenticationTemplate: templateAsString,
+      isEmptyTemplate: templateAsString === emptyTemplateAsString,
+      backups,
+      restoreOptions
     };
   },
   {
@@ -67,6 +120,8 @@ export const ImportExportDialog = connect(
   const [errorMessage, setErrorMessage] = useState('');
   const [fileName, updateFileName] = useState('');
   const [template, updateTemplate] = useState(props.authenticationTemplate);
+  const [restoringFromBackup, setRestoringFromBackup] = useState(false);
+  const [selectedBackup, setSelectedBackup] = useState(0);
   const [hasErrors, setHasErrors] = useState(false);
   const [importedTemplate, setImportedTemplate] = useState<
     AppState['currentTemplate'] | undefined
@@ -88,48 +143,63 @@ export const ImportExportDialog = connect(
     >
       <div className={Classes.DIALOG_BODY}>
         <div className="actions">
-          <Button
-            className="action"
-            disabled={template !== props.authenticationTemplate}
-            onClick={() => {
-              beginDownload(
-                `${props.name
-                  .toLowerCase()
-                  .trim()
-                  .replace(/\s/g, '_')
-                  .replace(/[^\.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
-                props.authenticationTemplate
-              );
-            }}
-          >
-            Download Template
-          </Button>
-          <FileInput
-            className="action import-input"
-            text={fileName !== '' ? fileName : 'Load from file...'}
-            inputProps={{ accept: 'application/json' }}
-            onInputChange={e => {
-              const input = e.target as HTMLInputElement;
-              if (!input.files) {
-                return;
-              }
-              const file = input.files[0];
-              updateFileName(file.name);
-              const reader = new FileReader();
-              reader.onload = () => {
-                if (!reader.result) {
-                  window.alert('The imported file appears to be empty.');
+          {/* TODO: only show download button if not the empty template – if is the empty template, show message telling the user to paste in the template below or load from a file.*/
+          props.isEmptyTemplate ? (
+            <p>Paste a template below to import.</p>
+          ) : (
+            <Button
+              className="action"
+              disabled={template !== props.authenticationTemplate}
+              onClick={() => {
+                beginDownload(
+                  `${props.name
+                    .toLowerCase()
+                    .trim()
+                    .replace(/\s/g, '_')
+                    .replace(/[^\.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
+                  props.authenticationTemplate
+                );
+              }}
+            >
+              Download Template
+            </Button>
+          )}
+          <div className="actions-right">
+            <Button
+              className="action"
+              onClick={() => {
+                setRestoringFromBackup(true);
+              }}
+            >
+              Restore from Autosave
+            </Button>
+            <FileInput
+              className="action import-input"
+              text={fileName !== '' ? fileName : 'Load from file...'}
+              inputProps={{ accept: 'application/json' }}
+              onInputChange={e => {
+                const input = e.target as HTMLInputElement;
+                if (!input.files) {
                   return;
                 }
-                try {
-                  updateTemplate(reader.result.toString());
-                } catch (e) {
-                  setErrorMessage(e);
-                }
-              };
-              reader.readAsText(file);
-            }}
-          />
+                const file = input.files[0];
+                updateFileName(file.name);
+                const reader = new FileReader();
+                reader.onload = () => {
+                  if (!reader.result) {
+                    window.alert('The imported file appears to be empty.');
+                    return;
+                  }
+                  try {
+                    updateTemplate(reader.result.toString());
+                  } catch (e) {
+                    setErrorMessage(e);
+                  }
+                };
+                reader.readAsText(file);
+              }}
+            />
+          </div>
         </div>
         <div className="import-export-editor">
           <MonacoEditor
@@ -173,10 +243,13 @@ export const ImportExportDialog = connect(
             )}
           </div>
           <Button
-            disabled={
+            disabled={template === props.authenticationTemplate}
+            className={
               hasErrors ||
               errorMessage !== '' ||
               template === props.authenticationTemplate
+                ? 'bp3-disabled'
+                : ''
             }
             onClick={() => {
               let parsed;
@@ -198,6 +271,33 @@ export const ImportExportDialog = connect(
           </Button>
         </div>
       </div>
+      <Alert
+        cancelButtonText="Cancel"
+        confirmButtonText="Restore"
+        intent={Intent.NONE}
+        isOpen={restoringFromBackup}
+        canEscapeKeyCancel={true}
+        canOutsideClickCancel={true}
+        onCancel={() => setRestoringFromBackup(false)}
+        onConfirm={() => {
+          const template = props.backups[selectedBackup].template;
+          updateTemplate(stringify(template));
+          setRestoringFromBackup(false);
+        }}
+      >
+        <p>
+          All Bitauth IDE sessions are automatically saved to your browser.
+          Choose a session to restore below.
+        </p>
+        <HTMLSelect
+          id="backups"
+          options={props.restoreOptions}
+          value={selectedBackup}
+          onChange={e => {
+            setSelectedBackup(Number(e.currentTarget.value));
+          }}
+        />
+      </Alert>
       <Alert
         cancelButtonText="Cancel"
         confirmButtonText="Overwrite Project"

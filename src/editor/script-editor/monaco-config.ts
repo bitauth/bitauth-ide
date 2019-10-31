@@ -5,7 +5,7 @@ import {
   bitauthScriptCompletionItemProviderBCH
 } from './bch-language';
 import schemaJson from './authentication-template-v0.schema.json';
-import { bitauthAuthenticationTemplateSchema } from './constants';
+import { bitauthAuthenticationTemplateSchema } from '../constants';
 
 export const bitauthScript = 'bitauth-script';
 export const bitauthDark = 'bitauth-dark';

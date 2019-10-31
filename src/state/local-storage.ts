@@ -2,6 +2,7 @@ import { Middleware } from 'redux';
 import { extractTemplate } from './import-export';
 import { AppState } from './types';
 import { emptyTemplate } from './defaults';
+import { localStorageBackupPrefix } from '../editor/constants';
 
 let hasLogged = false;
 const emptyTemplateString = JSON.stringify(emptyTemplate);
@@ -11,7 +12,7 @@ export const automaticallySaveTemplateToLocalStorage: Middleware<
   AppState
 > = store => next => action => {
   const state = store.getState();
-  const saveKey = `BITAUTH_IDE_BACKUP_${state.appLoadTime.toISOString()}`;
+  const saveKey = `${localStorageBackupPrefix}${state.appLoadTime.toISOString()}`;
   if (!hasLogged) {
     hasLogged = true;
     console.log(

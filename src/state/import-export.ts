@@ -16,7 +16,7 @@ import {
   AuthenticationTemplateScriptTest
 } from 'bitcoin-ts';
 import { createInsecureUuidV4 } from './utils';
-import { bitauthAuthenticationTemplateSchema } from '../editor/script-editor/constants';
+import { bitauthAuthenticationTemplateSchema } from '../editor/constants';
 
 const extractPattern = (string: string, pattern: RegExp) => {
   const result = pattern.exec(string);

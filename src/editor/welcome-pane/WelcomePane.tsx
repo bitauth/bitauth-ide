@@ -18,7 +18,7 @@ import multi from '../../templates/2-of-3-template.json';
 import continuity from '../../templates/2-of-2-continuity.json';
 import zcf from '../../templates/zcf.json';
 import { importAuthenticationTemplate } from '../../state/import-export';
-import { AuthenticationTemplate, stringify } from 'bitcoin-ts';
+import { AuthenticationTemplate } from 'bitcoin-ts';
 
 const isValidTemplate = (result: IDETemplate | string): result is IDETemplate =>
   typeof result !== 'string';
@@ -45,9 +45,10 @@ const defaultTemplates = {
 };
 
 interface WelcomePaneDispatch {
-  resetTemplate: typeof ActionCreators.resetTemplate;
+  importExport: typeof ActionCreators.importExport;
   importTemplate: typeof ActionCreators.importTemplate;
   openTemplateSettings: typeof ActionCreators.openTemplateSettings;
+  resetTemplate: typeof ActionCreators.resetTemplate;
 }
 
 const templateIconSize = 12;
@@ -55,9 +56,10 @@ const templateIconSize = 12;
 export const WelcomePane = connect(
   (state: AppState) => ({}),
   {
-    resetTemplate: ActionCreators.resetTemplate,
+    importExport: ActionCreators.importExport,
     importTemplate: ActionCreators.importTemplate,
-    openTemplateSettings: ActionCreators.openTemplateSettings
+    openTemplateSettings: ActionCreators.openTemplateSettings,
+    resetTemplate: ActionCreators.resetTemplate
   }
 )((props: WelcomePaneDispatch) => {
   return (
@@ -151,6 +153,21 @@ export const WelcomePane = connect(
               Empty Template &rarr;
             </h4>
             <p>A blank slate, ready for some creative genius.</p>
+          </div>
+          <div
+            className="starter-template"
+            onClick={() => {
+              props.resetTemplate();
+              props.importExport();
+              //
+              // props.openTemplateSettings();
+            }}
+          >
+            <h4>
+              <Icon icon={IconNames.REPEAT} iconSize={templateIconSize} />
+              Import or Restore Template &rarr;
+            </h4>
+            <p>Import or restore a template from a previous session.</p>
           </div>
         </div>
       </div>

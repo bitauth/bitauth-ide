@@ -8,6 +8,9 @@
     align-items: center;
     justify-content: space-between;
   }
+  .actions-right {
+    display: flex;
+  }
   .action {
     margin: 12px 12px 24px 0;
   }
@@ -19,4 +22,7 @@
 }
 .import-export-editor {
   height: 400px;
+}
+#backups {
+  width: 360px;
 }
