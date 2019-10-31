@@ -77,12 +77,12 @@ export const HeaderBar = () => {
         </h1>
         <a
           className="link github-logo"
-          href="https://github.com/bitjson/bitauth-ide"
+          href="https://github.com/bitauth/bitauth-ide/issues"
           target="_blank"
-          title="View BitAuth IDE on GitHub"
+          title="View open BitAuth IDE issues on GitHub"
         >
           <img src={GitHubLogo} alt="logo" />
-          Bugs
+          Report Bug
         </a>
         {wrapInterfaceTooltip(
           <a
