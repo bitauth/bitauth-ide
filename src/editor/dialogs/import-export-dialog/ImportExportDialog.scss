@@ -19,10 +19,10 @@
       background: var(--interface-background-color);
     }
   }
+  .restore-dialog {
+    width: 600px;
+  }
 }
 .import-export-editor {
   height: 400px;
-}
-#backups {
-  width: 360px;
 }

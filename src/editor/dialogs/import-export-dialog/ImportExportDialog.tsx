@@ -272,6 +272,7 @@ export const ImportExportDialog = connect(
         </div>
       </div>
       <Alert
+        className="restore-dialog"
         cancelButtonText="Cancel"
         confirmButtonText="Restore"
         intent={Intent.NONE}
@@ -291,6 +292,7 @@ export const ImportExportDialog = connect(
         </p>
         <HTMLSelect
           id="backups"
+          className="bp3-fill"
           options={props.restoreOptions}
           value={selectedBackup}
           onChange={e => {
