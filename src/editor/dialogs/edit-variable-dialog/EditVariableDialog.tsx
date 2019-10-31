@@ -20,8 +20,14 @@ import {
   HTMLSelect
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { sanitizeId, variableIcon, wrapInterfaceTooltip } from '../../common';
+import {
+  sanitizeId,
+  variableIcon,
+  wrapInterfaceTooltip,
+  compileScriptMock
+} from '../../common';
 import { unknownValue } from '../../../utils';
+import { CompilationResultError, binToHex } from 'bitcoin-ts';
 
 const variableTypes: {
   label: string;
@@ -106,19 +112,27 @@ const variableTypeDescriptions: {
   )
 };
 
-const isValidHex = (value: string) => value.length % 2 === 0;
-
 /**
  * The key must be 32 bytes (64 hex characters), and it must be less than or equal to:
  * `0xFFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFE BAAE DCE6 AF48 A03B BFD2 5E8C D036 4140`
- *
- * Because this is only for testing, we just disallow keys with more than 31 `f`
- * characters. 😄
+ *  TODO: update
  */
-const isValidEnoughPrivateKey = (key: string) =>
-  key.length === 64 && key.toLowerCase().split('f').length < 32;
+const isValidEnoughPrivateKey = (key: string) => true;
 
-const ones = '1111111111111111111111111111111111111111111111111111111111111111';
+const onesKey =
+  '0x1111111111111111111111111111111111111111111111111111111111111111';
+
+const compilationErrorToString = (
+  errors: CompilationResultError<{}>['errors']
+) =>
+  errors
+    .map(
+      ({ error, range }) =>
+        `${error} (${
+          range.startLineNumber !== 1 ? `Line: ${range.startLineNumber} ` : ''
+        }Column: ${range.startColumn})`
+    )
+    .join(', ');
 
 export const EditVariableDialog = ({
   entity,
@@ -150,8 +164,10 @@ export const EditVariableDialog = ({
     (variable && variable.type) || 'Key'
   );
   const [variableMock, setVariableMock] = useState(
-    (variable && variable.mock) || ones
+    (variable && variable.mock) || onesKey
   );
+  const [variableMockHex, setVariableMockHex] = useState('');
+  const [variableMockError, setVariableMockError] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
   return (
@@ -162,7 +178,9 @@ export const EditVariableDialog = ({
         setVariableDescription((variable && variable.description) || '');
         setVariableId((variable && variable.id) || '');
         setVariableType((variable && variable.type) || 'Key');
-        setVariableMock((variable && variable.mock) || ones);
+        setVariableMock((variable && variable.mock) || onesKey);
+        setVariableMockHex('');
+        setVariableMockError('');
         setNonUniqueId('');
       }}
       onClose={() => {
@@ -274,21 +292,31 @@ export const EditVariableDialog = ({
             <FormGroup
               helperText={
                 <span>
+                  {variableMockError !== '' ? (
+                    <p>{variableMockError}</p>
+                  ) : (
+                    variableMockHex !== '' && (
+                      <p>
+                        Result: <code>0x{variableMockHex}</code>
+                      </p>
+                    )
+                  )}
                   {variableType === 'Key' ? (
                     <p>
-                      A valid, testing private key encoded as a hexadecimal
-                      value. (This will be 64 characters, and it must fall
-                      within the range for Secp256k1.)
+                      A valid, testing private key encoded in BTL. (E.g. as a
+                      HexLiteral, this will be
+                      <code>0x[64 characters]</code>. Test values must fall
+                      within the allowed range for Secp256k1.)
                     </p>
-                  ) : variableType === 'WalletData' ? (
+                  ) : variableType === 'WalletData' ||
+                    variableType === 'AddressData' ? (
                     <p>
-                      A testing value for the Wallet Data, encoded as a
-                      hexadecimal value.
-                    </p>
-                  ) : variableType === 'AddressData' ? (
-                    <p>
-                      A testing value for the Address Data, encoded as a
-                      hexadecimal value.
+                      A testing value for this{' '}
+                      {variableType === 'AddressData' ? 'Address' : 'Wallet'}{' '}
+                      Data, encoded in BTL. E.g. a bigint literal like{' '}
+                      <code>123</code>, a hex literal like <code>0xc0de</code>,
+                      a UTF8 string like <code>'test'</code>, or even a push
+                      like <code>&lt;"abc"&gt;</code>.
                     </p>
                   ) : (
                     ''
@@ -309,9 +337,19 @@ export const EditVariableDialog = ({
                 autoComplete="off"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const value = e.target.value;
-                  setVariableMock(
-                    value.toLowerCase().replace(/[^0-9a-f]*/g, '')
-                  );
+                  setVariableMock(value);
+                  const compiled = compileScriptMock(value);
+                  if (compiled.success) {
+                    setVariableMockError('');
+                    setVariableMockHex(binToHex(compiled.bytecode));
+                  } else {
+                    console.error(compiled);
+                    setVariableMockError(
+                      `Compilation error${
+                        compiled.errors.length > 1 ? 's' : ''
+                      }: ${compilationErrorToString(compiled.errors)}`
+                    );
+                  }
                 }}
               />
             </FormGroup>
@@ -364,7 +402,7 @@ export const EditVariableDialog = ({
             disabled={
               variableId === '' ||
               variableMock === '' ||
-              !isValidHex(variableMock) ||
+              variableMockError !== '' ||
               (variableType === 'Key' &&
                 !isValidEnoughPrivateKey(variableMock)) ||
               variableType === 'HDKey'

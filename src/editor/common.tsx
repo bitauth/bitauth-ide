@@ -9,6 +9,7 @@ import {
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../utils';
 import { Tooltip, Position } from '@blueprintjs/core';
+import { compileScriptText } from 'bitcoin-ts';
 
 /**
  * RegExp(`[a-zA-Z_][\.a-zA-Z0-9_-]*`)
@@ -87,3 +88,6 @@ export const variableIcon = (type: IDEVariable['type']) => {
       return unknownValue(type);
   }
 };
+
+export const compileScriptMock = (script: string) =>
+  compileScriptText(script, {}, { scripts: {} });

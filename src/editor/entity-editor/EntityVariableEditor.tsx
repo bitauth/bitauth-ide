@@ -7,7 +7,6 @@ import {
   CurrentVariables,
   IDEVariable
 } from '../../state/types';
-import { unknownValue } from '../../utils';
 import { Card, Elevation, Icon } from '@blueprintjs/core';
 import { EditVariableDialog } from '../dialogs/edit-variable-dialog/EditVariableDialog';
 import {
@@ -23,24 +22,6 @@ const variableName = (variable: IDEVariable) =>
     : variable.type === 'CurrentBlockTime'
     ? 'Current Block Time'
     : variable.name;
-
-const variableInitialDescription = (type: IDEVariable['type']) => {
-  switch (type) {
-    case 'WalletData':
-    case 'AddressData':
-      return '';
-    case 'CurrentBlockHeight':
-      return '';
-    case 'CurrentBlockTime':
-      return '';
-    case 'HDKey':
-      return '';
-    case 'Key':
-      return '';
-    default:
-      return unknownValue(type);
-  }
-};
 
 interface EntityVariablesProps {
   entityInternalId: string;
@@ -80,7 +61,6 @@ export const EntityVariableEditor = connect(
         {props.entity.variableInternalIds.map(internalId => {
           const variable = props.variablesByInternalId[internalId];
           const name = variableName(variable);
-          // const description =
           return (
             <Card
               key={internalId}

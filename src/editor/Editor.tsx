@@ -53,7 +53,11 @@ import { ActionCreators } from '../state/reducer';
 import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
 import { EntitySettingsEditor } from './entity-editor/EntitySettingsEditor';
 import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
-import { getCurrentScripts, getCurrentEntities } from './common';
+import {
+  getCurrentScripts,
+  getCurrentEntities,
+  compileScriptMock
+} from './common';
 import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
 import { TemplateSettings } from './template-settings/TemplateSettings';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
@@ -230,13 +234,6 @@ const getSourceScripts = (
 const currentBlock = 561171;
 const currentTimeUTC = 1549166880000; // "current" – just a reasonable, static time for determinism
 
-export const compileScriptMock = (script: string) => {
-  const result = compileScriptText(`0x${script}`, {}, { scripts: {} });
-  return result.success
-    ? result.bytecode
-    : console.error('compileScriptMock failure:', result);
-};
-
 const getIDECompilationData = (
   state: AppState
 ): CompilationData<CompilerOperationDataBCH> => {
@@ -254,7 +251,13 @@ const getIDECompilationData = (
       case 'AddressData':
       case 'WalletData':
         const mock = compileScriptMock(variable.mock);
-        if (mock === undefined) {
+        if (mock.success !== true) {
+          console.error(
+            'Unexpected variable mock compilation error. Variable:',
+            variable,
+            'Result:',
+            mock
+          );
           return data;
         }
         switch (variable.type) {
@@ -265,7 +268,7 @@ const getIDECompilationData = (
               keys: {
                 privateKeys: {
                   ...privateKeys,
-                  [variable.id]: mock
+                  [variable.id]: mock.bytecode
                 }
               }
             };
@@ -275,7 +278,7 @@ const getIDECompilationData = (
               ...data,
               addressData: {
                 ...addressData,
-                [variable.id]: mock
+                [variable.id]: mock.bytecode
               }
             };
           case 'WalletData':
@@ -284,7 +287,7 @@ const getIDECompilationData = (
               ...data,
               walletData: {
                 ...walletData,
-                [variable.id]: mock
+                [variable.id]: mock.bytecode
               }
             };
         }
