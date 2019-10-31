@@ -204,8 +204,8 @@ export class EvaluationViewer extends React.Component<
             this.props.script === this.state.script &&
             this.state.evaluationTrace.join() ===
               this.props.evaluationTrace.join()
-              ? ''
-              : 'cached'
+              ? 'content'
+              : 'content cached'
           }
         >
           {this.state.evaluation.length > 0 && (

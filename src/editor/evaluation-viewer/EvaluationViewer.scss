@@ -5,8 +5,12 @@ $hex-color: #5bb498;
 .EvaluationViewer {
   background: var(--stack-vis-background-color);
   line-height: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
 
-  overflow: hidden;
+  .content {
+    white-space: nowrap;
+  }
 
   .cached {
     opacity: 0.5;
@@ -19,9 +23,21 @@ $hex-color: #5bb498;
     margin: 0 0 4px;
     padding: #{$initialStateVerticalPadding}px 0;
     height: #{$initialStateHeight}px;
-    background: var(--editor-background-color);
     box-sizing: initial;
-    position: relative;
+
+    &:before {
+      content: '';
+      height: 30px;
+      width: 100%;
+      background: var(--editor-background-color);
+      position: fixed;
+      margin-top: -8px;
+      z-index: 0;
+    }
+    & > .state {
+      z-index: 1;
+      position: relative;
+    }
   }
 
   .scroll-decoration:after {
