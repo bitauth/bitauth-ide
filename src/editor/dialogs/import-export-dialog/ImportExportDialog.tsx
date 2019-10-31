@@ -123,7 +123,7 @@ export const ImportExportDialog = connect(
   const [restoringFromBackup, setRestoringFromBackup] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState(0);
   const [hasErrors, setHasErrors] = useState(false);
-  const [importedTemplate, setImportedTemplate] = useState<
+  const [promptForImportOfTemplate, setPromptForImportOfTemplate] = useState<
     AppState['currentTemplate'] | undefined
   >(undefined);
   return (
@@ -262,7 +262,13 @@ export const ImportExportDialog = connect(
               if (typeof result === 'string') {
                 setErrorMessage(result);
               } else {
-                setImportedTemplate(result);
+                if (props.isEmptyTemplate) {
+                  // no need to prompt the user about overwriting an empty template
+                  props.importTemplate(result);
+                  props.closeDialog();
+                } else {
+                  setPromptForImportOfTemplate(result);
+                }
               }
               //
             }}
@@ -304,13 +310,13 @@ export const ImportExportDialog = connect(
         cancelButtonText="Cancel"
         confirmButtonText="Overwrite Project"
         intent={Intent.DANGER}
-        isOpen={importedTemplate !== undefined}
+        isOpen={promptForImportOfTemplate !== undefined}
         canEscapeKeyCancel={true}
         canOutsideClickCancel={true}
-        onCancel={() => setImportedTemplate(undefined)}
+        onCancel={() => setPromptForImportOfTemplate(undefined)}
         onConfirm={() => {
-          props.importTemplate(importedTemplate!);
-          setImportedTemplate(undefined);
+          props.importTemplate(promptForImportOfTemplate!);
+          setPromptForImportOfTemplate(undefined);
           props.closeDialog();
         }}
       >
