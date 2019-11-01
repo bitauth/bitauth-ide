@@ -310,7 +310,7 @@ export const EditVariableDialog = ({
                     ''
                   )}
                   <p>
-                    This is used during development in BitAuth IDE, and is
+                    This is used during development in Bitauth IDE, and is
                     exported as part of the authentication template.
                   </p>
                 </span>

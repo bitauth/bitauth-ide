@@ -12,7 +12,7 @@ import {
 export enum IDEMode {
   /**
    * The primary editing mode – an interactive editor and omniscient debugger
-   * for BitAuth templates.
+   * for Bitauth templates.
    */
   editor = 'editor',
   /**
@@ -55,7 +55,7 @@ export interface IDETemplateScriptBase {
    */
   name: string;
   /**
-   * The script, in the BitAuth Templating Language (BTL).
+   * The script, in the Bitauth Templating Language (BTL).
    */
   script: string;
   /**
@@ -126,7 +126,7 @@ export interface IDETemplateTestCheckScript extends IDETemplateScriptBase {
 /**
  * All the script types which are permitted to be "activated" in the editor.
  *
- * In BitAuth IDE, `test-check` scripts are currently tightly-coupled with their
+ * In Bitauth IDE, `test-check` scripts are currently tightly-coupled with their
  * sibling `test-setup` scripts. (So the same `test-setup` and `test-check`
  * should always be edited together.) For simplicity, we refer to the pair by
  * it's `test-setup` script.
@@ -202,7 +202,11 @@ export enum ActiveDialog {
   /**
    * The dialog to create a new script by importing.
    */
-  importScript
+  importScript,
+  /**
+   * A dialog with guides and help content.
+   */
+  guide
 }
 
 export interface IDETemplate {
@@ -240,7 +244,7 @@ export interface AppState {
     | undefined;
   savedTemplates: { template: AuthenticationTemplate; savedDate: Date }[];
   /**
-   * The state of the BitAuth template currently open in the IDE. This is stored
+   * The state of the Bitauth template currently open in the IDE. This is stored
    * in a significantly different structure than `AuthenticationTemplate`, so it
    * must be serialized and deserialized when copying in and out of the IDE.
    */

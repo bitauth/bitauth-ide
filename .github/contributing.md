@@ -1,4 +1,4 @@
-# Contributing to BitAuth IDE
+# Contributing to Bitauth IDE
 
 Pull requests are welcome! Here are some miscellaneous notes on the project.
 

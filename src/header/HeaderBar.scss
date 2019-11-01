@@ -51,7 +51,7 @@
       margin-right: 6px;
     }
   }
-  .updates {
+  .link {
     .bp3-icon {
       margin-right: 6px;
     }
@@ -64,5 +64,22 @@
     .bp3-icon-caret-down {
       color: #242b2f !important;
     }
+  }
+}
+
+.intro-popover {
+  $tooltip-background: var(--interface-background-color);
+  .bp3-popover-content {
+    max-width: 400px !important;
+    background: $tooltip-background !important;
+    color: #fff !important;
+    padding: 12px;
+  }
+  .bp3-popover-arrow-fill {
+    fill: $tooltip-background !important;
+  }
+  p {
+    margin: 0;
+    font-size: 16px;
   }
 }

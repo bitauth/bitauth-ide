@@ -47,6 +47,9 @@ class App extends ImmerReducer<AppState> {
       ? [...vms, vm]
       : vms;
   }
+  openGuide() {
+    this.draftState.activeDialog = ActiveDialog.guide;
+  }
   importExport() {
     this.draftState.activeDialog = ActiveDialog.importExport;
   }

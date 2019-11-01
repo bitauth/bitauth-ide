@@ -1,0 +1,24 @@
+.GuideDialog {
+  width: 900px; // TODO: break up content, widen dialog, implement sidebar navigation
+  padding: 2em 6em 3em;
+  font-size: initial;
+
+  h2 {
+    margin-top: 30px;
+    font-size: 24px;
+  }
+  h3 {
+    font-size: 20px;
+  }
+  p,
+  li {
+    line-height: 1.5em;
+  }
+  em {
+    font-weight: bold;
+    font-style: normal;
+  }
+  li {
+    margin-top: 10px;
+  }
+}

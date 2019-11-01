@@ -10,7 +10,7 @@
           "type": "string"
         },
         "mock": {
-          "description": "The hexadecimal string-encoded test value for this variable. This test\nvalue is used during development and can provide validation when\nimporting this template into a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
+          "description": "The BTL-encoded test value for this variable. This test value is used\nduring development and can provide validation when importing this template\ninto a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
           "type": "string"
         },
         "name": {
@@ -28,7 +28,7 @@
     },
     "AuthenticationTemplate": {
       "additionalProperties": false,
-      "description": "An `AuthenticationTemplate` (a.k.a. `BitAuth Template`) specifies a set of\nlocking scripts, unlocking scripts, and other information required to use a\ncertain authentication scheme. Templates fully describe wallets and protocols\nin a way that can be shared between software clients.",
+      "description": "An `AuthenticationTemplate` (a.k.a. `Bitauth Template`) specifies a set of\nlocking scripts, unlocking scripts, and other information required to use a\ncertain authentication scheme. Templates fully describe wallets and protocols\nin a way that can be shared between software clients.",
       "properties": {
         "$schema": {
           "description": "The URI which identifies the JSON Schema used by this template. Try:\n`https://bitauth.com/schemas/authentication-template-v0.schema.json`\nto enable documentation, autocompletion, and validation in JSON documents.",
@@ -109,7 +109,7 @@
           "type": "string"
         },
         "script": {
-          "description": "The script definition in BitAuth Script.",
+          "description": "The script definition in BTL (Bitauth Templating Language).",
           "type": "string"
         },
         "tests": {
@@ -180,7 +180,7 @@
           "type": "string"
         },
         "mock": {
-          "description": "The hexadecimal string-encoded test value for this variable. This test\nvalue is used during development and can provide validation when\nimporting this template into a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
+          "description": "The BTL-encoded test value for this variable. This test value is used\nduring development and can provide validation when importing this template\ninto a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
           "type": "string"
         },
         "name": {
@@ -204,7 +204,7 @@
           "type": "string"
         },
         "mock": {
-          "description": "The hexadecimal string-encoded test value for this variable. This test\nvalue is used during development and can provide validation when\nimporting this template into a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
+          "description": "The BTL-encoded test value for this variable. This test value is used\nduring development and can provide validation when importing this template\ninto a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
           "type": "string"
         },
         "name": {
@@ -229,7 +229,7 @@
           "type": "string"
         },
         "mock": {
-          "description": "The hexadecimal string-encoded test value for this variable. This test\nvalue is used during development and can provide validation when\nimporting this template into a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
+          "description": "The BTL-encoded test value for this variable. This test value is used\nduring development and can provide validation when importing this template\ninto a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
           "type": "string"
         },
         "name": {
@@ -265,7 +265,7 @@
           "type": "string"
         },
         "mock": {
-          "description": "The hexadecimal string-encoded test value for this variable. This test\nvalue is used during development and can provide validation when\nimporting this template into a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
+          "description": "The BTL-encoded test value for this variable. This test value is used\nduring development and can provide validation when importing this template\ninto a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
           "type": "string"
         },
         "name": {
@@ -289,7 +289,7 @@
           "type": "string"
         },
         "mock": {
-          "description": "The hexadecimal string-encoded test value for this variable. This test\nvalue is used during development and can provide validation when\nimporting this template into a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
+          "description": "The BTL-encoded test value for this variable. This test value is used\nduring development and can provide validation when importing this template\ninto a new system.\n\nWhen testing, all variables for all entities are initialized to their\n`mock` and each unlocking script is tested against the locking script,\nensuring it is able to unlock it. For inline scripts, variables are also\ninitialized to their `mock`s when evaluating inline script tests.\n\nNote, `mock` is itself defined in BTL syntax, but mock scripts do not have\naccess to evaluations, other variables, or scripts. (Hex, BigInt, and UTF8\nliterals are permissible, as well as push notation and comments.)",
           "type": "string"
         },
         "name": {

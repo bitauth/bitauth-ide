@@ -3,3 +3,6 @@ export const bitauthAuthenticationTemplateSchema =
 
 export const localStorageBackupPrefix = 'BITAUTH_IDE_BACKUP_';
 export const backupWarningLimit = 500;
+
+export const localStorageGuidePopoverDismissedKey =
+  'BITAUTH_IDE_GUIDE_POPOVER_DISMISSED';

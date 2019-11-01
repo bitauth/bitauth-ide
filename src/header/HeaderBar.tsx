@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './HeaderBar.scss';
-import { Button, MenuItem, Icon } from '@blueprintjs/core';
+import {
+  Button,
+  MenuItem,
+  Icon,
+  Popover,
+  PopoverInteractionKind
+} from '@blueprintjs/core';
 import { ItemRenderer, Select } from '@blueprintjs/select';
 import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
-import { IDEMode } from '../state/types';
+import { IDEMode, AppState, ActiveDialog } from '../state/types';
 import GitHubLogo from './github-logo.svg';
 import { IconNames } from '@blueprintjs/icons';
 import { wrapInterfaceTooltip } from '../editor/common';
+import { connect } from 'react-redux';
+import { ActionCreators } from '../state/reducer';
+import { GuideDialog } from '../editor/dialogs/guide-dialog/GuideDialog';
+import {
+  localStorageEventHasNeverHappened,
+  LocalStorageEvents
+} from '../state/local-storage';
 
 interface IDESupportedModes {
   id: IDEMode;
@@ -67,7 +80,38 @@ const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
   );
 };
 
-export const HeaderBar = () => {
+interface HeaderDispatch {
+  openGuide: typeof ActionCreators.openGuide;
+  closeDialog: typeof ActionCreators.closeDialog;
+}
+interface HeaderProps extends HeaderDispatch {
+  activeDialog: ActiveDialog;
+  isWelcomePane: boolean;
+}
+
+export const HeaderBar = connect(
+  (state: AppState) => ({
+    activeDialog: state.activeDialog,
+    isWelcomePane: state.currentEditingMode === 'welcome'
+  }),
+  {
+    openGuide: ActionCreators.openGuide,
+    closeDialog: ActionCreators.closeDialog
+  }
+)((props: HeaderProps) => {
+  const [introPopoverVisible, setIntroPopoverVisible] = useState(false);
+  useEffect(() => {
+    if (
+      props.isWelcomePane &&
+      localStorageEventHasNeverHappened(
+        LocalStorageEvents.GuidePopoverDismissed
+      )
+    ) {
+      setTimeout(() => {
+        setIntroPopoverVisible(true);
+      }, 3000);
+    }
+  }, []);
   return (
     <div className="HeaderBar">
       <div className="left-section">
@@ -75,24 +119,45 @@ export const HeaderBar = () => {
           <span className="bitauth">bitauth</span>
           <span className="ide">IDE</span>
         </h1>
-        <a
-          className="link github-logo"
-          href="https://github.com/bitauth/bitauth-ide/issues"
-          target="_blank"
-          title="View open BitAuth IDE issues on GitHub"
+        <Popover
+          portalClassName="intro-popover"
+          content={<p>New to Bitauth IDE? Check out the guide!</p>}
+          interactionKind={PopoverInteractionKind.CLICK}
+          isOpen={introPopoverVisible}
+          onInteraction={state => {
+            if (state === false) {
+              setIntroPopoverVisible(false);
+            }
+          }}
         >
-          <img src={GitHubLogo} alt="logo" />
-          Report Bug
-        </a>
+          {wrapInterfaceTooltip(
+            <a className="link" onClick={() => props.openGuide()}>
+              <Icon icon={IconNames.MANUAL} iconSize={12} /> Guide
+            </a>,
+            'Open the Bitauth IDE guide.'
+          )}
+        </Popover>
         {wrapInterfaceTooltip(
           <a
-            className="link updates"
+            className="link github-logo"
+            href="https://github.com/bitauth/bitauth-ide/issues"
+            target="_blank"
+          >
+            <img src={GitHubLogo} alt="logo" />
+            Report a bug
+          </a>,
+          'Please report bugs in our GitHub issue tracker →'
+        )}
+
+        {wrapInterfaceTooltip(
+          <a
+            className="link"
             href="https://twitter.com/bitauth"
             target="_blank"
           >
-            <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Updates
+            <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Get updates
           </a>,
-          'Get updates about BitAuth IDE on Twitter →'
+          'Get updates about Bitauth IDE on Twitter →'
         )}
       </div>
       <div className="right-section">
@@ -123,6 +188,10 @@ export const HeaderBar = () => {
           </VirtualMachineSelect>
         </div>
       </div>
+      <GuideDialog
+        activeDialog={props.activeDialog}
+        closeDialog={props.closeDialog}
+      />
     </div>
   );
-};
+});

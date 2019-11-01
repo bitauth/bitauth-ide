@@ -22,7 +22,7 @@ import { unknownValue } from '../../utils';
 
 // cspell:ignore cbitcoin cwindow
 console.log(
-  `%cWelcome to BitAuth IDE!
+  `%cWelcome to Bitauth IDE!
   
 %cThe %cbitcoin-ts%c library is available at %cb%c (%cwindow.b%c).
 You can click a line in the evaluation viewer to inspect the program state at that point in the evaluation.
