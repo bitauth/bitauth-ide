@@ -264,7 +264,9 @@ export class EvaluationViewer extends React.Component<
               </div>
               <ul className="list">
                 {this.props.compilation.errors.map(({ error, range }) => (
-                  <li key={error}>
+                  <li
+                    key={`${error}${range.startLineNumber}${range.endLineNumber}${range.startColumn}${range.endColumn}`}
+                  >
                     <span className="error-message">{error}</span>
                     <span className="line-and-column">{`[${range.startLineNumber},${range.startColumn}]`}</span>
                   </li>
