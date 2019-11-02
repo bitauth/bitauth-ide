@@ -15,7 +15,8 @@ import {
   ScriptType,
   ActiveDialog,
   CurrentScripts,
-  CurrentEntities
+  CurrentEntities,
+  VariableDetails
 } from '../state/types';
 import {
   OpcodesBCH,
@@ -31,7 +32,8 @@ import {
   AuthenticationProgramStateBCH,
   SampledEvaluationResult,
   getCompilerOperationsBCH,
-  compileScriptText
+  compileScriptText,
+  AuthenticationTemplateVariable
 } from 'bitcoin-ts';
 import {
   getResolvedVariables,
@@ -170,6 +172,7 @@ interface EditorStateScriptMode<ProgramState extends IDESupportedProgramState> {
    * StackItemIdentifyFunction can continue to be used.)
    */
   identifyStackItems: StackItemIdentifyFunction | undefined;
+  variableDetails: VariableDetails;
 }
 
 const formatScript = (
@@ -360,25 +363,23 @@ const computeEditorState = <
       externalState
     );
   const createState = createCreateStateWithStack([]);
+  const scripts = Object.values(
+    state.currentTemplate.scriptsByInternalId
+  ).reduce(
+    (scripts, ideScript) => ({ ...scripts, [ideScript.id]: ideScript.script }),
+    {}
+  );
+  const variables = Object.values(
+    state.currentTemplate.variablesByInternalId
+  ).reduce(
+    (variables, variable) => ({ ...variables, [variable.id]: variable }),
+    {}
+  );
   const compiler = createCompiler<CompilerOperationDataBCH, ProgramState>({
     opcodes: bitcoinCashOpcodeIdentifiers,
     operations: getCompilerOperationsBCH(),
-    variables: Object.values(
-      state.currentTemplate.variablesByInternalId
-    ).reduce(
-      (variables, variable) => ({
-        ...variables,
-        [variable.id]: variable
-      }),
-      {}
-    ),
-    scripts: Object.values(state.currentTemplate.scriptsByInternalId).reduce(
-      (scripts, ideScript) => ({
-        ...scripts,
-        [ideScript.id]: ideScript.script
-      }),
-      {}
-    ),
+    variables,
+    scripts,
     secp256k1: crypto.secp256k1,
     sha256: crypto.sha256,
     vm,
@@ -521,12 +522,42 @@ const computeEditorState = <
             )
           );
 
+    /**
+     * Map variable InternalIds to entity InternalIds
+     */
+    const variableOwnership: {
+      [variableInternalId: string]: string;
+    } = Object.entries(state.currentTemplate.entitiesByInternalId).reduce(
+      (previous, [entityInternalId, content]) =>
+        content.variableInternalIds
+          .map(variableInternalId => ({
+            [variableInternalId]: entityInternalId
+          }))
+          .reduce((done, next) => ({ ...done, ...next }), { ...previous }),
+      {}
+    );
+    const variableDetails: VariableDetails = Object.entries(
+      state.currentTemplate.variablesByInternalId
+    ).reduce((variables, [internalId, variable]) => {
+      const entity =
+        state.currentTemplate.entitiesByInternalId[
+          variableOwnership[internalId]
+        ];
+      return {
+        ...variables,
+        [variable.id]: {
+          variable,
+          entity: { name: entity.name, id: entity.id }
+        }
+      };
+    }, {});
     return {
       editorMode,
       isP2sh,
       identifyStackItems,
       scriptEditorEvaluationTrace,
-      scriptEditorFrames
+      scriptEditorFrames,
+      variableDetails
     };
   } catch (e) {
     console.error('Encountered an unexpected compiler error:', e);
@@ -675,8 +706,9 @@ export const Editor = connect(
                   script={computed.scriptEditorFrames[i].script}
                   scriptType={computed.scriptEditorFrames[i].scriptType}
                   compilation={computed.scriptEditorFrames[i].compilation}
+                  variableDetails={computed.variableDetails}
                   isP2SH={computed.isP2sh}
-                  update={props.updateScript}
+                  updateScript={props.updateScript}
                   currentScripts={props.currentScripts}
                   setScrollOffset={setScrollOffset[i]}
                   editScript={props.editScript}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './EvaluationViewer.scss';
 import {
   binToHex,
@@ -146,7 +146,7 @@ const EvaluationLine = ({
   </div>
 );
 
-interface EvaluationViewerProps {
+export const EvaluationViewer = (props: {
   compilation: CompilationResult;
   evaluation?: Evaluation;
   evaluationTrace: string[];
@@ -154,130 +154,98 @@ interface EvaluationViewerProps {
   lookup?: StackItemIdentifyFunction;
   script: string;
   scrollOffset: number;
-}
+}) => {
+  const [cachedEvaluation, setCachedEvaluation] = useState([] as Evaluation);
+  const [cachedEvaluationTrace, setCachedEvaluationTrace] = useState(['']);
+  const [cachedLookup, setCachedLookup] = useState<
+    StackItemIdentifyFunction | undefined
+  >(() => false as false);
 
-interface EvaluationViewerState {
-  cachedEvaluationTrace: string[];
-  cachedEvaluation: Evaluation;
-  cachedLookup?: StackItemIdentifyFunction;
-}
-
-export class EvaluationViewer extends React.Component<
-  EvaluationViewerProps,
-  EvaluationViewerState
-> {
-  state: EvaluationViewerState = {
-    cachedEvaluation: [],
-    cachedEvaluationTrace: ['']
-  };
-  /**
-   * EvaluationViewers are slightly stateful in that they remember the last
-   * evaluation and continue displaying it (slightly dimmed) when parse and
-   * resolve errors are occurring.
-   *
-   * The cached content gets completely reset when the evaluationTrace changes
-   * (so we don't show cached evaluations against the wrong scripts).
-   */
-  static getDerivedStateFromProps: React.GetDerivedStateFromProps<
-    EvaluationViewerProps,
-    EvaluationViewerState
-  > = (props: EvaluationViewerProps, state: EvaluationViewerState) => {
-    if (props.evaluationTrace.join() !== state.cachedEvaluationTrace.join()) {
-      return {
-        cachedEvaluation: props.evaluation || [],
-        cachedEvaluationTrace: props.evaluationTrace,
-        cachedLookup: props.lookup
-      };
-    }
+  if (props.evaluationTrace.join() !== cachedEvaluationTrace.join()) {
     if (props.evaluation && props.evaluation.length !== 0) {
-      return {
-        cachedEvaluation: props.evaluation,
-        cachedLookup: props.lookup
-      };
+      setCachedEvaluation(props.evaluation);
+      setCachedLookup(props.lookup);
+    } else {
+      setCachedEvaluation([]);
+      setCachedLookup(() => false as false);
     }
-    return null;
-  };
-
-  render() {
-    return (
-      <div className="EvaluationViewer">
-        <div
-          className={`content${
-            typeof this.props.evaluation === 'undefined' &&
-            this.state.cachedEvaluation.length !== 0
-              ? ' cached'
-              : ''
-          }`}
-        >
-          {this.state.cachedEvaluation.length > 0 ? (
-            <div>
-              <div
-                className={`header-bar ${
-                  this.props.scrollOffset !== 0 ? 'scroll-decoration' : ''
-                }`}
-              >
-                <div className="header-bar-content">
-                  <EvaluationLine
-                    line={this.state.cachedEvaluation[0]}
-                    lineIndex={0}
-                    error={Errors.none}
-                    lookup={this.state.cachedLookup}
-                  />
-                </div>
-              </div>
-
-              <div
-                className="evaluation"
-                style={{ marginTop: -this.props.scrollOffset }}
-              >
-                {this.state.cachedEvaluation
-                  .slice(1)
-                  .map((line, lineIndex, lines) => (
-                    <EvaluationLine
-                      key={lineIndex}
-                      lineIndex={lineIndex + 1}
-                      line={line}
-                      error={
-                        line.state && line.state.error
-                          ? lines[lineIndex - 1] &&
-                            lines[lineIndex - 1].state &&
-                            typeof lines[lineIndex - 1].state.error === 'string'
-                            ? Errors.past
-                            : Errors.current
-                          : Errors.none
-                      }
-                      lookup={this.state.cachedLookup}
-                    />
-                  ))}
-              </div>
-            </div>
-          ) : this.props.compilation.success === false ? (
-            <div className="compilation-error-without-cache">
-              <div className="header-bar">
-                <div className="header-bar-content">
-                  There{' '}
-                  {this.props.compilation.errors.length === 1
-                    ? 'is an error'
-                    : `are ${this.props.compilation.errors.length} errors`}{' '}
-                  preventing compilation:
-                </div>
-              </div>
-              <ul className="list">
-                {this.props.compilation.errors.map(({ error, range }) => (
-                  <li
-                    key={`${error}${range.startLineNumber}${range.endLineNumber}${range.startColumn}${range.endColumn}`}
-                  >
-                    <span className="error-message">{error}</span>
-                    <span className="line-and-column">{`[${range.startLineNumber},${range.startColumn}]`}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div className="header-bar"></div>
-          )}
-        </div>
-      </div>
-    );
+    setCachedEvaluationTrace(props.evaluationTrace);
   }
-}
+
+  const useCached =
+    typeof props.evaluation === 'undefined' && cachedEvaluation.length !== 0;
+  const evaluation = useCached ? cachedEvaluation : props.evaluation;
+  const lookup = useCached ? cachedLookup : props.lookup;
+
+  return (
+    <div className="EvaluationViewer">
+      <div className={`content${useCached ? ' cached' : ''}`}>
+        {evaluation && evaluation.length > 0 ? (
+          <div>
+            <div
+              className={`header-bar ${
+                props.scrollOffset !== 0 ? 'scroll-decoration' : ''
+              }`}
+            >
+              <div className="header-bar-content">
+                <EvaluationLine
+                  line={evaluation[0]}
+                  lineIndex={0}
+                  error={Errors.none}
+                  lookup={lookup}
+                />
+              </div>
+            </div>
+
+            <div
+              className="evaluation"
+              style={{ marginTop: -props.scrollOffset }}
+            >
+              {evaluation.slice(1).map((line, lineIndex, lines) => (
+                <EvaluationLine
+                  key={lineIndex}
+                  lineIndex={lineIndex + 1}
+                  line={line}
+                  error={
+                    line.state && line.state.error
+                      ? lines[lineIndex - 1] &&
+                        lines[lineIndex - 1].state &&
+                        typeof lines[lineIndex - 1].state.error === 'string'
+                        ? Errors.past
+                        : Errors.current
+                      : Errors.none
+                  }
+                  lookup={lookup}
+                />
+              ))}
+            </div>
+          </div>
+        ) : props.compilation.success === false ? (
+          <div className="compilation-error-without-cache">
+            <div className="header-bar">
+              <div className="header-bar-content">
+                There{' '}
+                {props.compilation.errors.length === 1
+                  ? 'is an error'
+                  : `are ${props.compilation.errors.length} errors`}{' '}
+                preventing compilation:
+              </div>
+            </div>
+            <ul className="list">
+              {props.compilation.errors.map(({ error, range }) => (
+                <li
+                  key={`${error}${range.startLineNumber}${range.endLineNumber}${range.startColumn}${range.endColumn}`}
+                >
+                  <span className="error-message">{error}</span>
+                  <span className="line-and-column">{`[${range.startLineNumber},${range.startColumn}]`}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="header-bar"></div>
+        )}
+      </div>
+    </div>
+  );
+};

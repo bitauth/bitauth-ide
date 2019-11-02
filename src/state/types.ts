@@ -40,6 +40,13 @@ export type IDEVariable = Required<AuthenticationTemplateVariable> & {
   id: string;
 };
 
+export type VariableDetails = {
+  [id: string]: {
+    variable: AuthenticationTemplateVariable;
+    entity: { name: string; id: string };
+  };
+};
+
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';
 
 export type BaseScriptType =

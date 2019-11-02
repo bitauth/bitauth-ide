@@ -32,7 +32,7 @@ $hex-color: #5bb498;
       & > li {
         padding: 0.25em 0.5em;
         list-style: none;
-        animation: error-animation 0.2s ease;
+        animation: error-animation 1s ease;
         & > .error-message {
           color: #fff;
           line-height: 1.3em;

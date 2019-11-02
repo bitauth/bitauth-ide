@@ -1,13 +1,13 @@
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import {
   languageBCH,
-  bitauthScriptHoverProviderBCH,
+  opcodeHoverProviderBCH,
   bitauthScriptCompletionItemProviderBCH
 } from './bch-language';
 import schemaJson from './authentication-template-v0.schema.json';
 import { bitauthAuthenticationTemplateSchema } from '../constants';
 
-export const bitauthScript = 'bitauth-script';
+export const bitauthTemplatingLanguage = 'bitauth-templating-language';
 export const bitauthDark = 'bitauth-dark';
 
 // TODO: enable and disable 'renderLineHighlight' based on editor focus? (it's a little strange to have 2-3 lines highlighted in the editor at the same time)
@@ -183,21 +183,21 @@ export const bitauthScriptMonarchLanguage = {
 } as Monaco.languages.IMonarchLanguage;
 
 export const registerBitauthScript = (monaco: typeof Monaco) => {
-  monaco.languages.register({ id: bitauthScript });
+  monaco.languages.register({ id: bitauthTemplatingLanguage });
   monaco.languages.setMonarchTokensProvider(
-    bitauthScript,
+    bitauthTemplatingLanguage,
     bitauthScriptMonarchLanguage
   );
   monaco.languages.setLanguageConfiguration(
-    bitauthScript,
+    bitauthTemplatingLanguage,
     bitauthScriptMonarchLangaugeConfiguration(monaco.languages)
   );
   monaco.languages.registerHoverProvider(
-    bitauthScript,
-    bitauthScriptHoverProviderBCH
+    bitauthTemplatingLanguage,
+    opcodeHoverProviderBCH
   );
   monaco.languages.registerCompletionItemProvider(
-    bitauthScript,
+    bitauthTemplatingLanguage,
     bitauthScriptCompletionItemProviderBCH
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);

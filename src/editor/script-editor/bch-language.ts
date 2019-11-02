@@ -110,11 +110,10 @@ const descriptions = Object.entries(OpcodeDescriptionsBCH)
     {}
   );
 
-export const bitauthScriptHoverProviderBCH: Monaco.languages.HoverProvider = {
+export const opcodeHoverProviderBCH: Monaco.languages.HoverProvider = {
   provideHover: (model, position) => {
     const query = model.getWordAtPosition(position);
     if (query !== null) {
-      // TODO: https://github.com/bitauth/bitauth-ide/issues/1
       if (descriptions[query.word] !== undefined)
         return Promise.resolve({
           contents: [
