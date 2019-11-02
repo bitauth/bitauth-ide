@@ -37,10 +37,12 @@ const selectResolvedSegmentAtPosition = (
 ): ResolvedScript[number] | undefined => {
   const firstMatchIndex = resolvedScript.findIndex(
     segment =>
-      segment.range.startLineNumber <= position.lineNumber &&
-      segment.range.endLineNumber >= position.lineNumber &&
-      segment.range.startColumn <= position.column &&
-      segment.range.endColumn >= position.column
+      (segment.range.startLineNumber < position.lineNumber &&
+        segment.range.endLineNumber > position.lineNumber) ||
+      (segment.range.startLineNumber <= position.lineNumber &&
+        segment.range.endLineNumber >= position.lineNumber &&
+        segment.range.startColumn <= position.column &&
+        segment.range.endColumn >= position.column)
   );
   const selected = resolvedScript[firstMatchIndex];
   if (selected !== undefined && Array.isArray(selected.value)) {
@@ -48,8 +50,6 @@ const selectResolvedSegmentAtPosition = (
   }
   return selected;
 };
-
-// CompilerKeyOperationsBCH
 
 const operationPartsToDetails = (operation: string, parameter: string) => {
   const map: { [op in CompilerKeyOperationsBCH]: [string, string] } = {
@@ -129,6 +129,7 @@ export const ScriptEditor = (props: {
 
   /**
    * https://github.com/bitauth/bitauth-ide/issues/1
+   * TODO: show the variable type in hover info
    * TODO: construct a tree of "reduction values" – anything you hover should
    * also show you the bytecode to which it reduced
    * TODO: hover info for resolvable scripts: `Script: **Script Name**`
