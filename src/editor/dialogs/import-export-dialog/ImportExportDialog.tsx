@@ -372,7 +372,8 @@ export const ImportExportDialog = connect(
         </p>
         <small>
           Please note, the template is compressed and encoded in the link (no
-          data is stored on the server), so the link can be very long.
+          data is stored on the server), so the link can be very long. For
+          simpler URLs, consider using a link shortening service.
         </small>
       </Alert>
       <Alert

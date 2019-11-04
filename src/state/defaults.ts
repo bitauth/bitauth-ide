@@ -33,7 +33,7 @@ if (typeof defaultTemplate === 'string') {
 let currentTemplate = defaultTemplate;
 
 const importRoute = '/import-template/';
-const isImport =
+let isImport =
   window.location.pathname.slice(0, importRoute.length) === importRoute;
 if (isImport) {
   const base64UrlToBase64 = (base64: string) =>
@@ -57,6 +57,7 @@ if (isImport) {
     window.alert(
       'This sharing URL seems to be corrupted. Please check the link and try again.'
     );
+    isImport = false;
     console.error(e);
   }
 }
