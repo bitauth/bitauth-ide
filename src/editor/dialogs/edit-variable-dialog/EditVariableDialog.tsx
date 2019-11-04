@@ -350,7 +350,7 @@ export const EditVariableDialog = ({
         {variableInternalId && variable !== undefined && (
           <div>
             <Button
-              className="delete-item-button"
+              className="ide-secondary-button delete-item-button"
               onClick={() => {
                 setPromptDelete(true);
               }}

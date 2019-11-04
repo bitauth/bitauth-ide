@@ -171,7 +171,7 @@ export const EntitySettingsEditor = connect(
           </div>
         </FormGroup>
         <Button
-          className="delete-item-button"
+          className="ide-secondary-button delete-item-button"
           onClick={() => setPromptDelete(true)}
         >
           <Icon icon={IconNames.TRASH} iconSize={10} />

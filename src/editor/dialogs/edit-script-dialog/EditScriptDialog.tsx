@@ -50,7 +50,7 @@ export const EditScriptDialog = ({
     .filter(scriptId => scriptId !== id);
   return (
     <Dialog
-      className="editor-dialog"
+      className="editor-dialog EditScriptDialog"
       onOpening={() => {
         setScriptName(name);
         setScriptId(id);
@@ -127,7 +127,7 @@ export const EditScriptDialog = ({
           </FormGroup>
         )}
         <Button
-          className="delete-item-button"
+          className="ide-secondary-button delete-item-button"
           onClick={() => {
             setPromptDelete(true);
           }}

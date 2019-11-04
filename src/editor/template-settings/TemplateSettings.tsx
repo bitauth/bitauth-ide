@@ -76,6 +76,7 @@ const activateLinks = (description: string) => {
     <a
       target="_blank"
       rel="noopener"
+      key={match}
       href={
         ['http://', 'https://'].indexOf(match) === -1
           ? `https://${match}`
@@ -88,7 +89,10 @@ const activateLinks = (description: string) => {
   return description
     .split(urlRegExp)
     .filter((_, i) => i % (captureGroups + 1) === 0)
-    .map((slice, i) => [<>{slice}</>, links[i]])
+    .map((slice, i) => [
+      <React.Fragment key={slice}>{slice}</React.Fragment>,
+      links[i]
+    ])
     .flat();
 };
 
@@ -122,12 +126,18 @@ export const TemplateSettings = connect(
             disabled={!isEditing}
           />
           {isEditing ? (
-            <Button className="done-button" onClick={() => setIsEditing(false)}>
+            <Button
+              className="ide-secondary-button"
+              onClick={() => setIsEditing(false)}
+            >
               <Icon icon={IconNames.SAVED} iconSize={10} />
               Done
             </Button>
           ) : (
-            <Button className="edit-button" onClick={() => setIsEditing(true)}>
+            <Button
+              className="ide-secondary-button"
+              onClick={() => setIsEditing(true)}
+            >
               <Icon icon={IconNames.EDIT} iconSize={10} />
               Edit
             </Button>
@@ -215,12 +225,15 @@ export const TemplateSettings = connect(
             item from the menu to the left.
           </p>
         )}
-        <Button className="import-button" onClick={() => props.importExport()}>
+        <Button
+          className="ide-secondary-button import-button"
+          onClick={() => props.importExport()}
+        >
           <Icon icon={IconNames.CHANGES} iconSize={10} />
           Import/Export Template...
         </Button>
         <Button
-          className="delete-item-button"
+          className="ide-secondary-button delete-item-button"
           onClick={() => setPromptDelete(true)}
         >
           <Icon icon={IconNames.TRASH} iconSize={10} />

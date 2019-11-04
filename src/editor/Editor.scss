@@ -34,3 +34,26 @@
     font-family: var(--monospace-font-family);
   }
 }
+
+.ide-secondary-button {
+  background: none transparent !important;
+  border: 1px solid #fff5 !important;
+  color: #fffa !important;
+  margin-right: 12px;
+
+  .bp3-icon {
+    margin: 0 8px 4px 0 !important;
+    color: #fff5 !important;
+  }
+}
+
+.ide-secondary-button.delete-item-button {
+  background: none transparent !important;
+  border: 1px solid #fff1 !important;
+  color: #fff5 !important;
+  margin-right: 12px;
+  .bp3-icon {
+    margin: 0 8px 4px 0 !important;
+    color: #fff3 !important;
+  }
+}
