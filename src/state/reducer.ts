@@ -18,9 +18,10 @@ import {
   IDETemplateTestCheckScript
 } from './types';
 import { editor } from 'monaco-editor';
-import { defaultState } from './defaults';
+import { defaultState, emptyTemplate } from './defaults';
 import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
+import { importAuthenticationTemplate } from './import-export';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {
@@ -54,12 +55,11 @@ class App extends ImmerReducer<AppState> {
     this.draftState.activeDialog = ActiveDialog.importExport;
   }
   resetTemplate() {
-    this.draftState.currentTemplate.name = '';
-    this.draftState.currentTemplate.description = '';
-    this.draftState.currentTemplate.entitiesByInternalId = {};
-    this.draftState.currentTemplate.variablesByInternalId = {};
-    this.draftState.currentTemplate.scriptsByInternalId = {};
-    this.draftState.currentTemplate.supportedVirtualMachines = [];
+    const empty = importAuthenticationTemplate(emptyTemplate);
+    if (typeof empty === 'string') {
+      throw new Error('Invalid empty template.');
+    }
+    this.draftState.currentTemplate = empty;
   }
   showWelcomePane() {
     this.draftState.currentEditingMode = 'welcome';
@@ -382,7 +382,8 @@ class App extends ImmerReducer<AppState> {
         iId => deleteInternalIds.indexOf(iId) === -1
       );
     });
-    this.draftState.currentlyEditingInternalId = undefined;
+    this.draftState.currentEditingMode = 'template-settings';
+    this.draftState.currentlyEditingInternalId = '';
   }
   closeDialog() {
     this.draftState.activeDialog = ActiveDialog.none;
