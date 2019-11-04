@@ -370,15 +370,37 @@ class App extends ImmerReducer<AppState> {
       ];
     });
 
+    const remaining = Object.keys(
+      this.draftState.currentTemplate.scriptsByInternalId
+    );
+    remaining.map(iId => {
+      const script = this.draftState.currentTemplate.scriptsByInternalId[iId];
+      if (script.type === 'tested' || script.type === 'locking') {
+        script.childInternalIds = script.childInternalIds.filter(
+          childId => deleteInternalIds.indexOf(childId) === -1
+        );
+        if (script.childInternalIds.length === 0) {
+          this.draftState.currentTemplate.scriptsByInternalId[iId] = {
+            type: 'isolated',
+            id: script.id,
+            script: script.script,
+            internalId: script.internalId,
+            name: script.name
+          };
+        }
+      }
+    });
+
     const entities = Object.keys(
       this.draftState.currentTemplate.entitiesByInternalId
     );
     entities.map(entityInternalId => {
-      const referencedScriptInternalIds = this.draftState.currentTemplate
-        .entitiesByInternalId[entityInternalId].scriptInternalIds;
+      const entity = this.draftState.currentTemplate.entitiesByInternalId[
+        entityInternalId
+      ];
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
-      ].scriptInternalIds = referencedScriptInternalIds.filter(
+      ].scriptInternalIds = entity.scriptInternalIds.filter(
         iId => deleteInternalIds.indexOf(iId) === -1
       );
     });
