@@ -347,10 +347,7 @@ export const ImportExportDialog = connect(
         canEscapeKeyCancel={true}
         canOutsideClickCancel={true}
         onCancel={() => setIsViewingSharingLink(false)}
-        onConfirm={() => {
-          // TODO:
-          setRestoringFromBackup(false);
-        }}
+        onConfirm={() => setIsViewingSharingLink(false)}
       >
         <p>
           Use the link below to import this template in a different browser:
