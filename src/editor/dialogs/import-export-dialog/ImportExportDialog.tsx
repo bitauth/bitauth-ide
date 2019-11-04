@@ -346,8 +346,7 @@ export const ImportExportDialog = connect(
         isOpen={isViewingSharingLink}
         canEscapeKeyCancel={true}
         canOutsideClickCancel={true}
-        onCancel={() => setIsViewingSharingLink(false)}
-        onConfirm={() => setIsViewingSharingLink(false)}
+        onClose={() => setIsViewingSharingLink(false)}
       >
         <p>
           Use the link below to import this template in a different browser:

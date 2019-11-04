@@ -102,7 +102,6 @@ export const HeaderBar = connect(
   const [introPopoverVisible, setIntroPopoverVisible] = useState(false);
   useEffect(() => {
     if (
-      props.isWelcomePane &&
       localStorageEventHasNeverHappened(
         LocalStorageEvents.GuidePopoverDismissed
       )
@@ -142,6 +141,7 @@ export const HeaderBar = connect(
             className="link github-logo"
             href="https://github.com/bitauth/bitauth-ide/issues"
             target="_blank"
+            rel="noopener"
           >
             <img src={GitHubLogo} alt="logo" />
             Report a bug
@@ -154,6 +154,7 @@ export const HeaderBar = connect(
             className="link"
             href="https://twitter.com/bitauth"
             target="_blank"
+            rel="noopener"
           >
             <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Get updates
           </a>,

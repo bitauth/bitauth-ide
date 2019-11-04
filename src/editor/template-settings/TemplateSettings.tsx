@@ -65,6 +65,33 @@ interface TemplateSettingsDispatch {
   showWelcomePane: typeof ActionCreators.showWelcomePane;
 }
 
+const urlRegExp = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+const captureGroups = 4;
+const activateLinks = (description: string) => {
+  const matches = description.match(urlRegExp);
+  if (matches === null) {
+    return description;
+  }
+  const links = matches.map(match => (
+    <a
+      target="_blank"
+      rel="noopener"
+      href={
+        ['http://', 'https://'].indexOf(match) === -1
+          ? `https://${match}`
+          : match
+      }
+    >
+      {match}
+    </a>
+  ));
+  return description
+    .split(urlRegExp)
+    .filter((_, i) => i % (captureGroups + 1) === 0)
+    .map((slice, i) => [<>{slice}</>, links[i]])
+    .flat();
+};
+
 export const TemplateSettings = connect(
   (state: AppState) => ({
     name: state.currentTemplate.name,
@@ -81,10 +108,9 @@ export const TemplateSettings = connect(
   }
 )((props: TemplateSettingsProps & TemplateSettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
-  const [importExportActive, setImportExportActive] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   return (
     <div className="TemplateSettings EditorPane">
-      <h2>Authentication Template Settings</h2>
       <div className="EditorPaneContents template-settings">
         <h3 className="name">
           <EditableText
@@ -93,58 +119,102 @@ export const TemplateSettings = connect(
             selectAllOnFocus={true}
             value={props.name}
             onChange={name => props.updateTemplateName(name)}
+            disabled={!isEditing}
           />
+          {isEditing ? (
+            <Button className="done-button" onClick={() => setIsEditing(false)}>
+              <Icon icon={IconNames.SAVED} iconSize={10} />
+              Done
+            </Button>
+          ) : (
+            <Button className="edit-button" onClick={() => setIsEditing(true)}>
+              <Icon icon={IconNames.EDIT} iconSize={10} />
+              Edit
+            </Button>
+          )}
         </h3>
         <div className="description">
-          <EditableText
-            maxLength={1000}
-            minLines={3}
-            multiline={true}
-            placeholder="A brief description of this authentication template..."
-            selectAllOnFocus={true}
-            value={props.description}
-            onChange={description =>
-              props.updateTemplateDescription(description)
-            }
-          />
+          {isEditing ? (
+            <EditableText
+              maxLength={10000}
+              minLines={3}
+              multiline={true}
+              placeholder="A brief description of this authentication template..."
+              selectAllOnFocus={true}
+              value={props.description}
+              onChange={description =>
+                props.updateTemplateDescription(description)
+              }
+            />
+          ) : (
+            <pre>{activateLinks(props.description)}</pre>
+          )}
         </div>
         <div className="divider" />
         <FormGroup
           label={
             <span className="supported-vms-label">
               <h4>Supported Virtual Machines</h4>
-              <p>
-                Here you can edit the list of Virtual Machines that this
-                authentication template supports.
-              </p>
-              <p>
-                Bitcoin VMs vary in subtle but critical ways. While many
-                templates will be usable across all VMs, each template must be
-                reviewed for compatibility.
-              </p>
+              {isEditing ? (
+                <>
+                  {' '}
+                  <p>
+                    Here you can edit the list of Virtual Machines that this
+                    authentication template supports.
+                  </p>
+                  <p>
+                    Bitcoin VMs vary in subtle but critical ways. While many
+                    templates will be usable across all VMs, each template must
+                    be reviewed for compatibility.
+                  </p>
+                </>
+              ) : (
+                <p>
+                  This authentication template has been confirmed to work on
+                  these Bitcoin VMs.
+                </p>
+              )}
             </span>
           }
           inline={true}
         >
           <div>
-            {Object.entries(availableVms).map(([id, label]) => {
-              const vm = id as IDESupportedVM;
-              const enabled = props.supportedVirtualMachines.indexOf(vm) !== -1;
-              return (
-                <Checkbox
-                  checked={enabled}
-                  key={id}
-                  labelElement={label}
-                  value={id}
-                  onChange={_ => {
-                    props.updateTemplateSupportedVM(vm, !enabled);
-                  }}
-                />
-              );
-            })}
+            {Object.entries(availableVms)
+              .filter(([id]) =>
+                isEditing
+                  ? true
+                  : props.supportedVirtualMachines.indexOf(
+                      id as IDESupportedVM
+                    ) !== -1
+              )
+              .map(([id, label]) => {
+                const vm = id as IDESupportedVM;
+                const enabled =
+                  props.supportedVirtualMachines.indexOf(vm) !== -1;
+                return (
+                  <Checkbox
+                    checked={enabled}
+                    key={id}
+                    labelElement={label}
+                    value={id}
+                    disabled={!isEditing}
+                    onChange={_ => {
+                      props.updateTemplateSupportedVM(vm, !enabled);
+                    }}
+                  />
+                );
+              })}
           </div>
         </FormGroup>
         <div className="divider" />
+        {isEditing ? (
+          ' '
+        ) : (
+          <p className="instructions">
+            To review the entities and scripts used by this template, choose an
+            item from the menu to the left.
+          </p>
+        )}
         <Button className="import-button" onClick={() => props.importExport()}>
           <Icon icon={IconNames.CHANGES} iconSize={10} />
           Import/Export Template...

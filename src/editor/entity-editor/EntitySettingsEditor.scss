@@ -4,7 +4,10 @@
     background: var(--interface-background-color);
   }
 
-  // TODO: DRY - this formatting is used in several places
+  .name {
+    margin: 0 0 12px;
+  }
+
   code {
     background-color: var(--stack-vis-background-color);
     border-radius: 2px;

@@ -243,7 +243,11 @@ export const GuideDialog = ({
         <p>
           To display debugging information, Bitauth IDE transparently integrates
           scripts into a simple transaction and evaluates it in the{' '}
-          <a target="_blank" href="https://github.com/bitauth/bitcoin-ts">
+          <a
+            target="_blank"
+            rel="noopener"
+            href="https://github.com/bitauth/bitcoin-ts"
+          >
             bitcoin-ts
           </a>{' '}
           virtual machine implementation.
@@ -296,12 +300,13 @@ export const GuideDialog = ({
           for improvement, please{' '}
           <a
             target="_blank"
+            rel="noopener"
             href="https://github.com/bitauth/bitauth-ide/issues"
           >
             open an issue on GitHub
           </a>{' '}
           or{' '}
-          <a target="_blank" href="https://twitter.com/bitjson">
+          <a target="_blank" rel="noopener" href="https://twitter.com/bitjson">
             message me on twitter
           </a>
           .
