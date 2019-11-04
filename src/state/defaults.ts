@@ -1,7 +1,12 @@
 import { AppState, ActiveDialog } from './types';
 import { IDEMode } from './types';
-import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
+import {
+  AuthenticationVirtualMachineIdentifier,
+  base64ToBin,
+  binToUtf8
+} from 'bitcoin-ts';
 import { importAuthenticationTemplate } from './import-export';
+import { inflate } from 'pako';
 
 export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] = [
   'BCH_2019_05',
@@ -25,13 +30,44 @@ if (typeof defaultTemplate === 'string') {
   throw new Error(`Invalid empty template: ${defaultTemplate}`);
 }
 
+let currentTemplate = defaultTemplate;
+
+const importRoute = '/import-template/';
+const isImport =
+  window.location.pathname.slice(0, importRoute.length) === importRoute;
+if (isImport) {
+  const base64UrlToBase64 = (base64: string) =>
+    base64.replace(/-/g, '+').replace(/_/g, '/');
+
+  const payload = window.location.pathname.slice(importRoute.length);
+  try {
+    const uncompressed = binToUtf8(
+      inflate(base64ToBin(base64UrlToBase64(payload)))
+    );
+    console.log('uncompressed', uncompressed);
+    const importedTemplate = importAuthenticationTemplate(
+      JSON.parse(uncompressed)
+    );
+    if (typeof importedTemplate === 'string') {
+      throw new Error(`Failed to import template: ${importedTemplate}`);
+    }
+    currentTemplate = importedTemplate;
+    history.pushState(null, 'Bitauth IDE', '/');
+  } catch (e) {
+    window.alert(
+      'This sharing URL seems to be corrupted. Please check the link and try again.'
+    );
+    console.error(e);
+  }
+}
+
 export const defaultState: AppState = {
   ideMode: IDEMode.editor,
   currentlyEditingInternalId: '',
-  currentEditingMode: 'welcome',
+  currentEditingMode: isImport ? 'template-settings' : 'welcome',
   // TODO: from local storage
   savedTemplates: [],
-  currentTemplate: defaultTemplate,
+  currentTemplate,
   currentVmId: 'BCH_2019_05',
   authenticationVirtualMachines: null,
   crypto: null,

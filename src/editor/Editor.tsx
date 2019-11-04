@@ -21,7 +21,6 @@ import {
 import {
   OpcodesBCH,
   AuthenticationInstruction,
-  hexToBin,
   CompilationResult,
   CompilationData,
   sampledEvaluateReductionTraceNodes,
@@ -31,9 +30,7 @@ import {
   createAuthenticationProgramStateCommon,
   AuthenticationProgramStateBCH,
   SampledEvaluationResult,
-  getCompilerOperationsBCH,
-  compileScriptText,
-  AuthenticationTemplateVariable
+  getCompilerOperationsBCH
 } from 'bitcoin-ts';
 import {
   getResolvedVariables,
@@ -758,14 +755,14 @@ export const Editor = connect(
         value={
           props.computed.editorMode === ProjectEditorMode.welcome
             ? Pane.welcome
+            : props.computed.editorMode === ProjectEditorMode.loading
+            ? Pane.loading
             : {
                 direction: 'row',
                 first: Pane.projectExplorer,
                 second:
-                  props.computed.editorMode === ProjectEditorMode.loading
-                    ? Pane.loading
-                    : props.computed.editorMode ===
-                      ProjectEditorMode.templateSettingsEditor
+                  props.computed.editorMode ===
+                  ProjectEditorMode.templateSettingsEditor
                     ? Pane.templateSettingsEditor
                     : props.computed.editorMode ===
                       ProjectEditorMode.entityEditor

@@ -2,16 +2,8 @@ import '../editor-dialog.scss';
 import './GuideDialog.scss';
 import React from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import { ActiveDialog, CurrentScripts } from '../../../state/types';
-import {
-  Classes,
-  Dialog,
-  FormGroup,
-  InputGroup,
-  Button,
-  Icon
-} from '@blueprintjs/core';
-// import { IconNames } from '@blueprintjs/icons';
+import { ActiveDialog } from '../../../state/types';
+import { Classes, Dialog } from '@blueprintjs/core';
 
 export const GuideDialog = ({
   activeDialog,

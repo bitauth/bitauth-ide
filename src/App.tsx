@@ -1,4 +1,3 @@
-// import './bitauth-script/bitauth-script.debug';
 import React from 'react';
 import 'normalize.css/normalize.css';
 import '@blueprintjs/icons/lib/css/blueprint-icons.css';

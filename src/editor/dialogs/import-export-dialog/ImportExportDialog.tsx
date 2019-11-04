@@ -10,10 +10,11 @@ import {
   FileInput,
   Alert,
   Intent,
-  HTMLSelect
+  HTMLSelect,
+  Popover
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { ActiveDialog, AppState, IDETemplate } from '../../../state/types';
+import { ActiveDialog, AppState } from '../../../state/types';
 import MonacoEditor from 'react-monaco-editor';
 import {
   monacoOptions,
@@ -32,7 +33,12 @@ import {
   importAuthenticationTemplate
 } from '../../../state/import-export';
 import { emptyTemplate } from '../../../state/defaults';
-import { localStorageBackupPrefix, backupWarningLimit } from '../../constants';
+import {
+  localStorageBackupPrefix,
+  backupWarningLimit,
+  ideURI
+} from '../../constants';
+import { deflate } from 'pako';
 
 const beginDownload = (filename: string, content: string) => {
   const e = document.createElement('a');
@@ -120,6 +126,8 @@ export const ImportExportDialog = connect(
   const [errorMessage, setErrorMessage] = useState('');
   const [fileName, updateFileName] = useState('');
   const [template, updateTemplate] = useState(props.authenticationTemplate);
+  const [isViewingSharingLink, setIsViewingSharingLink] = useState(false);
+  const [sharingLink, setSharingLink] = useState('');
   const [restoringFromBackup, setRestoringFromBackup] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState(0);
   const [hasErrors, setHasErrors] = useState(false);
@@ -147,22 +155,47 @@ export const ImportExportDialog = connect(
           props.isEmptyTemplate ? (
             <p>Paste a template below to import.</p>
           ) : (
-            <Button
-              className="action"
-              disabled={template !== props.authenticationTemplate}
-              onClick={() => {
-                beginDownload(
-                  `${props.name
-                    .toLowerCase()
-                    .trim()
-                    .replace(/\s/g, '_')
-                    .replace(/[^\.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
-                  props.authenticationTemplate
-                );
-              }}
-            >
-              Download Template
-            </Button>
+            <div>
+              <Button
+                className="action"
+                disabled={template !== props.authenticationTemplate}
+                onClick={() => {
+                  beginDownload(
+                    `${props.name
+                      .toLowerCase()
+                      .trim()
+                      .replace(/\s/g, '_')
+                      .replace(/[^\.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
+                    props.authenticationTemplate
+                  );
+                }}
+              >
+                Download Template
+              </Button>
+              <Button
+                className="action"
+                disabled={template !== props.authenticationTemplate}
+                onClick={() => {
+                  const base64toBase64Url = (base64: string) =>
+                    base64.replace(/\+/g, '-').replace(/\//g, '_');
+                  const payload = base64toBase64Url(
+                    binToBase64(
+                      deflate(
+                        utf8ToBin(
+                          JSON.stringify(
+                            JSON.parse(props.authenticationTemplate)
+                          )
+                        )
+                      )
+                    )
+                  );
+                  setSharingLink(`${ideURI}/import-template/${payload}`);
+                  setIsViewingSharingLink(true);
+                }}
+              >
+                Share Link...
+              </Button>
+            </div>
           )}
           <div className="actions-right">
             <Button
@@ -171,7 +204,7 @@ export const ImportExportDialog = connect(
                 setRestoringFromBackup(true);
               }}
             >
-              Restore from Autosave
+              Restore from Autosave...
             </Button>
             <FileInput
               className="action import-input"
@@ -305,6 +338,45 @@ export const ImportExportDialog = connect(
             setSelectedBackup(Number(e.currentTarget.value));
           }}
         />
+      </Alert>
+      <Alert
+        className="share-dialog"
+        confirmButtonText="Done"
+        intent={Intent.NONE}
+        isOpen={isViewingSharingLink}
+        canEscapeKeyCancel={true}
+        canOutsideClickCancel={true}
+        onCancel={() => setIsViewingSharingLink(false)}
+        onConfirm={() => {
+          // TODO:
+          setRestoringFromBackup(false);
+        }}
+      >
+        <p>
+          Use the link below to import this template in a different browser:
+        </p>
+        <p>
+          <Popover
+            portalClassName="sharing-link-popover"
+            content={<div>URL Copied</div>}
+            target={
+              <input
+                type="text"
+                className="sharing-link"
+                value={sharingLink}
+                readOnly
+                onFocus={e => {
+                  e.target.select();
+                  document.execCommand('copy');
+                }}
+              />
+            }
+          />
+        </p>
+        <small>
+          Please note, the template is compressed and encoded in the link (no
+          data is stored on the server), so the link can be very long.
+        </small>
       </Alert>
       <Alert
         cancelButtonText="Cancel"

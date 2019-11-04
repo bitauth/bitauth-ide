@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './WelcomePane.scss';
 import {
   EditableText,
@@ -61,55 +61,54 @@ export const WelcomePane = connect(
     openTemplateSettings: ActionCreators.openTemplateSettings,
     resetTemplate: ActionCreators.resetTemplate
   }
-)((props: WelcomePaneDispatch) => {
-  return (
-    <div className="WelcomePane EditorPane">
-      <div className="EditorPaneContents">
-        <div className="welcome-box">
-          <h3 className="instructions">Choose a template to begin</h3>
-          <div
-            className="starter-template"
-            onClick={() => {
-              props.importTemplate(defaultTemplates.single);
-              props.openTemplateSettings();
-            }}
-          >
-            <h4>
-              <Icon icon={IconNames.PERSON} iconSize={templateIconSize} />
-              Single Signature (P2PKH) &rarr;
-            </h4>
-            <p>Transactions are signed by only a single key.</p>
-          </div>
-          <div
-            className="starter-template"
-            onClick={() => {
-              props.importTemplate(defaultTemplates.multi);
-              props.openTemplateSettings();
-            }}
-          >
-            <h4>
-              <Icon icon={IconNames.PEOPLE} iconSize={templateIconSize} />
-              2-of-3 Multi-Signature &rarr;
-            </h4>
-            <p>Transactions require any two of three co-owners to sign.</p>
-          </div>
-          <div
-            className="starter-template"
-            onClick={() => {
-              props.importTemplate(defaultTemplates.continuity);
-              props.openTemplateSettings();
-            }}
-          >
-            <h4>
-              <Icon icon={IconNames.TIME} iconSize={templateIconSize} />
-              2-of-2 with Business Continuity &rarr;
-            </h4>
-            <p>
-              Transactions require either both co-owners to sign, or after a
-              delay, one co-owner and another trusted party.
-            </p>
-          </div>
-          {/* <div
+)((props: WelcomePaneDispatch) => (
+  <div className="WelcomePane EditorPane">
+    <div className="EditorPaneContents">
+      <div className="welcome-box">
+        <h3 className="instructions">Choose a template to begin</h3>
+        <div
+          className="starter-template"
+          onClick={() => {
+            props.importTemplate(defaultTemplates.single);
+            props.openTemplateSettings();
+          }}
+        >
+          <h4>
+            <Icon icon={IconNames.PERSON} iconSize={templateIconSize} />
+            Single Signature (P2PKH) &rarr;
+          </h4>
+          <p>Transactions are signed by only a single key.</p>
+        </div>
+        <div
+          className="starter-template"
+          onClick={() => {
+            props.importTemplate(defaultTemplates.multi);
+            props.openTemplateSettings();
+          }}
+        >
+          <h4>
+            <Icon icon={IconNames.PEOPLE} iconSize={templateIconSize} />
+            2-of-3 Multi-Signature &rarr;
+          </h4>
+          <p>Transactions require any two of three co-owners to sign.</p>
+        </div>
+        <div
+          className="starter-template"
+          onClick={() => {
+            props.importTemplate(defaultTemplates.continuity);
+            props.openTemplateSettings();
+          }}
+        >
+          <h4>
+            <Icon icon={IconNames.TIME} iconSize={templateIconSize} />
+            2-of-2 with Business Continuity &rarr;
+          </h4>
+          <p>
+            Transactions require either both co-owners to sign, or after a
+            delay, one co-owner and another trusted party.
+          </p>
+        </div>
+        {/* <div
             className="starter-template"
             onClick={() => {
               // props.importTemplate(defaultTemplates.tree);
@@ -125,7 +124,7 @@ export const WelcomePane = connect(
               public revelation of the other 7 signers' public keys.
             </p>
           </div> */}
-          {/* <div
+        {/* <div
             className="starter-template"
             onClick={() => {
               props.importTemplate(defaultTemplates.zcf);
@@ -141,36 +140,33 @@ export const WelcomePane = connect(
               attempts to double-spend, the bounty is forfeited to a miner.
             </p>
           </div> */}
-          <div
-            className="starter-template"
-            onClick={() => {
-              props.resetTemplate();
-              props.openTemplateSettings();
-            }}
-          >
-            <h4>
-              <Icon icon={IconNames.CLEAN} iconSize={templateIconSize} />
-              Empty Template &rarr;
-            </h4>
-            <p>A blank slate, ready for some creative genius.</p>
-          </div>
-          <div
-            className="starter-template"
-            onClick={() => {
-              props.resetTemplate();
-              props.importExport();
-              //
-              // props.openTemplateSettings();
-            }}
-          >
-            <h4>
-              <Icon icon={IconNames.REPEAT} iconSize={templateIconSize} />
-              Import or Restore Template &rarr;
-            </h4>
-            <p>Import or restore a template from a previous session.</p>
-          </div>
+        <div
+          className="starter-template"
+          onClick={() => {
+            props.resetTemplate();
+            props.openTemplateSettings();
+          }}
+        >
+          <h4>
+            <Icon icon={IconNames.CLEAN} iconSize={templateIconSize} />
+            Empty Template &rarr;
+          </h4>
+          <p>A blank slate, ready for some creative genius.</p>
+        </div>
+        <div
+          className="starter-template"
+          onClick={() => {
+            props.resetTemplate();
+            props.importExport();
+          }}
+        >
+          <h4>
+            <Icon icon={IconNames.REPEAT} iconSize={templateIconSize} />
+            Import or Restore Template &rarr;
+          </h4>
+          <p>Import or restore a template from a previous session.</p>
         </div>
       </div>
     </div>
-  );
-});
+  </div>
+));

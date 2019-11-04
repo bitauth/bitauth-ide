@@ -1,5 +1,5 @@
 .ImportExportDialog {
-  max-width: 800px;
+  max-width: 900px;
   width: 100% !important;
 
   .actions {
@@ -19,10 +19,37 @@
       background: var(--interface-background-color);
     }
   }
-  .restore-dialog {
-    width: 600px;
-  }
 }
 .import-export-editor {
   height: 400px;
+}
+.restore-dialog {
+  width: 500px;
+  max-width: 500px;
+}
+.share-dialog {
+  width: 600px;
+  max-width: 600px;
+  .sharing-link {
+    padding: 0.5em;
+    width: 550px;
+    display: block;
+    background: var(--interface-background-color);
+    color: #fffc;
+    border: 0 none;
+  }
+}
+
+.sharing-link-popover {
+  $tooltip-background: var(--stack-vis-background-color);
+  .bp3-popover-content {
+    max-width: 400px !important;
+    overflow-wrap: break-word;
+    background: $tooltip-background !important;
+    color: #fff !important;
+    padding: 12px;
+  }
+  .bp3-popover-arrow-fill {
+    fill: $tooltip-background !important;
+  }
 }

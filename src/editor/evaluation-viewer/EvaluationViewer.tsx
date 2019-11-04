@@ -3,7 +3,6 @@ import './EvaluationViewer.scss';
 import {
   binToHex,
   parseBytesAsScriptNumber,
-  stringify,
   CompilationResult
 } from 'bitcoin-ts';
 import * as bitcoinTs from 'bitcoin-ts';
