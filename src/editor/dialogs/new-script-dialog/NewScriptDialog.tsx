@@ -63,10 +63,12 @@ export const NewScriptDialog = ({
   const [nonUniqueId, setNonUniqueId] = useState('');
   const usedIds = currentScripts.map(script => script.id);
   const availableParents = currentScripts
-    .filter(script =>
-      scriptType === 'unlocking'
-        ? script.type === 'locking'
-        : script.type === 'isolated' || script.type === 'tested'
+    .filter(
+      script =>
+        script.type === 'isolated' ||
+        (scriptType === 'unlocking'
+          ? script.type === 'locking'
+          : script.type === 'tested')
     )
     .map(script => ({
       label: script.name,
@@ -103,7 +105,6 @@ export const NewScriptDialog = ({
               display: 'none'
             })
           }}
-          // helperText={typeDescriptions[scriptType]}
           label={scriptType === 'unlocking' ? 'Unlocks' : 'Tested Script'}
           labelFor="parent-script"
           inline={true}

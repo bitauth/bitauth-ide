@@ -309,8 +309,23 @@ class App extends ImmerReducer<AppState> {
         };
         const lock = this.draftState.currentTemplate.scriptsByInternalId[
           lockingInternalId
-        ] as IDETemplateLockingScript;
-        lock.childInternalIds.push(script.internalId);
+        ];
+        if (lock.type !== 'locking') {
+          this.draftState.currentTemplate.scriptsByInternalId[
+            lockingInternalId
+          ] = {
+            childInternalIds: [],
+            id: lock.id,
+            internalId: lock.internalId,
+            isP2SH: true,
+            name: lock.name,
+            script: lock.script,
+            type: 'locking'
+          };
+        }
+        (this.draftState.currentTemplate.scriptsByInternalId[
+          lockingInternalId
+        ] as IDETemplateLockingScript).childInternalIds.push(script.internalId);
         this.draftState.currentlyEditingInternalId = script.internalId;
         return;
       case 'test-setup':
