@@ -257,9 +257,13 @@ export const ScriptEditor = (props: {
                   return {
                     contents: [
                       {
-                        value: `${hasOperation ? `${operationName} – ` : ''}**${
+                        value: `${
+                          hasOperation ? operationName : details.variable.type
+                        } – ${
                           details.variable.name
-                        }** (${details.entity.name})`
+                            ? `**${details.variable.name}**`
+                            : ''
+                        }(${details.entity.name})`
                       },
                       ...(hasOperation
                         ? [{ value: operationDescription as string }]
