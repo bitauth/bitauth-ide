@@ -1,16 +1,11 @@
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import {
-  languageBCH,
-  opcodeHoverProviderBCH,
-  bitauthScriptCompletionItemProviderBCH
-} from './bch-language';
+import { languageBCH } from './bch-language';
 import schemaJson from './authentication-template-v0.schema.json';
 import { bitauthAuthenticationTemplateSchema } from '../constants';
 
 export const bitauthTemplatingLanguage = 'bitauth-templating-language';
 export const bitauthDark = 'bitauth-dark';
 
-// TODO: enable and disable 'renderLineHighlight' based on editor focus? (it's a little strange to have 2-3 lines highlighted in the editor at the same time)
 export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
   /**
    * TODO: This is a hack to get things working – we should manually call layout
@@ -69,7 +64,7 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
   }
 };
 
-export const bitauthScriptMonarchLangaugeConfiguration = (
+export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
   monacoLanguages: typeof Monaco.languages
 ): Monaco.languages.LanguageConfiguration => ({
   autoClosingPairs: [
@@ -123,7 +118,7 @@ export const bitauthScriptMonarchLangaugeConfiguration = (
   ]
 });
 
-export const bitauthScriptMonarchLanguage = {
+export const bitauthTemplatingLanguageMonarchLanguage = {
   // defaultToken: 'invalid', // set to 'invalid' to debug tokenization problems
   tokenPostfix: '.bitauth',
   brackets: [
@@ -182,23 +177,15 @@ export const bitauthScriptMonarchLanguage = {
   }
 } as Monaco.languages.IMonarchLanguage;
 
-export const registerBitauthScript = (monaco: typeof Monaco) => {
+export const registerBitauthTemplatingLanguage = (monaco: typeof Monaco) => {
   monaco.languages.register({ id: bitauthTemplatingLanguage });
   monaco.languages.setMonarchTokensProvider(
     bitauthTemplatingLanguage,
-    bitauthScriptMonarchLanguage
+    bitauthTemplatingLanguageMonarchLanguage
   );
   monaco.languages.setLanguageConfiguration(
     bitauthTemplatingLanguage,
-    bitauthScriptMonarchLangaugeConfiguration(monaco.languages)
-  );
-  monaco.languages.registerHoverProvider(
-    bitauthTemplatingLanguage,
-    opcodeHoverProviderBCH
-  );
-  monaco.languages.registerCompletionItemProvider(
-    bitauthTemplatingLanguage,
-    bitauthScriptCompletionItemProviderBCH
+    bitauthTemplatingLanguageMonarchLangaugeConfiguration(monaco.languages)
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);
   monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
@@ -214,6 +201,6 @@ export const registerBitauthScript = (monaco: typeof Monaco) => {
 
 export const prepMonaco = (monaco: typeof Monaco) => {
   if (monaco.languages.getLanguages().length < 3) {
-    registerBitauthScript(monaco);
+    registerBitauthTemplatingLanguage(monaco);
   }
 };

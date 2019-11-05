@@ -110,8 +110,22 @@ const descriptions = Object.entries(OpcodeDescriptionsBCH)
     {}
   );
 
-export const opcodeHoverProviderBCH: Monaco.languages.HoverProvider = {
+/**
+ * Monaco hover providers are global, so we have to ensure we're
+ * looking at the correct script.
+ */
+export const isCorrectScript = (
+  model: Monaco.editor.ITextModel,
+  script: string
+) => model.getValue() === script;
+
+export const opcodeHoverProviderBCH = (
+  script: string
+): Monaco.languages.HoverProvider => ({
   provideHover: (model, position) => {
+    if (!isCorrectScript(model, script)) {
+      return;
+    }
     const query = model.getWordAtPosition(position);
     if (query !== null) {
       if (descriptions[query.word] !== undefined)
@@ -123,7 +137,7 @@ export const opcodeHoverProviderBCH: Monaco.languages.HoverProvider = {
         });
     }
   }
-};
+});
 
 const completableOpcodes = [
   ...flowControlOpcodes,
@@ -142,7 +156,7 @@ const opcodeSuggestions = completableOpcodes.map<
 }));
 
 // TODO: variable autocomplete with `.` triggerCharacter
-export const bitauthScriptCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider = {
+export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider = {
   triggerCharacters: [''],
   provideCompletionItems: (model, position) => {
     const query = model.getWordAtPosition(position);

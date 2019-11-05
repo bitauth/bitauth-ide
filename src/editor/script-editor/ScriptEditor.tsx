@@ -2,7 +2,12 @@ import {
   Range,
   CompilationResultResolve,
   ResolvedScript,
-  CompilerKeyOperationsBCH
+  CompilerKeyOperationsBCH,
+  CompilationResultReduce,
+  ScriptReductionTraceChildNode,
+  ScriptReductionTraceContainerNode,
+  binToHex,
+  disassembleBytecodeBCH
 } from 'bitcoin-ts';
 import React, { Component, useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
@@ -23,6 +28,12 @@ import { IconNames } from '@blueprintjs/icons';
 import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
 import { wrapInterfaceTooltip } from '../common';
 import { CompilationResult } from 'bitcoin-ts';
+import { IDESupportedProgramState } from '../editor-types';
+import {
+  opcodeHoverProviderBCH,
+  opcodeCompletionItemProviderBCH,
+  isCorrectScript
+} from './bch-language';
 
 const cursorIsAtEndOfRange = (
   cursor: { column: number; lineNumber: number },
@@ -31,24 +42,52 @@ const cursorIsAtEndOfRange = (
   cursor.lineNumber === range.endLineNumber &&
   cursor.column === range.endColumn;
 
+const isWithinRange = (
+  position: { lineNumber: number; column: number },
+  range: Range
+) =>
+  (range.startLineNumber < position.lineNumber &&
+    range.endLineNumber > position.lineNumber) ||
+  (range.startLineNumber <= position.lineNumber &&
+    range.endLineNumber >= position.lineNumber &&
+    range.startColumn <= position.column &&
+    range.endColumn > position.column);
+
 const selectResolvedSegmentAtPosition = (
   resolvedScript: ResolvedScript,
   position: { lineNumber: number; column: number }
 ): ResolvedScript[number] | undefined => {
-  const firstMatchIndex = resolvedScript.findIndex(
-    segment =>
-      (segment.range.startLineNumber < position.lineNumber &&
-        segment.range.endLineNumber > position.lineNumber) ||
-      (segment.range.startLineNumber <= position.lineNumber &&
-        segment.range.endLineNumber >= position.lineNumber &&
-        segment.range.startColumn <= position.column &&
-        segment.range.endColumn >= position.column)
+  const firstMatch = resolvedScript.find(segment =>
+    isWithinRange(position, segment.range)
   );
-  const selected = resolvedScript[firstMatchIndex];
-  if (selected !== undefined && Array.isArray(selected.value)) {
-    return selectResolvedSegmentAtPosition(selected.value, position);
+  if (firstMatch !== undefined && Array.isArray(firstMatch.value)) {
+    const internalSelected = selectResolvedSegmentAtPosition(
+      firstMatch.value,
+      position
+    );
+    return internalSelected === undefined ? firstMatch : internalSelected;
   }
-  return selected;
+  return firstMatch;
+};
+
+const selectReductionSourceSegmentAtPosition = (
+  reduce: ScriptReductionTraceChildNode<IDESupportedProgramState>,
+  position: { lineNumber: number; column: number }
+): ScriptReductionTraceChildNode<IDESupportedProgramState> | undefined => {
+  const matchesRange = isWithinRange(position, reduce.range);
+  if (matchesRange) {
+    const container = reduce as ScriptReductionTraceContainerNode<
+      IDESupportedProgramState
+    >;
+    if (Array.isArray(container.source)) {
+      const firstMatch = container.source
+        .map(child => selectReductionSourceSegmentAtPosition(child, position))
+        .filter(selected => selected !== undefined)[0];
+      return firstMatch === undefined ? container : firstMatch;
+    }
+    return reduce;
+  }
+  return undefined;
 };
 
 const operationPartsToDetails = (operation: string, parameter: string) => {
@@ -130,90 +169,136 @@ export const ScriptEditor = (props: {
   /**
    * https://github.com/bitauth/bitauth-ide/issues/1
    * TODO: show the variable type in hover info
-   * TODO: construct a tree of "reduction values" – anything you hover should
-   * also show you the bytecode to which it reduced
    * TODO: hover info for resolvable scripts: `Script: **Script Name**`
    * TODO: provide autocomplete options for variable operations
    */
   useEffect(() => {
     if (monaco !== undefined) {
-      const hoverProvider = monaco.languages.registerHoverProvider(
+      const bytecodeHoverProvider = monaco.languages.registerHoverProvider(
         bitauthTemplatingLanguage,
         {
           provideHover: (model, position) => {
-            /**
-             * Monaco hover providers are global, so we have to ensure we're
-             * looking at the correct script.
-             */
-            const isCurrentScript = model.getValue() === props.script;
-            if (isCurrentScript) {
-              const resolve = (props.compilation as CompilationResultResolve)
-                .resolve as ResolvedScript | undefined;
-              if (resolve) {
-                const segment = selectResolvedSegmentAtPosition(
-                  resolve,
-                  position
-                );
-                if (
-                  segment !== undefined &&
-                  segment.type === 'bytecode' &&
-                  segment.variable !== undefined
-                ) {
-                  const range = segment.range;
-                  const parts = segment.variable.split('.');
-                  const variableId = parts[0];
-                  const details = props.variableDetails[variableId];
-                  if (details !== undefined) {
-                    const {
-                      hasOperation,
-                      operationName,
-                      operationDescription
-                    } = getOperationDetails(parts);
-                    return Promise.resolve({
-                      contents: [
-                        {
-                          value: `${
-                            hasOperation ? `${operationName} – ` : ''
-                          }**${details.variable.name}** (${
-                            details.entity.name
-                          })`
-                        },
-                        ...(hasOperation
-                          ? [{ value: operationDescription as string }]
-                          : []),
-                        ...(details.variable.description
-                          ? [{ value: details.variable.description }]
-                          : [])
-                      ],
-                      range
-                    });
-                  }
-                }
-              } else {
-                // resolve is not available (parse error)
-                const query = model.getWordAtPosition(position);
-                if (query !== null) {
-                  const details = props.variableDetails[query.word];
-                  if (details !== undefined)
-                    return Promise.resolve({
-                      contents: [
-                        {
-                          value: `**${details.variable.name}** (${details.entity.name})`
-                        },
-                        ...(details.variable.description
-                          ? [{ value: details.variable.description }]
-                          : [])
-                      ]
-                    });
-                }
+            if (!isCorrectScript(model, props.script)) {
+              return;
+            }
+            const reduce = (props.compilation as CompilationResultReduce<
+              IDESupportedProgramState
+            >).reduce as
+              | CompilationResultReduce<IDESupportedProgramState>['reduce']
+              | undefined;
+            if (reduce) {
+              const segment = selectReductionSourceSegmentAtPosition(
+                reduce,
+                position
+              );
+              /**
+               * Don't provide bytecode hover for the top-level segment to
+               * avoid being annoying/distracting.
+               */
+              if (segment !== undefined && segment !== reduce) {
+                return {
+                  contents: [
+                    {
+                      value: `**Compiled**: \`0x${binToHex(segment.bytecode)}\``
+                    }
+                  ],
+                  range: segment.range
+                };
               }
             }
-            return null;
           }
         }
       );
+      /**
+       * We register here to ensure opcode hover information appears above the
+       * bytecode hover information.
+       */
+      const opcodeHoverProvider = monaco.languages.registerHoverProvider(
+        bitauthTemplatingLanguage,
+        opcodeHoverProviderBCH(props.script)
+      );
+      const identifierHoverProvider = monaco.languages.registerHoverProvider(
+        bitauthTemplatingLanguage,
+        {
+          provideHover: (model, position) => {
+            if (!isCorrectScript(model, props.script)) {
+              return;
+            }
+            const resolve = (props.compilation as CompilationResultResolve)
+              .resolve as ResolvedScript | undefined;
+            if (resolve) {
+              const segment = selectResolvedSegmentAtPosition(
+                resolve,
+                position
+              );
+              if (
+                segment !== undefined &&
+                segment.type === 'bytecode' &&
+                segment.variable !== undefined
+              ) {
+                const range = segment.range;
+                const parts = segment.variable.split('.');
+                const variableId = parts[0];
+                const details = props.variableDetails[variableId];
+                if (details !== undefined) {
+                  const {
+                    hasOperation,
+                    operationName,
+                    operationDescription
+                  } = getOperationDetails(parts);
+                  return {
+                    contents: [
+                      {
+                        value: `${hasOperation ? `${operationName} – ` : ''}**${
+                          details.variable.name
+                        }** (${details.entity.name})`
+                      },
+                      ...(hasOperation
+                        ? [{ value: operationDescription as string }]
+                        : []),
+                      ...(details.variable.description
+                        ? [{ value: details.variable.description }]
+                        : [])
+                    ],
+                    range
+                  };
+                }
+              }
+            } else {
+              /**
+               * resolve is not available (i.e. a parse error occurred)
+               */
+              const query = model.getWordAtPosition(position);
+              if (query !== null) {
+                const details = props.variableDetails[query.word];
+                if (details !== undefined) {
+                  return {
+                    contents: [
+                      {
+                        value: `**${details.variable.name}** (${details.entity.name})`
+                      },
+                      ...(details.variable.description
+                        ? [{ value: details.variable.description }]
+                        : [])
+                    ]
+                  };
+                }
+              }
+            }
+          }
+        }
+      );
+
+      const opcodeCompletionProvider = monaco.languages.registerCompletionItemProvider(
+        bitauthTemplatingLanguage,
+        opcodeCompletionItemProviderBCH
+      );
+
       return () => {
-        hoverProvider.dispose();
+        bytecodeHoverProvider.dispose();
+        opcodeHoverProvider.dispose();
+        identifierHoverProvider.dispose();
+        opcodeCompletionProvider.dispose();
       };
     }
   });

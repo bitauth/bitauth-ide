@@ -47,7 +47,6 @@ if (isImport) {
     const uncompressed = binToUtf8(
       inflate(base64ToBin(base64UrlToBase64(payload)))
     );
-    console.log('uncompressed', uncompressed);
     const importedTemplate = importAuthenticationTemplate(
       JSON.parse(uncompressed)
     );
