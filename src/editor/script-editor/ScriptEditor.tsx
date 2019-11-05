@@ -176,7 +176,7 @@ export const ScriptEditor = (props: {
    * TODO: provide autocomplete options for variable operations
    */
   useEffect(() => {
-    if (monaco !== undefined) {
+    if (monaco !== undefined && editor !== undefined) {
       const bytecodeHoverProvider = monaco.languages.registerHoverProvider(
         bitauthTemplatingLanguage,
         {
@@ -320,11 +320,44 @@ export const ScriptEditor = (props: {
         opcodeCompletionItemProviderBCH
       );
 
+      const updateMarkers = () => {
+        const model = editor.getModel();
+        if (model !== null) {
+          let markers: MonacoMarkerDataRequired[] = [];
+          if (props.compilation.success !== true) {
+            const raw = props.compilation.errors.map<MonacoMarkerDataRequired>(
+              error => ({
+                ...error.range,
+                severity: monacoEditor.MarkerSeverity.Error,
+                message: error.error
+              })
+            );
+            const cursor = editor.getPosition();
+            const hasFocus = editor.hasTextFocus();
+            /**
+             * Hide the error if this editor is in focus and the cursor is
+             * currently at the end of the error's range (to be less annoying
+             * while typing).*/
+            markers =
+              hasFocus && cursor !== null
+                ? raw.filter(marker => !cursorIsAtEndOfRange(cursor, marker))
+                : raw;
+          }
+          monaco.editor.setModelMarkers(model, '', markers);
+        }
+      };
+
+      const watchCursor = editor.onDidChangeCursorPosition(updateMarkers);
+      const watchFocus = editor.onDidFocusEditorText(updateMarkers);
+      const watchBlur = editor.onDidBlurEditorText(updateMarkers);
       return () => {
         bytecodeHoverProvider.dispose();
         opcodeHoverProvider.dispose();
         identifierHoverProvider.dispose();
         opcodeCompletionProvider.dispose();
+        watchCursor.dispose();
+        watchFocus.dispose();
+        watchBlur.dispose();
       };
     }
   });
@@ -363,37 +396,6 @@ export const ScriptEditor = (props: {
             editor.onDidScrollChange(e => {
               props.setScrollOffset(e.scrollTop);
             });
-            editor.onDidChangeCursorPosition(e => {
-              if (monaco !== undefined && editor !== undefined) {
-                const model = editor.getModel();
-                const compilation = props.compilation;
-                if (model !== null) {
-                  let markers: MonacoMarkerDataRequired[] = [];
-                  if (compilation.success !== true && editor.hasTextFocus()) {
-                    const cursor = editor.getPosition();
-                    const raw = compilation.errors.map<
-                      MonacoMarkerDataRequired
-                    >(error => ({
-                      ...error.range,
-                      severity: monacoEditor.MarkerSeverity.Error,
-                      message: error.error
-                    }));
-                    markers =
-                      cursor === null
-                        ? raw
-                        : /**
-                           * Hide the error if the cursor is currently at the end of its
-                           * range (to be less annoying while typing).
-                           */
-                          raw.filter(
-                            marker => !cursorIsAtEndOfRange(cursor, marker)
-                          );
-                  }
-                  monaco.editor.setModelMarkers(model, '', markers);
-                }
-              }
-            });
-
             setEditor(editor);
             setMonaco(monaco);
           }}
