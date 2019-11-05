@@ -180,12 +180,21 @@ export const ScriptEditor = (props: {
             if (!isCorrectScript(model, props.script)) {
               return;
             }
+            const resolve = (props.compilation as CompilationResultResolve)
+              .resolve as ResolvedScript | undefined;
             const reduce = (props.compilation as CompilationResultReduce<
               IDESupportedProgramState
             >).reduce as
               | CompilationResultReduce<IDESupportedProgramState>['reduce']
               | undefined;
-            if (reduce) {
+            if (resolve && reduce) {
+              const resolvedSegment = selectResolvedSegmentAtPosition(
+                resolve,
+                position
+              );
+              if (resolvedSegment && resolvedSegment.type === 'comment') {
+                return;
+              }
               const segment = selectReductionSourceSegmentAtPosition(
                 reduce,
                 position
