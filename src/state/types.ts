@@ -6,7 +6,8 @@ import {
   AuthenticationVirtualMachine,
   AuthenticationVirtualMachineIdentifier,
   Sha256,
-  Secp256k1
+  Secp256k1,
+  AuthenticationTemplateScript
 } from 'bitcoin-ts';
 
 export enum IDEMode {
@@ -45,6 +46,10 @@ export type VariableDetails = {
     variable: AuthenticationTemplateVariable;
     entity: { name: string; id: string };
   };
+};
+
+export type ScriptDetails = {
+  [id: string]: IDETemplateScript;
 };
 
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';

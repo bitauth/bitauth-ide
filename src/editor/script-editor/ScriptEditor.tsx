@@ -20,7 +20,12 @@ import {
 import './ScriptEditor.scss';
 import { ActionCreators } from '../../state/reducer';
 import { MonacoMarkerDataRequired } from '../../btl-utils/editor-tooling';
-import { ScriptType, CurrentScripts, VariableDetails } from '../../state/types';
+import {
+  ScriptType,
+  CurrentScripts,
+  VariableDetails,
+  ScriptDetails
+} from '../../state/types';
 import { getScriptTooltipIcon } from '../project-explorer/ProjectExplorer';
 import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
@@ -142,6 +147,7 @@ export const ScriptEditor = (props: {
   id: string;
   name: string;
   compilation: CompilationResult;
+  scriptDetails: ScriptDetails;
   variableDetails: VariableDetails;
   setScrollOffset: React.Dispatch<React.SetStateAction<number>>;
   currentScripts: CurrentScripts;
@@ -167,8 +173,6 @@ export const ScriptEditor = (props: {
 
   /**
    * https://github.com/bitauth/bitauth-ide/issues/1
-   * TODO: show the variable type in hover info
-   * TODO: hover info for resolvable scripts: `Script: **Script Name**`
    * TODO: provide autocomplete options for variable operations
    */
   useEffect(() => {
@@ -239,41 +243,51 @@ export const ScriptEditor = (props: {
                 resolve,
                 position
               );
-              if (
-                segment !== undefined &&
-                segment.type === 'bytecode' &&
-                segment.variable !== undefined
-              ) {
+              if (segment !== undefined && segment.type === 'bytecode') {
                 const range = segment.range;
-                const parts = segment.variable.split('.');
-                const variableId = parts[0];
-                const details = props.variableDetails[variableId];
-                if (details !== undefined) {
-                  const {
-                    hasOperation,
-                    operationName,
-                    operationDescription
-                  } = getOperationDetails(parts);
-                  return {
-                    contents: [
-                      {
-                        value: `${
-                          hasOperation ? operationName : details.variable.type
-                        } – ${
-                          details.variable.name
-                            ? `**${details.variable.name}**`
-                            : ''
-                        }(${details.entity.name})`
-                      },
-                      ...(hasOperation
-                        ? [{ value: operationDescription as string }]
-                        : []),
-                      ...(details.variable.description
-                        ? [{ value: details.variable.description }]
-                        : [])
-                    ],
-                    range
-                  };
+                if ('variable' in segment) {
+                  const parts = segment.variable.split('.');
+                  const variableId = parts[0];
+                  const details = props.variableDetails[variableId];
+                  if (details !== undefined) {
+                    const {
+                      hasOperation,
+                      operationName,
+                      operationDescription
+                    } = getOperationDetails(parts);
+                    return {
+                      contents: [
+                        {
+                          value: `${
+                            hasOperation ? operationName : details.variable.type
+                          } – ${
+                            details.variable.name
+                              ? `**${details.variable.name}**`
+                              : ''
+                          }(${details.entity.name})`
+                        },
+                        ...(hasOperation
+                          ? [{ value: operationDescription as string }]
+                          : []),
+                        ...(details.variable.description
+                          ? [{ value: details.variable.description }]
+                          : [])
+                      ],
+                      range
+                    };
+                  }
+                } else if ('script' in segment) {
+                  const details = props.scriptDetails[segment.script];
+                  if (details !== undefined) {
+                    return {
+                      contents: [
+                        {
+                          value: `Script: **${details.name}**`
+                        }
+                      ],
+                      range
+                    };
+                  }
                 }
               }
             } else {

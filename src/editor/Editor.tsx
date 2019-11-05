@@ -16,7 +16,8 @@ import {
   ActiveDialog,
   CurrentScripts,
   CurrentEntities,
-  VariableDetails
+  VariableDetails,
+  ScriptDetails
 } from '../state/types';
 import {
   OpcodesBCH,
@@ -170,6 +171,7 @@ interface EditorStateScriptMode<ProgramState extends IDESupportedProgramState> {
    */
   identifyStackItems: StackItemIdentifyFunction | undefined;
   variableDetails: VariableDetails;
+  scriptDetails: ScriptDetails;
 }
 
 const formatScript = (
@@ -548,10 +550,19 @@ const computeEditorState = <
         }
       };
     }, {});
+
+    const scriptDetails = Object.values(
+      state.currentTemplate.scriptsByInternalId
+    ).reduce(
+      (scripts, ideScript) => ({ ...scripts, [ideScript.id]: ideScript }),
+      {}
+    );
+
     return {
       editorMode,
-      isP2sh,
       identifyStackItems,
+      isP2sh,
+      scriptDetails,
       scriptEditorEvaluationTrace,
       scriptEditorFrames,
       variableDetails
@@ -704,6 +715,7 @@ export const Editor = connect(
                   scriptType={computed.scriptEditorFrames[i].scriptType}
                   compilation={computed.scriptEditorFrames[i].compilation}
                   variableDetails={computed.variableDetails}
+                  scriptDetails={computed.scriptDetails}
                   isP2SH={computed.isP2sh}
                   updateScript={props.updateScript}
                   currentScripts={props.currentScripts}
