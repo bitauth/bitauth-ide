@@ -145,6 +145,11 @@ const EvaluationLine = ({
   </div>
 );
 
+const emptyEvaluation = [] as Evaluation;
+const emptyLookup = {
+  lookup: () => false as false
+};
+
 export const EvaluationViewer = (props: {
   compilation: CompilationResult;
   evaluation?: Evaluation;
@@ -154,31 +159,39 @@ export const EvaluationViewer = (props: {
   script: string;
   scrollOffset: number;
 }) => {
-  const [cachedEvaluation, setCachedEvaluation] = useState([] as Evaluation);
+  const [cachedEvaluation, setCachedEvaluation] = useState(emptyEvaluation);
+  const [cachedScript, setCachedScript] = useState('');
   const [cachedEvaluationTrace, setCachedEvaluationTrace] = useState(['']);
-  const [cachedLookup, setCachedLookup] = useState<
-    StackItemIdentifyFunction | undefined
-  >(() => false as false);
+  const [cachedLookup, setCachedLookup] = useState<{
+    lookup: StackItemIdentifyFunction | undefined;
+  }>(emptyLookup);
 
   if (props.evaluationTrace.join() !== cachedEvaluationTrace.join()) {
-    if (props.evaluation && props.evaluation.length !== 0) {
-      setCachedEvaluation(props.evaluation);
-      setCachedLookup(props.lookup);
-    } else {
-      setCachedEvaluation([]);
-      setCachedLookup(() => false as false);
-    }
+    setCachedEvaluation(emptyEvaluation);
+    setCachedLookup(emptyLookup);
     setCachedEvaluationTrace(props.evaluationTrace);
+    return null;
+  }
+  const hasError =
+    typeof props.evaluation === 'undefined' || props.evaluation.length === 0;
+  const cacheIsUpdated = cachedScript === props.script;
+
+  if (!hasError && !cacheIsUpdated) {
+    console.log('updating cache');
+    setCachedScript(props.script);
+    setCachedEvaluation(props.evaluation as Evaluation);
+    setCachedLookup({ lookup: props.lookup });
+    return null;
   }
 
-  const useCached =
-    typeof props.evaluation === 'undefined' && cachedEvaluation.length !== 0;
-  const evaluation = useCached ? cachedEvaluation : props.evaluation;
-  const lookup = useCached ? cachedLookup : props.lookup;
+  const cacheIsAvailable = cachedEvaluation.length !== 0;
+  const showCached = hasError && cacheIsAvailable;
+  const evaluation = showCached ? cachedEvaluation : props.evaluation;
+  const lookup = showCached ? cachedLookup.lookup : props.lookup;
 
   return (
     <div className="EvaluationViewer">
-      <div className={`content${useCached ? ' cached' : ''}`}>
+      <div className={`content${showCached ? ' cached' : ''}`}>
         {evaluation && evaluation.length > 0 ? (
           <div>
             <div
