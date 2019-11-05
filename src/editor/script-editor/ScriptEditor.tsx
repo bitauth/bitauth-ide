@@ -6,10 +6,9 @@ import {
   CompilationResultReduce,
   ScriptReductionTraceChildNode,
   ScriptReductionTraceContainerNode,
-  binToHex,
-  disassembleBytecodeBCH
+  binToHex
 } from 'bitcoin-ts';
-import React, { Component, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import {
@@ -46,11 +45,11 @@ const isWithinRange = (
   position: { lineNumber: number; column: number },
   range: Range
 ) =>
-  (range.startLineNumber < position.lineNumber &&
+  ((range.startLineNumber < position.lineNumber ||
+    (range.startLineNumber === position.lineNumber &&
+      range.startColumn < position.column)) &&
     range.endLineNumber > position.lineNumber) ||
-  (range.startLineNumber <= position.lineNumber &&
-    range.endLineNumber >= position.lineNumber &&
-    range.startColumn <= position.column &&
+  (range.endLineNumber === position.lineNumber &&
     range.endColumn > position.column);
 
 const selectResolvedSegmentAtPosition = (
