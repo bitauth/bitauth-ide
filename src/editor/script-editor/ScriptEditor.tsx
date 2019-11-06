@@ -139,6 +139,35 @@ const getOperationDetails = (variableParts: string[]) => {
   };
 };
 
+const updateMarkers = (
+  monaco: typeof monacoEditor,
+  editor: monacoEditor.editor.IStandaloneCodeEditor,
+  compilation: CompilationResult
+) => () => {
+  const model = editor.getModel();
+  if (model !== null) {
+    let markers: MonacoMarkerDataRequired[] = [];
+    if (compilation.success !== true) {
+      const raw = compilation.errors.map<MonacoMarkerDataRequired>(error => ({
+        ...error.range,
+        severity: monacoEditor.MarkerSeverity.Error,
+        message: error.error
+      }));
+      const cursor = editor.getPosition();
+      const hasFocus = editor.hasTextFocus();
+      /**
+       * Hide the error if this editor is in focus and the cursor is
+       * currently at the end of the error's range (to be less annoying
+       * while typing).*/
+      markers =
+        hasFocus && cursor !== null
+          ? raw.filter(marker => !cursorIsAtEndOfRange(cursor, marker))
+          : raw;
+    }
+    monaco.editor.setModelMarkers(model, '', markers);
+  }
+};
+
 export const ScriptEditor = (props: {
   isP2SH: boolean;
   script: string;
@@ -320,36 +349,11 @@ export const ScriptEditor = (props: {
         opcodeCompletionItemProviderBCH
       );
 
-      const updateMarkers = () => {
-        const model = editor.getModel();
-        if (model !== null) {
-          let markers: MonacoMarkerDataRequired[] = [];
-          if (props.compilation.success !== true) {
-            const raw = props.compilation.errors.map<MonacoMarkerDataRequired>(
-              error => ({
-                ...error.range,
-                severity: monacoEditor.MarkerSeverity.Error,
-                message: error.error
-              })
-            );
-            const cursor = editor.getPosition();
-            const hasFocus = editor.hasTextFocus();
-            /**
-             * Hide the error if this editor is in focus and the cursor is
-             * currently at the end of the error's range (to be less annoying
-             * while typing).*/
-            markers =
-              hasFocus && cursor !== null
-                ? raw.filter(marker => !cursorIsAtEndOfRange(cursor, marker))
-                : raw;
-          }
-          monaco.editor.setModelMarkers(model, '', markers);
-        }
-      };
-
-      const watchCursor = editor.onDidChangeCursorPosition(updateMarkers);
-      const watchFocus = editor.onDidFocusEditorText(updateMarkers);
-      const watchBlur = editor.onDidBlurEditorText(updateMarkers);
+      const update = updateMarkers(monaco, editor, props.compilation);
+      update();
+      const watchCursor = editor.onDidChangeCursorPosition(update);
+      const watchFocus = editor.onDidFocusEditorText(update);
+      const watchBlur = editor.onDidBlurEditorText(update);
       return () => {
         bytecodeHoverProvider.dispose();
         opcodeHoverProvider.dispose();

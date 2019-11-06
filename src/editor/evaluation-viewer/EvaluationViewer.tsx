@@ -177,7 +177,6 @@ export const EvaluationViewer = (props: {
   const cacheIsUpdated = cachedScript === props.script;
 
   if (!hasError && !cacheIsUpdated) {
-    console.log('updating cache');
     setCachedScript(props.script);
     setCachedEvaluation(props.evaluation as Evaluation);
     setCachedLookup({ lookup: props.lookup });
