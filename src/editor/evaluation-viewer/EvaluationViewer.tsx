@@ -55,7 +55,11 @@ enum Errors {
 }
 
 const stackItem = (itemIndex: number, hex: string, content: JSX.Element) => (
-  <Popover key={itemIndex} content={hex} portalClassName="stack-popover">
+  <Popover
+    key={`${itemIndex}:${hex}`}
+    content={hex}
+    portalClassName="stack-popover"
+  >
     <Tooltip content={hex} portalClassName="stack-tooltip">
       {content}
     </Tooltip>
