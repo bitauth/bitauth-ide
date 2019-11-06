@@ -103,12 +103,25 @@ export const languageBCH = {
   otherOpcodes
 };
 
+/**
+ * Format: [description, optionalExampleString]
+ * `description` is prose description, `optionalExampleString` is the example
+ * string illustrating stack operations.
+ */
 const descriptions = Object.entries(OpcodeDescriptionsBCH)
   .filter(([key]) => key.slice(0, 3) === 'OP_')
-  .reduce<{ [opcode: string]: string }>(
-    (map, [key, value]) => ({ ...map, [key]: value }),
-    {}
-  );
+  .reduce<{ [opcode: string]: [string, string?] }>((map, [key, value]) => {
+    const parts = value.split('(E.g.');
+    const description = parts[0];
+    const example = parts[1];
+    return {
+      ...map,
+      [key]:
+        example !== undefined
+          ? [description, example.slice(0, example.length - 1)]
+          : [description]
+    };
+  }, {});
 
 /**
  * Monaco hover providers are global, so we have to ensure we're
@@ -128,13 +141,16 @@ export const opcodeHoverProviderBCH = (
     }
     const query = model.getWordAtPosition(position);
     if (query !== null) {
-      if (descriptions[query.word] !== undefined)
-        return Promise.resolve({
+      if (descriptions[query.word] !== undefined) {
+        const exampleString = descriptions[query.word][1];
+        return {
           contents: [
             { value: `**${query.word}**` },
-            { value: descriptions[query.word] }
+            ...(exampleString !== undefined ? [{ value: exampleString }] : []),
+            { value: descriptions[query.word][0] }
           ]
-        });
+        };
+      }
     }
   }
 });
@@ -150,12 +166,12 @@ const opcodeSuggestions = completableOpcodes.map<
   Monaco.languages.CompletionItem
 >(opcode => ({
   label: opcode,
-  documentation: descriptions[opcode],
+  detail: descriptions[opcode][1],
+  documentation: descriptions[opcode][0],
   kind: Monaco.languages.CompletionItemKind.Function,
   insertText: opcode
 }));
 
-// TODO: variable autocomplete with `.` triggerCharacter
 export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider = {
   triggerCharacters: [''],
   provideCompletionItems: (model, position) => {
