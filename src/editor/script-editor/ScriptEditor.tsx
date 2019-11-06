@@ -288,12 +288,12 @@ export const ScriptEditor = (props: {
                       contents: [
                         {
                           value: `${
-                            hasOperation ? operationName : details.variable.type
-                          } – ${
                             details.variable.name
                               ? `**${details.variable.name}**`
                               : ''
-                          }(${details.entity.name})`
+                          } – ${
+                            hasOperation ? operationName : details.variable.type
+                          } (${details.entity.name})`
                         },
                         ...(hasOperation
                           ? [{ value: operationDescription as string }]
@@ -311,7 +311,7 @@ export const ScriptEditor = (props: {
                     return {
                       contents: [
                         {
-                          value: `Script: **${details.name}**`
+                          value: `**${details.name}** – Script`
                         }
                       ],
                       range
@@ -330,7 +330,7 @@ export const ScriptEditor = (props: {
                   return {
                     contents: [
                       {
-                        value: `**${details.variable.name}** (${details.entity.name})`
+                        value: `**${details.variable.name}** – ${details.variable.type} (${details.entity.name})`
                       },
                       ...(details.variable.description
                         ? [{ value: details.variable.description }]
