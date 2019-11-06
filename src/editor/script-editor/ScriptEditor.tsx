@@ -142,10 +142,15 @@ const getOperationDetails = (variableParts: string[]) => {
 const updateMarkers = (
   monaco: typeof monacoEditor,
   editor: monacoEditor.editor.IStandaloneCodeEditor,
-  compilation: CompilationResult
+  compilation: CompilationResult,
+  script: string
 ) => () => {
   const model = editor.getModel();
-  if (model !== null) {
+  /**
+   * Avoid updating markers if the script has changed. (This prevents error
+   * markers from flashing on/off while typing.)
+   */
+  if (model !== null && model.getValue() === script) {
     let markers: MonacoMarkerDataRequired[] = [];
     if (compilation.success !== true) {
       const raw = compilation.errors.map<MonacoMarkerDataRequired>(error => ({
@@ -349,7 +354,12 @@ export const ScriptEditor = (props: {
         opcodeCompletionItemProviderBCH
       );
 
-      const update = updateMarkers(monaco, editor, props.compilation);
+      const update = updateMarkers(
+        monaco,
+        editor,
+        props.compilation,
+        props.script
+      );
       update();
       const watchCursor = editor.onDidChangeCursorPosition(update);
       const watchFocus = editor.onDidFocusEditorText(update);
