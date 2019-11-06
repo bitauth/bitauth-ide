@@ -206,39 +206,53 @@ export const GuideDialog = ({
         <ul>
           <li>
             <code>all_outputs</code>– the recommended (and most commonly used)
-            signing serialization algorithm (A.K.A. "SIGHASH_ALL")
+            signing serialization algorithm. This signs each element of the
+            transaction using the private key, preventing an attacker from being
+            able to reuse the signature on a modified transaction. (A.K.A.
+            "SIGHASH_ALL")
           </li>
           <li>
-            <code>all_outputs_single_input</code>– A.K.A. "SIGHASH_ALL" with
-            "ANYONE_CAN_PAY"
+            <code>all_outputs_single_input</code>– a modification to the
+            "all_outputs" signing serialization algorithm which does not cover
+            inputs other than the one being spent. (A.K.A. "SIGHASH_ALL" with
+            "ANYONE_CAN_PAY")
           </li>
           <li>
-            <code>corresponding_output</code>– A.K.A. "SIGHASH_SINGLE"
+            <code>corresponding_output</code>– a signing serialization algorithm
+            which only covers the output with the same index value as the input
+            being spent. Warning: this can cause vulnerabilities by allowing the
+            transaction to be modified in certain ways after being signed.
+            (A.K.A. "SIGHASH_SINGLE")
           </li>
           <li>
-            <code>corresponding_output_single_input</code>– A.K.A.
-            "SIGHASH_SINGLE" with "ANYONE_CAN_PAY"
+            <code>corresponding_output_single_input</code>– a modification to
+            the "corresponding_output" signing serialization algorithm which
+            does not cover inputs other than the one being spent. (A.K.A.
+            "SIGHASH_SINGLE" with "ANYONE_CAN_PAY")
           </li>
           <li>
-            <code>no_outputs</code>– A.K.A. "SIGHASH_NONE"
+            <code>no_outputs</code>– a signing serialization algorithm which
+            only covers other inputs. Warning: this allows anyone to modify the
+            outputs after being signed. (A.K.A. "SIGHASH_NONE")
           </li>
           <li>
-            <code>no_outputs_single_input</code>– A.K.A. "SIGHASH_NONE" with
-            "ANYONE_CAN_PAY"
+            <code>no_outputs_single_input</code>– a modification to the
+            "no_outputs" signing serialization algorithm which does not cover
+            inputs other than the one being spent. (A.K.A. "SIGHASH_NONE" with
+            "ANYONE_CAN_PAY")
           </li>
         </ul>
         <p>
           Most authentication schemes should use the <code>all_outputs</code>{' '}
           setting, e.g. <code>&lt;owner.signature.all_outputs&gt;</code>. This
-          algorithm signs each output of the transaction using the private key.
-          This prevents an attacker from being able to reuse the signature on a
+          prevents an attacker from being able to reuse the signature on a
           different transaction (which the key holder did not intend to
           authorize).
         </p>
         <p>
-          For unique circumstances, the other signing serialization algorithms
-          can also be specified – you can find resources online to describe the
-          other algorithms in further detail.
+          For unique circumstances, the other algorithms can also be specified –
+          you can find resources online which describe some of these scenarios
+          and their security implications.
         </p>
         <p>
           To display debugging information, Bitauth IDE transparently integrates

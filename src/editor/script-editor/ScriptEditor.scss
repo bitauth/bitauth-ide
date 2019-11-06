@@ -49,7 +49,12 @@
     height: calc(100% - #{$headerVertical}px);
   }
 
-  .monaco-editor .scroll-decoration {
-    box-shadow: var(--scrolled-under-shadow);
+  .monaco-editor {
+    .scroll-decoration {
+      box-shadow: var(--scrolled-under-shadow);
+    }
+    .monaco-icon-label::before {
+      margin-right: 4px;
+    }
   }
 }

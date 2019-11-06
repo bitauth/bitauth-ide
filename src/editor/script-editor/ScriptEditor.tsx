@@ -6,7 +6,8 @@ import {
   CompilationResultReduce,
   ScriptReductionTraceChildNode,
   ScriptReductionTraceContainerNode,
-  binToHex
+  binToHex,
+  SigningSerializationIdentifier
 } from 'bitcoin-ts';
 import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
@@ -94,11 +95,13 @@ const selectReductionSourceSegmentAtPosition = (
   return undefined;
 };
 
-const operationPartsToDetails = (operation: string, parameter: string) => {
+const getKeyOperationDescriptions = (parameter?: string) => {
   const map: { [op in CompilerKeyOperationsBCH]: [string, string] } = {
     data_signature: [
       'Data Signature (ECDSA)',
-      `An ECDSA signature covering the sha256 hash of the compiled bytecode from script ID "${parameter}".`
+      `An ECDSA signature covering the sha256 hash of the compiled bytecode ${
+        parameter ? `from script ID "${parameter}"` : 'of another script'
+      }.`
     ],
     public_key: [
       'Public Key',
@@ -106,19 +109,71 @@ const operationPartsToDetails = (operation: string, parameter: string) => {
     ],
     schnorr_data_signature: [
       'Data Signature (Schnorr)',
-      `A Schnorr signature covering the sha256 hash of the compiled bytecode from script ID "${parameter}".`
+      `A Schnorr signature covering the sha256 hash of the compiled bytecode from ${
+        parameter ? `from script ID "${parameter}"` : 'of another script'
+      }.`
     ],
     schnorr_signature: [
       'Signature (Schnorr)',
-      `A Schnorr signature covering the double sha256 hash of the serialized transaction (using the "${parameter}" signing serialization algorithm).`
+      `A Schnorr signature covering the double sha256 hash of the serialized transaction${
+        parameter
+          ? ` (using the "${parameter}" signing serialization algorithm)`
+          : ''
+      }.`
     ],
     signature: [
       'Signature (ECDSA)',
-      `An ECDSA signature covering the double sha256 hash of the serialized transaction (using the "${parameter}" signing serialization algorithm).`
+      `An ECDSA signature covering the double sha256 hash of the serialized transaction${
+        parameter
+          ? ` (using the "${parameter}" signing serialization algorithm)`
+          : ''
+      }.`
     ]
   };
+  return map;
+};
+
+const keyOperationsWhichRequireAParameter = [
+  'data_signature',
+  'schnorr_data_signature',
+  'schnorr_signature',
+  'signature'
+];
+
+const signatureOperationParameterDescriptions: {
+  [parameter in SigningSerializationIdentifier]: [string, string];
+} = {
+  all_outputs: [
+    'A.K.A. "SIGHASH_ALL" (Recommended)',
+    'The recommended and most frequently used signing serialization algorithm. This signs each element of the transaction using the private key, preventing an attacker from being able to reuse the signature on a modified transaction.'
+  ],
+  all_outputs_single_input: [
+    'A.K.A. "SIGHASH_ALL" with "ANYONE_CAN_PAY"',
+    'A modification to the "all_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.'
+  ],
+  corresponding_output: [
+    'A.K.A. "SIGHASH_SINGLE"',
+    'A signing serialization algorithm which only covers the output with the same index value as the input being spent. Warning: this can cause vulnerabilities by allowing the transaction to be modified after being signed.'
+  ],
+  corresponding_output_single_input: [
+    'A.K.A. "SIGHASH_SINGLE" with "ANYONE_CAN_PAY"',
+    'A modification to the "corresponding_output" signing serialization algorithm which does not cover inputs other than the one being spent.'
+  ],
+  no_outputs: [
+    'A.K.A. "SIGHASH_NONE"',
+    'A signing serialization algorithm which only covers other inputs. Warning: this allows anyone to modify the outputs after being signed.'
+  ],
+  no_outputs_single_input: [
+    'A.K.A. "SIGHASH_NONE" with "ANYONE_CAN_PAY"',
+    'A modification to the "no_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.'
+  ]
+};
+
+const operationPartsToDetails = (operation: string, parameter: string) => {
   return (
-    map[operation as CompilerKeyOperationsBCH] || [
+    getKeyOperationDescriptions(parameter)[
+      operation as CompilerKeyOperationsBCH
+    ] || [
       'Unknown Operation',
       `The compiler knows about the "${operation}${
         parameter ? `.${parameter}` : ''
@@ -354,6 +409,144 @@ export const ScriptEditor = (props: {
         opcodeCompletionItemProviderBCH
       );
 
+      const variableCompletionProvider = monaco.languages.registerCompletionItemProvider(
+        bitauthTemplatingLanguage,
+        {
+          provideCompletionItems: (model, position) => {
+            const contentBeforePosition = model.getValueInRange({
+              startColumn: 1,
+              startLineNumber: position.lineNumber,
+              endColumn: position.column,
+              endLineNumber: position.lineNumber
+            });
+            const lastValidIdentifier = /[a-zA-Z_][\.a-zA-Z0-9_-]*$/;
+            const match = contentBeforePosition.match(lastValidIdentifier);
+            /**
+             * If match is `null`, the user manually triggered autocomplete:
+             * show all potential variable options.
+             */
+            const parts = match === null ? [''] : match[0].split('.');
+            const variableId = parts[0];
+            const operation = parts[1] as string | undefined;
+            const parameter = parts[2] as string | undefined;
+
+            if (operation === undefined) {
+              return {
+                suggestions: Object.entries(props.variableDetails)
+                  .filter(([id]) => id.indexOf(variableId) !== -1)
+                  .map<monacoEditor.languages.CompletionItem>(
+                    ([id, { variable, entity }]) => {
+                      const isKey =
+                        variable.type === 'Key' || variable.type === 'HDKey';
+                      return {
+                        label: id,
+                        detail: `${variable.name} – ${variable.type} (${entity.name})`,
+                        documentation: variable.description,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        insertText: isKey ? `${id}.` : id,
+                        ...(isKey
+                          ? {
+                              command: {
+                                id: 'editor.action.triggerSuggest',
+                                title: 'Suggest Operation'
+                              }
+                            }
+                          : {})
+                      };
+                    }
+                  )
+              };
+            }
+
+            const details = props.variableDetails[variableId] as
+              | VariableDetails[string]
+              | undefined;
+
+            if (
+              details === undefined ||
+              (details.variable.type !== 'HDKey' &&
+                details.variable.type !== 'Key')
+            ) {
+              return null;
+            }
+
+            if (parameter === undefined) {
+              const descriptions = getKeyOperationDescriptions();
+              return {
+                suggestions: Object.entries(descriptions)
+                  .filter(([op]) => op.indexOf(operation) !== -1)
+                  .map<monacoEditor.languages.CompletionItem>(
+                    ([op, descriptions]) => {
+                      const requiresParameter =
+                        keyOperationsWhichRequireAParameter.indexOf(op) !== -1;
+                      return {
+                        label: op,
+                        detail: descriptions[0],
+                        documentation: descriptions[1],
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: requiresParameter ? `${op}.` : op,
+                        ...(requiresParameter
+                          ? {
+                              command: {
+                                id: 'editor.action.triggerSuggest',
+                                title: 'Suggest Parameter'
+                              }
+                            }
+                          : {})
+                      };
+                    }
+                  )
+              };
+            }
+
+            if (keyOperationsWhichRequireAParameter.indexOf(operation) === -1) {
+              return null;
+            }
+
+            if (
+              operation === 'signature' ||
+              operation === 'schnorr_signature'
+            ) {
+              return {
+                suggestions: Object.entries(
+                  signatureOperationParameterDescriptions
+                )
+                  .filter(([param]) => param.indexOf(parameter) !== -1)
+                  .map<monacoEditor.languages.CompletionItem>(
+                    ([param, descriptions]) => ({
+                      label: param,
+                      detail: descriptions[0],
+                      documentation: descriptions[1],
+                      kind: monaco.languages.CompletionItemKind.Function,
+                      insertText: param
+                    })
+                  )
+              };
+            } else if (
+              operation === 'data_signature' ||
+              operation === 'schnorr_data_signature'
+            ) {
+              return {
+                suggestions: Object.entries(props.scriptDetails)
+                  .filter(([id]) => id.indexOf(parameter) !== -1)
+                  .map<monacoEditor.languages.CompletionItem>(
+                    ([id, scriptInfo]) => ({
+                      label: id,
+                      detail: scriptInfo.name,
+                      kind: monaco.languages.CompletionItemKind.Variable,
+                      insertText: id
+                    })
+                  )
+              };
+            } else {
+              console.error(`Unexpected key operations ${operation}.`);
+              return null;
+            }
+          },
+          triggerCharacters: ['.']
+        }
+      );
+
       const update = updateMarkers(
         monaco,
         editor,
@@ -369,6 +562,7 @@ export const ScriptEditor = (props: {
         opcodeHoverProvider.dispose();
         identifierHoverProvider.dispose();
         opcodeCompletionProvider.dispose();
+        variableCompletionProvider.dispose();
         watchCursor.dispose();
         watchFocus.dispose();
         watchBlur.dispose();

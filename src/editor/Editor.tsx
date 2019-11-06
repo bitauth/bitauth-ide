@@ -553,10 +553,15 @@ const computeEditorState = <
 
     const scriptDetails = Object.values(
       state.currentTemplate.scriptsByInternalId
-    ).reduce(
-      (scripts, ideScript) => ({ ...scripts, [ideScript.id]: ideScript }),
-      {}
-    );
+    )
+      .filter(
+        ideScript =>
+          ideScript.type !== 'test-setup' && ideScript.type !== 'test-check'
+      )
+      .reduce(
+        (scripts, ideScript) => ({ ...scripts, [ideScript.id]: ideScript }),
+        {}
+      );
 
     return {
       editorMode,
