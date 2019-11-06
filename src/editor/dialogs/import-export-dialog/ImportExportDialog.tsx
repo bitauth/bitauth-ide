@@ -151,51 +151,46 @@ export const ImportExportDialog = connect(
     >
       <div className={Classes.DIALOG_BODY}>
         <div className="actions">
-          {/* TODO: only show download button if not the empty template – if is the empty template, show message telling the user to paste in the template below or load from a file.*/
-          props.isEmptyTemplate ? (
-            <p>Paste a template below to import.</p>
-          ) : (
-            <div>
-              <Button
-                className="action"
-                disabled={template !== props.authenticationTemplate}
-                onClick={() => {
-                  beginDownload(
-                    `${props.name
-                      .toLowerCase()
-                      .trim()
-                      .replace(/\s/g, '_')
-                      .replace(/[^\.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
-                    props.authenticationTemplate
-                  );
-                }}
-              >
-                Download Template
-              </Button>
-              <Button
-                className="action"
-                disabled={template !== props.authenticationTemplate}
-                onClick={() => {
-                  const base64toBase64Url = (base64: string) =>
-                    base64.replace(/\+/g, '-').replace(/\//g, '_');
-                  const payload = base64toBase64Url(
-                    binToBase64(
-                      deflate(
-                        utf8ToBin(
-                          JSON.stringify(
-                            JSON.parse(props.authenticationTemplate)
-                          )
-                        )
+          props.isEmptyTemplate ? (<p>Paste a template below to import.</p>) : (
+          <div>
+            <Button
+              className="action"
+              disabled={template !== props.authenticationTemplate}
+              onClick={() => {
+                beginDownload(
+                  `${props.name
+                    .toLowerCase()
+                    .trim()
+                    .replace(/\s/g, '_')
+                    .replace(/[^\.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
+                  props.authenticationTemplate
+                );
+              }}
+            >
+              Download Template
+            </Button>
+            <Button
+              className="action"
+              disabled={template !== props.authenticationTemplate}
+              onClick={() => {
+                const base64toBase64Url = (base64: string) =>
+                  base64.replace(/\+/g, '-').replace(/\//g, '_');
+                const payload = base64toBase64Url(
+                  binToBase64(
+                    deflate(
+                      utf8ToBin(
+                        JSON.stringify(JSON.parse(props.authenticationTemplate))
                       )
                     )
-                  );
-                  setSharingLink(`${ideURI}/import-template/${payload}`);
-                  setIsViewingSharingLink(true);
-                }}
-              >
-                Share Link...
-              </Button>
-            </div>
+                  )
+                );
+                setSharingLink(`${ideURI}/import-template/${payload}`);
+                setIsViewingSharingLink(true);
+              }}
+            >
+              Share Link...
+            </Button>
+          </div>
           )}
           <div className="actions-right">
             <Button
