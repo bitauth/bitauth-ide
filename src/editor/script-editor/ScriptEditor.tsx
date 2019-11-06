@@ -426,39 +426,51 @@ export const ScriptEditor = (props: {
              * show all potential variable options.
              */
             const parts = match === null ? [''] : match[0].split('.');
-            const variableId = parts[0];
+            const targetId = parts[0];
             const operation = parts[1] as string | undefined;
             const parameter = parts[2] as string | undefined;
 
             if (operation === undefined) {
               return {
-                suggestions: Object.entries(props.variableDetails)
-                  .filter(([id]) => id.indexOf(variableId) !== -1)
-                  .map<monacoEditor.languages.CompletionItem>(
-                    ([id, { variable, entity }]) => {
-                      const isKey =
-                        variable.type === 'Key' || variable.type === 'HDKey';
-                      return {
-                        label: id,
-                        detail: `${variable.name} – ${variable.type} (${entity.name})`,
-                        documentation: variable.description,
-                        kind: monaco.languages.CompletionItemKind.Variable,
-                        insertText: isKey ? `${id}.` : id,
-                        ...(isKey
-                          ? {
-                              command: {
-                                id: 'editor.action.triggerSuggest',
-                                title: 'Suggest Operation'
+                suggestions: [
+                  ...Object.entries(props.variableDetails)
+                    .filter(([id]) => id.indexOf(targetId) !== -1)
+                    .map<monacoEditor.languages.CompletionItem>(
+                      ([id, { variable, entity }]) => {
+                        const isKey =
+                          variable.type === 'Key' || variable.type === 'HDKey';
+                        return {
+                          label: id,
+                          detail: `${variable.name} – ${variable.type} (${entity.name})`,
+                          documentation: variable.description,
+                          kind: monaco.languages.CompletionItemKind.Variable,
+                          insertText: isKey ? `${id}.` : id,
+                          ...(isKey
+                            ? {
+                                command: {
+                                  id: 'editor.action.triggerSuggest',
+                                  title: 'Suggest Operation'
+                                }
                               }
-                            }
-                          : {})
-                      };
-                    }
-                  )
+                            : {})
+                        };
+                      }
+                    ),
+                  ...Object.entries(props.scriptDetails)
+                    .filter(([id]) => id.indexOf(targetId) !== -1)
+                    .map<monacoEditor.languages.CompletionItem>(
+                      ([id, script]) => ({
+                        label: id,
+                        detail: `${script.name} – Script`,
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: id
+                      })
+                    )
+                ]
               };
             }
 
-            const details = props.variableDetails[variableId] as
+            const details = props.variableDetails[targetId] as
               | VariableDetails[string]
               | undefined;
 
