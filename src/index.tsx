@@ -8,7 +8,6 @@ import LogRocket from 'logrocket';
 
 if (process.env.NODE_ENV === 'production') {
   LogRocket.init('wkulwl/bitauth-ide');
-  // TODO: full story, analytics, etc.
 }
 
 const store = configureStore();

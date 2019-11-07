@@ -260,10 +260,6 @@ export const ScriptEditor = (props: {
     };
   });
 
-  /**
-   * https://github.com/bitauth/bitauth-ide/issues/1
-   * TODO: provide autocomplete options for variable operations
-   */
   useEffect(() => {
     if (monaco !== undefined && editor !== undefined) {
       const bytecodeHoverProvider = monaco.languages.registerHoverProvider(

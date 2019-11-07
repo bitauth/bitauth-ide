@@ -189,8 +189,8 @@ export const extractTemplate = (
   version: 0
 });
 
+// TODO: clean up tech debt
 /**
- * TODO: tech debt:
  * This method was original written for a template format with arrays for
  * `entities` and `scripts`. It can probably be majorly simplified.
  */

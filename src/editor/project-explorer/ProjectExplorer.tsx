@@ -162,7 +162,6 @@ const getScriptTypeName = (type?: ScriptType) => {
 export const getScriptTooltipIcon = (type?: ScriptType) =>
   wrapInterfaceTooltip(getIcon(type), getScriptTypeName(type));
 
-// TODO: use ContextMenuTarget from "@blueprintjs/core"
 export const ProjectExplorer = connect(
   (state: AppState) => ({
     templateName: state.currentTemplate.name,

@@ -263,7 +263,6 @@ export interface AppState {
   currentVmId: keyof IDELoadedVMs;
   authenticationVirtualMachines: IDELoadedVMs | null;
   crypto: IDELoadedCrypto | null;
-  // compilationData: CompilationData; // TODO: delete
   activeDialog: ActiveDialog;
   /**
    * Date from the moment this instance of the app was initialized.
