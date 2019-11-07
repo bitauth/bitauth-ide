@@ -3,9 +3,15 @@ import {
   ExecutionStackState,
   ErrorState,
   MinimumProgramState,
-  AuthenticationProgramCommon
+  AuthenticationProgramCommon,
+  CompilationResult
 } from 'bitcoin-ts';
-import { IDETemplateScript } from '../state/types';
+import {
+  IDETemplateScript,
+  ScriptType,
+  VariableDetails,
+  ScriptDetails
+} from '../state/types';
 
 export enum ProjectEditorMode {
   /**
@@ -40,7 +46,42 @@ export enum ProjectEditorMode {
    * The state of the editor before async dependencies (VMs and crypto) have
    * loaded, or if nothing is currently selected for editing.
    */
-  loading = 'loading'
+  loading = 'loading',
+  /**
+   * The view visible while the IDE is importing a template from a remote URL.
+   */
+  importing = 'importing'
+}
+
+export enum ScriptEditorPane {
+  /**
+   * Present for all ScriptEditor types (`isolated`, `unlocking`, and `test`).
+   */
+  zero = 'ScriptEditorPane0',
+  /**
+   * Present for `unlocking` and `test` ScriptEditor types.
+   */
+  one = 'ScriptEditorPane1',
+  /**
+   * Only present for the `test` ScriptEditor type.
+   */
+  two = 'ScriptEditorPane2'
+}
+
+export enum ScriptEvaluationViewerPane {
+  /**
+   * Present for all ScriptEvaluationViewer types (`isolated`, `unlocking`, and
+   * `test`).
+   */
+  zero = 'ScriptEvaluationViewerPane0',
+  /**
+   * Present for `unlocking` and `test` ScriptEvaluationViewer types.
+   */
+  one = 'ScriptEvaluationViewerPane1',
+  /**
+   * Only present for the `test` ScriptEvaluationViewer type.
+   */
+  two = 'ScriptEvaluationViewerPane2'
 }
 
 /**
@@ -116,4 +157,67 @@ export interface ProjectExplorerTreeNode {
   active: boolean;
   id: IDETemplateScript['id'];
   children?: ProjectExplorerTreeNode[];
+}
+
+export interface ScriptEditorFrame<
+  ProgramState extends IDESupportedProgramState
+> {
+  name: string;
+  id: string;
+  internalId: string;
+  script: string;
+  scriptType: ScriptType;
+  compilation: CompilationResult<ProgramState>;
+  /**
+   * `evaluation` is undefined if there are compilation errors.
+   */
+  evaluation?: Evaluation<ProgramState>;
+}
+
+export type ComputedEditorState<
+  ProgramState extends IDESupportedProgramState
+> =
+  | EditorStateWelcomeMode
+  | EditorStateTemplateSettingsMode
+  | EditorStateEntityMode
+  | EditorStateScriptMode<ProgramState>
+  | EditorStateLoadingMode
+  | EditorStateImportingMode;
+
+interface EditorStateEntityMode {
+  editorMode: ProjectEditorMode.entityEditor;
+}
+
+interface EditorStateWelcomeMode {
+  editorMode: ProjectEditorMode.welcome;
+}
+
+interface EditorStateTemplateSettingsMode {
+  editorMode: ProjectEditorMode.templateSettingsEditor;
+}
+
+interface EditorStateLoadingMode {
+  editorMode: ProjectEditorMode.loading;
+}
+interface EditorStateImportingMode {
+  editorMode: ProjectEditorMode.importing;
+}
+
+export interface EditorStateScriptMode<
+  ProgramState extends IDESupportedProgramState
+> {
+  editorMode:
+    | ProjectEditorMode.isolatedScriptEditor
+    | ProjectEditorMode.testedScriptEditor
+    | ProjectEditorMode.scriptPairEditor;
+  scriptEditorFrames: ScriptEditorFrame<ProgramState>[];
+  scriptEditorEvaluationTrace: string[];
+  isP2sh: boolean;
+  /**
+   * Set to `undefined` if no compilations were successful (so the previous
+   * StackItemIdentifyFunction can continue to be used.)
+   */
+  identifyStackItems: StackItemIdentifyFunction | undefined;
+  variableDetails: VariableDetails;
+  scriptDetails: ScriptDetails;
 }

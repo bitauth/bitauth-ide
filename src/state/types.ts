@@ -252,7 +252,7 @@ export interface AppState {
     | 'script'
     | 'entity'
     | 'template-settings'
-    | undefined;
+    | 'importing';
   savedTemplates: { template: AuthenticationTemplate; savedDate: Date }[];
   /**
    * The state of the Bitauth template currently open in the IDE. This is stored

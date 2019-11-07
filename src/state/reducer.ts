@@ -30,6 +30,9 @@ class App extends ImmerReducer<AppState> {
     this.draftState.authenticationVirtualMachines = vms;
     this.draftState.crypto = crypto;
   }
+  openWelcomePane() {
+    this.draftState.currentEditingMode = 'welcome';
+  }
   openTemplateSettings() {
     this.draftState.currentEditingMode = 'template-settings';
   }

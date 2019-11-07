@@ -368,11 +368,26 @@ export const ImportExportDialog = connect(
             }
           />
         </p>
-        <small>
-          Please note, the template is compressed and encoded in the link (no
-          data is stored on the server), so the link can be very long. For
-          simpler URLs, consider using a link shortening service.
-        </small>
+        <p>
+          <small>
+            Please note, the template is compressed and encoded in the link (no
+            data is stored on the server), so the link can be very long. For
+            simpler URLs, consider using a link shortening service.
+          </small>
+        </p>
+        <p>
+          <small>
+            You can also share a template using a GitHub Gist. See{' '}
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://gist.github.com/bitjson/a055ad6ba863a4472767bb5e441a3437"
+            >
+              this example gist
+            </a>{' '}
+            for details.
+          </small>
+        </p>
       </Alert>
       <Alert
         cancelButtonText="Cancel"

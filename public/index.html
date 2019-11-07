@@ -45,16 +45,6 @@
           margin: 20px 0;
         }
       </style>
-      <script>
-        if (typeof BigInt === 'undefined') {
-          document.getElementById('unsupported-browser').style.display =
-            'block';
-          window.alert(
-            'Sorry, Bitauth IDE requires native BigInt support in your browser to work properly\n\n' +
-              'Please try visiting on a desktop using Chrome, Firefox, or Opera.'
-          );
-        }
-      </script>
       <a href="https://bitauth.com/">Back to Bitauth.com</a
       ><a href="https://github.com/bitauth/bitauth-ide"
         >View Bitauth IDE on GitHub</a
@@ -72,5 +62,15 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script>
+      if (typeof BigInt === 'undefined') {
+        document.getElementById('unsupported-browser').style.display = 'block';
+        document.getElementById('root').style.display = 'none';
+        window.alert(
+          'Sorry, Bitauth IDE requires native BigInt support in your browser to work properly.\n\n' +
+            'Please try visiting on a desktop using Chrome, Firefox, or Opera.'
+        );
+      }
+    </script>
   </body>
 </html>
