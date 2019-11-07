@@ -17,7 +17,6 @@ import {
   IDEVariable,
   IDETemplateTestCheckScript
 } from './types';
-import { editor } from 'monaco-editor';
 import { defaultState, emptyTemplate } from './defaults';
 import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
@@ -133,7 +132,7 @@ class App extends ImmerReducer<AppState> {
     const variables = this.draftState.currentTemplate.entitiesByInternalId[
       internalId
     ].variableInternalIds;
-    variables.map(variableInternalId => {
+    variables.forEach(variableInternalId => {
       delete this.draftState.currentTemplate.variablesByInternalId[
         variableInternalId
       ];
@@ -182,7 +181,7 @@ class App extends ImmerReducer<AppState> {
     const entities = Object.keys(
       this.draftState.currentTemplate.entitiesByInternalId
     );
-    entities.map(entityInternalId => {
+    entities.forEach(entityInternalId => {
       const variables = this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ].variableInternalIds;
@@ -194,15 +193,7 @@ class App extends ImmerReducer<AppState> {
     });
     delete this.draftState.currentTemplate.variablesByInternalId[internalId];
   }
-  updateScript({
-    event,
-    internalId: internalId,
-    script
-  }: {
-    event: editor.IModelContentChangedEvent;
-    internalId: string;
-    script: string;
-  }) {
+  updateScript({ internalId, script }: { internalId: string; script: string }) {
     this.draftState.currentTemplate.scriptsByInternalId[
       internalId
     ].script = script;
@@ -379,7 +370,7 @@ class App extends ImmerReducer<AppState> {
         ? [deleteTarget.testCheckInternalId]
         : [])
     ];
-    deleteInternalIds.map(scriptInternalId => {
+    deleteInternalIds.forEach(scriptInternalId => {
       delete this.draftState.currentTemplate.scriptsByInternalId[
         scriptInternalId
       ];
@@ -388,7 +379,7 @@ class App extends ImmerReducer<AppState> {
     const remaining = Object.keys(
       this.draftState.currentTemplate.scriptsByInternalId
     );
-    remaining.map(iId => {
+    remaining.forEach(iId => {
       const script = this.draftState.currentTemplate.scriptsByInternalId[iId];
       if (script.type === 'tested' || script.type === 'locking') {
         script.childInternalIds = script.childInternalIds.filter(
@@ -409,7 +400,7 @@ class App extends ImmerReducer<AppState> {
     const entities = Object.keys(
       this.draftState.currentTemplate.entitiesByInternalId
     );
-    entities.map(entityInternalId => {
+    entities.forEach(entityInternalId => {
       const entity = this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ];

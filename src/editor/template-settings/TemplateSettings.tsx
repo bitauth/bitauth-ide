@@ -65,7 +65,7 @@ interface TemplateSettingsDispatch {
   showWelcomePane: typeof ActionCreators.showWelcomePane;
 }
 
-const urlRegExp = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+const urlRegExp = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/g;
 const captureGroups = 4;
 const activateLinks = (description: string) => {
   const matches = description.match(urlRegExp);
@@ -75,7 +75,7 @@ const activateLinks = (description: string) => {
   const links = matches.map(match => (
     <a
       target="_blank"
-      rel="noopener"
+      rel="noopener noreferrer"
       key={match}
       href={
         ['http://', 'https://'].indexOf(match) === -1

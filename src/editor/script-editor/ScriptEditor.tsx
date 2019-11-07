@@ -639,8 +639,7 @@ export const ScriptEditor = (props: {
           onChange={(value, event) =>
             props.updateScript({
               script: value,
-              internalId: props.internalId,
-              event
+              internalId: props.internalId
             })
           }
         />

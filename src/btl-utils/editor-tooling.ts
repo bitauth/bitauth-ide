@@ -1,10 +1,5 @@
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
-import {
-  ResolvedScript,
-  ResolvedSegmentBytecode,
-  ResolvedSegmentVariableBytecode,
-  ResolvedSegmentScriptBytecode
-} from 'bitcoin-ts';
+import { ResolvedScript } from 'bitcoin-ts';
 
 export interface MonacoMarkerDataRequired {
   severity: monacoEditor.MarkerSeverity;
@@ -35,6 +30,7 @@ export const getResolvedVariables = (
             { variable: segment.variable, bytecode: segment.value }
           ];
         }
+      // eslint-disable-line no-fallthrough
       default:
         return variables;
     }

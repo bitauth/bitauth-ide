@@ -29,7 +29,11 @@
     }
   }
 
-  a.link {
+  a.link,
+  button.link {
+    background: none;
+    -webkit-appearance: none;
+    border: none;
     line-height: 0;
     color: #fff;
     font-size: 12px;

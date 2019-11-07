@@ -18,25 +18,38 @@ import {
 import { createInsecureUuidV4 } from './utils';
 import { bitauthAuthenticationTemplateSchema } from '../editor/constants';
 
-const extractPattern = (string: string, pattern: RegExp) => {
-  const result = pattern.exec(string);
-  return result ? result[1] : false;
-};
-
-const extractRedeemScript = (lockingScript: string) =>
-  extractPattern(
-    lockingScript,
-    /^\s*OP_HASH160\s*<\s*\$\(\s*<\s*([\s\S]*)\s>\s*OP_HASH160\s*\)\s*>\s*OP_EQUAL\s*$/
-  );
-
-const extractUnlockingScriptFromUnlockingP2SH = (
-  unlocks: string,
-  unlockingScript: string
-) =>
-  extractPattern(
-    unlockingScript,
-    new RegExp(`^([\\s\\S]*\\S)\\s*<\\s*${unlocks}\\.redeem_script\\s*>\\s*$`)
-  );
+// TODO: attempt to extract all P2SH scripts (which don't follow our `magicSuffix` convention) from imports.
+// const extractPattern = (string: string, pattern: RegExp) => {
+//   const result = pattern.exec(string);
+//   return result ? result[1] : false;
+// };
+// const extractRedeemScript = (lockingScript: string) =>
+//   extractPattern(
+//     lockingScript,
+//     /^\s*OP_HASH160\s*<\s*\$\(\s*<\s*([\s\S]*)\s>\s*OP_HASH160\s*\)\s*>\s*OP_EQUAL\s*$/
+//   );
+// const extractUnlockingScriptFromUnlockingP2SH = (
+//   unlocks: string,
+//   unlockingScript: string
+// ) =>
+//   extractPattern(
+//     unlockingScript,
+//     new RegExp(`^([\\s\\S]*\\S)\\s*<\\s*${unlocks}\\.redeem_script\\s*>\\s*$`)
+//   );
+// const extractP2sh = (
+//   lockingScriptId: string,
+//   lockingScript: string,
+//   unlockingScript: string
+// ) => {
+//   const redeemScript = extractRedeemScript(lockingScript);
+//   const trimmedUnlock = extractUnlockingScriptFromUnlockingP2SH(
+//     lockingScriptId,
+//     unlockingScript
+//   );
+//   return redeemScript && trimmedUnlock
+//     ? { unlockingScript: trimmedUnlock, lockingScript: redeemScript }
+//     : false;
+// };
 
 const buildLockingScriptForP2SH = (redeemScriptId: string) =>
   `OP_HASH160 <$(<${redeemScriptId}> OP_HASH160)> OP_EQUAL`;
@@ -45,25 +58,6 @@ const buildUnlockingScriptForP2SH = (
   redeemScriptId: string,
   strippedUnlockingScript: string
 ) => `${strippedUnlockingScript} <${redeemScriptId}>`;
-
-/**
- * TODO: attempt to extract all P2SH scripts (which don't follow our
- *  `magicSuffix` convention) from imports.
- */
-const extractP2sh = (
-  lockingScriptId: string,
-  lockingScript: string,
-  unlockingScript: string
-) => {
-  const redeemScript = extractRedeemScript(lockingScript);
-  const trimmedUnlock = extractUnlockingScriptFromUnlockingP2SH(
-    lockingScriptId,
-    unlockingScript
-  );
-  return redeemScript && trimmedUnlock
-    ? { unlockingScript: trimmedUnlock, lockingScript: redeemScript }
-    : false;
-};
 
 type ExtractedScript = AuthenticationTemplateScript & { id: string };
 
@@ -264,7 +258,7 @@ export const importAuthenticationTemplate = (
       const lockingId = createInsecureUuidV4();
       const matchingScript = templateScripts.find(s => s.id === redeemScriptId);
       if (matchingScript === undefined) {
-        throw 'Could not find matching locking script.';
+        throw new Error('Could not find matching locking script.');
       }
       const children = templateScripts
         .filter(s => s.unlocks === script.id)
@@ -277,7 +271,7 @@ export const importAuthenticationTemplate = (
           script: unlocking.script
             ? unlocking.script
                 .replace(
-                  new RegExp(`<\s*${redeemScriptId.replace('.', '\\.')}\s*>`),
+                  new RegExp(`<\s*${redeemScriptId.replace('.', '\\.')}\s*>`), // eslint-disable-line no-useless-escape
                   ''
                 )
                 .trim()

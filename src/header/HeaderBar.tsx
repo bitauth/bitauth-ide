@@ -130,9 +130,9 @@ export const HeaderBar = connect(
           }}
         >
           {wrapInterfaceTooltip(
-            <a className="link" onClick={() => props.openGuide()}>
+            <button className="link" onClick={() => props.openGuide()}>
               <Icon icon={IconNames.MANUAL} iconSize={12} /> Guide
-            </a>,
+            </button>,
             'Open the Bitauth IDE guide.'
           )}
         </Popover>
@@ -141,7 +141,7 @@ export const HeaderBar = connect(
             className="link github-logo"
             href="https://github.com/bitauth/bitauth-ide/issues"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
           >
             <img src={GitHubLogo} alt="logo" />
             Report a bug
@@ -154,7 +154,7 @@ export const HeaderBar = connect(
             className="link"
             href="https://twitter.com/bitauth"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
           >
             <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Get updates
           </a>,

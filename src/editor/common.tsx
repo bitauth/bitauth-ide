@@ -12,7 +12,7 @@ import { Tooltip, Position } from '@blueprintjs/core';
 import { compileScriptText } from 'bitcoin-ts';
 
 /**
- * RegExp(`[a-zA-Z_][\.a-zA-Z0-9_-]*`)
+ * RegExp(`[a-zA-Z_][.a-zA-Z0-9_-]*`)
  */
 export const sanitizeId = (input: string) =>
   input
@@ -20,7 +20,7 @@ export const sanitizeId = (input: string) =>
     .trim()
     .replace(/\s/g, '_')
     .replace(/^[^a-zA-Z_]/g, '')
-    .replace(/[^\.a-zA-Z0-9_-]/g, '');
+    .replace(/[^.a-zA-Z0-9_-]/g, '');
 
 export const getCurrentScripts = (state: AppState) =>
   Object.entries(state.currentTemplate.scriptsByInternalId)

@@ -2,17 +2,11 @@ import '../editor-dialog.scss';
 import './ImportScriptDialog.scss';
 import React, { useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import {
-  ActiveDialog,
-  ScriptType,
-  BaseScriptType,
-  CurrentScripts
-} from '../../../state/types';
+import { ActiveDialog, CurrentScripts } from '../../../state/types';
 import {
   Classes,
   Dialog,
   FormGroup,
-  HTMLSelect,
   InputGroup,
   Button,
   Icon

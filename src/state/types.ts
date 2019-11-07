@@ -6,8 +6,7 @@ import {
   AuthenticationVirtualMachine,
   AuthenticationVirtualMachineIdentifier,
   Sha256,
-  Secp256k1,
-  AuthenticationTemplateScript
+  Secp256k1
 } from 'bitcoin-ts';
 
 export enum IDEMode {

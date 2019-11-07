@@ -114,7 +114,15 @@ export const GuideDialog = ({
           <li>
             <em>UTF8 literals</em> – UTF8-encoded data, surrounded by single
             quotes (<code>'</code>) or double quotes (<code>"</code>), e.g.{' '}
-            <code>'this is a string'</code> or <code>"UTF8 👍"</code>.
+            <code>'this is a string'</code> or{' '}
+            <code>
+              "UTF8{' '}
+              <span role="img" aria-label="thumbs up">
+                👍
+              </span>
+              "
+            </code>
+            .
           </li>
           <li>
             <em>BigInt literals</em> – integers, e.g. <code>1234</code>.
@@ -259,7 +267,7 @@ export const GuideDialog = ({
           scripts into a simple transaction and evaluates it in the{' '}
           <a
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             href="https://github.com/bitauth/bitcoin-ts"
           >
             bitcoin-ts
@@ -314,13 +322,17 @@ export const GuideDialog = ({
           for improvement, please{' '}
           <a
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             href="https://github.com/bitauth/bitauth-ide/issues"
           >
             open an issue on GitHub
           </a>{' '}
           or{' '}
-          <a target="_blank" rel="noopener" href="https://twitter.com/bitjson">
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://twitter.com/bitjson"
+          >
             message me on twitter
           </a>
           .

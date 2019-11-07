@@ -1,14 +1,5 @@
 import React from 'react';
 import './WelcomePane.scss';
-import {
-  EditableText,
-  FormGroup,
-  Button,
-  Icon,
-  Intent,
-  Alert,
-  Checkbox
-} from '@blueprintjs/core';
 import { AppState, IDETemplate } from '../../state/types';
 import { connect } from 'react-redux';
 import { IconNames } from '@blueprintjs/icons';
@@ -19,12 +10,13 @@ import continuity from '../../templates/2-of-2-continuity.json';
 import zcf from '../../templates/zcf.json';
 import { importAuthenticationTemplate } from '../../state/import-export';
 import { AuthenticationTemplate } from 'bitcoin-ts';
+import { Icon } from '@blueprintjs/core';
 
 const isValidTemplate = (result: IDETemplate | string): result is IDETemplate =>
   typeof result !== 'string';
 const assertValidTemplate = (result: IDETemplate | string) => {
   if (!isValidTemplate(result)) {
-    throw `Default template is invalid: ${result}`;
+    throw new Error(`Default template is invalid: ${result}`);
   }
   return result;
 };
@@ -66,7 +58,7 @@ export const WelcomePane = connect(
     <div className="EditorPaneContents">
       <div className="welcome-box">
         <h3 className="instructions">Choose a template to begin</h3>
-        <div
+        <button
           className="starter-template"
           onClick={() => {
             props.importTemplate(defaultTemplates.single);
@@ -78,8 +70,8 @@ export const WelcomePane = connect(
             Single Signature (P2PKH) &rarr;
           </h4>
           <p>Transactions are signed by only a single key.</p>
-        </div>
-        <div
+        </button>
+        <button
           className="starter-template"
           onClick={() => {
             props.importTemplate(defaultTemplates.multi);
@@ -91,8 +83,8 @@ export const WelcomePane = connect(
             2-of-3 Multi-Signature &rarr;
           </h4>
           <p>Transactions require any two of three co-owners to sign.</p>
-        </div>
-        <div
+        </button>
+        <button
           className="starter-template"
           onClick={() => {
             props.importTemplate(defaultTemplates.continuity);
@@ -107,7 +99,7 @@ export const WelcomePane = connect(
             Transactions require either both co-owners to sign, or after a
             delay, one co-owner and another trusted party.
           </p>
-        </div>
+        </button>
         {/* <div
             className="starter-template"
             onClick={() => {
@@ -140,7 +132,7 @@ export const WelcomePane = connect(
               attempts to double-spend, the bounty is forfeited to a miner.
             </p>
           </div> */}
-        <div
+        <button
           className="starter-template"
           onClick={() => {
             props.resetTemplate();
@@ -152,8 +144,8 @@ export const WelcomePane = connect(
             Empty Template &rarr;
           </h4>
           <p>A blank slate, ready for some creative genius.</p>
-        </div>
-        <div
+        </button>
+        <button
           className="starter-template"
           onClick={() => {
             props.resetTemplate();
@@ -165,7 +157,7 @@ export const WelcomePane = connect(
             Import or Restore Template &rarr;
           </h4>
           <p>Import or restore a template from a previous session.</p>
-        </div>
+        </button>
       </div>
     </div>
   </div>

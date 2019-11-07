@@ -84,7 +84,7 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
   onEnterRules: [
     {
       // e.g. /** | */
-      beforeText: /^\s*\/\*\*(?!\/)([^\*]|\*(?!\/))*$/,
+      beforeText: /^\s*\/\*\*(?!\/)([^*]|\*(?!\/))*$/,
       afterText: /^\s*\*\/$/,
       action: {
         indentAction: monacoLanguages.IndentAction.IndentOutdent,
@@ -93,7 +93,7 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     },
     {
       // e.g. /** ...|
-      beforeText: /^\s*\/\*\*(?!\/)([^\*]|\*(?!\/))*$/,
+      beforeText: /^\s*\/\*\*(?!\/)([^*]|\*(?!\/))*$/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
         appendText: ' * '
@@ -101,7 +101,7 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     },
     {
       // e.g.  * ...|
-      beforeText: /^(\t|(\ \ ))*\ \*(\ ([^\*]|\*(?!\/))*)?$/,
+      beforeText: /^(\t|( {2}))* *( ([^*]|\*(?!\/))*)?$/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
         appendText: '* '
@@ -109,7 +109,7 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     },
     {
       // e.g.  */|
-      beforeText: /^(\t|(\ \ ))*\ \*\/\s*$/,
+      beforeText: /^(\t|( {2}))* \*\/\s*$/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
         removeText: 1
@@ -143,7 +143,7 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
       [/0[xX](@hex)/, 'literal.hex'], // HexLiteral
       [/(@bigint)/, 'literal.bigint'], // BigIntLiteral
       [
-        /[a-zA-Z_][\.a-zA-Z0-9_-]+/,
+        /[a-zA-Z_][.a-zA-Z0-9_-]+/,
         {
           cases: {
             '@flowControlOpcodes': 'opcode.flow-control',
@@ -168,9 +168,9 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
       [/\/\/.*$/, 'comment']
     ],
     comment: [
-      [/[^\/*]+/, 'comment'],
+      [/[^/*]+/, 'comment'],
       [/\*\//, 'comment', '@pop'],
-      [/[\/*]/, 'comment']
+      [/[/*]/, 'comment']
     ],
     string_double: [[/[^"$]+/, 'string'], [/"/, 'string', '@pop']],
     string_single: [[/[^'$]+/, 'string'], [/'/, 'string', '@pop']]
