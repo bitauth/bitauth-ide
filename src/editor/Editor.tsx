@@ -293,6 +293,7 @@ const getIDECompilationData = (
               }
             };
         }
+      // eslint-disable-next-line no-fallthrough
       default:
         unknownValue(variable);
         return data;
@@ -688,13 +689,12 @@ export const Editor = connect(
             case ScriptEditorPane.one:
             case ScriptEditorPane.two:
               type = 'editor';
-            case ScriptEvaluationViewerPane.zero:
+            case ScriptEvaluationViewerPane.zero: // eslint-disable-line no-fallthrough
             case ScriptEvaluationViewerPane.one:
             case ScriptEvaluationViewerPane.two:
               const computed = props.computed as EditorStateScriptMode<
                 IDESupportedProgramState
               >;
-              computed;
               let i = 0;
               switch (id) {
                 case ScriptEditorPane.zero:

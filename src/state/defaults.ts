@@ -54,7 +54,7 @@ if (isImport) {
       throw new Error(`Failed to import template: ${importedTemplate}`);
     }
     currentTemplate = importedTemplate;
-    history.pushState(null, 'Bitauth IDE', '/');
+    window.history.pushState(null, 'Bitauth IDE', '/');
   } catch (e) {
     window.alert(
       'This sharing URL seems to be corrupted. Please check the link and try again.'

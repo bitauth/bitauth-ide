@@ -189,7 +189,7 @@ export const extractTemplate = (
       {}
     ),
   scripts: extractTemplateScripts(currentTemplate),
-  supported: currentTemplate.supportedVirtualMachines.sort((a, b) =>
+  supported: [...currentTemplate.supportedVirtualMachines].sort((a, b) =>
     a.localeCompare(b)
   ),
   version: 0

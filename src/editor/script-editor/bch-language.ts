@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { OpcodesBCH, OpcodeDescriptionsBCH } from 'bitcoin-ts';
+import { OpcodesBCH, OpcodeDescriptionsBCH, Range } from 'bitcoin-ts';
 
 const opcodeNames = Object.keys(OpcodesBCH).filter(
   key => key.slice(0, 3) === 'OP_'
@@ -162,26 +162,33 @@ const completableOpcodes = [
   ...otherOpcodes
 ];
 
-const opcodeSuggestions = completableOpcodes.map<
-  Monaco.languages.CompletionItem
->(opcode => ({
-  label: opcode,
-  detail: descriptions[opcode][1],
-  documentation: descriptions[opcode][0],
-  kind: Monaco.languages.CompletionItemKind.Function,
-  insertText: opcode
-}));
+const opcodeSuggestions = (range: Range) =>
+  completableOpcodes.map<Monaco.languages.CompletionItem>(opcode => ({
+    label: opcode,
+    detail: descriptions[opcode][1],
+    documentation: descriptions[opcode][0],
+    kind: Monaco.languages.CompletionItemKind.Function,
+    insertText: opcode,
+    range
+  }));
 
 export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider = {
   triggerCharacters: [''],
   provideCompletionItems: (model, position) => {
     const query = model.getWordAtPosition(position);
+    const columns = model.getWordUntilPosition(position);
+    const range: Range = {
+      startColumn: columns.startColumn,
+      endColumn: columns.endColumn,
+      startLineNumber: position.lineNumber,
+      endLineNumber: position.lineNumber
+    };
     const suggestions =
       query !== null &&
       (query.word === 'O' ||
         query.word === 'OP' ||
         query.word.slice(0, 3) === 'OP_')
-        ? opcodeSuggestions
+        ? opcodeSuggestions(range)
         : [];
     return { suggestions };
   }

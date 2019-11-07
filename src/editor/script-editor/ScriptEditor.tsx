@@ -419,16 +419,24 @@ export const ScriptEditor = (props: {
               endColumn: position.column,
               endLineNumber: position.lineNumber
             });
-            const lastValidIdentifier = /[a-zA-Z_][\.a-zA-Z0-9_-]*$/;
+            const lastValidIdentifier = /[a-zA-Z_][.a-zA-Z0-9_-]*$/;
             const match = contentBeforePosition.match(lastValidIdentifier);
             /**
              * If match is `null`, the user manually triggered autocomplete:
              * show all potential variable options.
              */
-            const parts = match === null ? [''] : match[0].split('.');
+            const assumedMatch = match === null ? '' : match;
+            const parts = assumedMatch[0].split('.');
             const targetId = parts[0];
             const operation = parts[1] as string | undefined;
             const parameter = parts[2] as string | undefined;
+
+            const range: Range = {
+              endColumn: position.column,
+              endLineNumber: position.lineNumber,
+              startColumn: position.column - assumedMatch.length,
+              startLineNumber: position.lineNumber
+            };
 
             if (operation === undefined) {
               return {
@@ -445,6 +453,7 @@ export const ScriptEditor = (props: {
                           documentation: variable.description,
                           kind: monaco.languages.CompletionItemKind.Variable,
                           insertText: isKey ? `${id}.` : id,
+                          range,
                           ...(isKey
                             ? {
                                 command: {
@@ -463,7 +472,8 @@ export const ScriptEditor = (props: {
                         label: id,
                         detail: `${script.name} – Script`,
                         kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: id
+                        insertText: id,
+                        range
                       })
                     )
                 ]
@@ -497,6 +507,7 @@ export const ScriptEditor = (props: {
                         documentation: descriptions[1],
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: requiresParameter ? `${op}.` : op,
+                        range,
                         ...(requiresParameter
                           ? {
                               command: {
@@ -530,7 +541,8 @@ export const ScriptEditor = (props: {
                       detail: descriptions[0],
                       documentation: descriptions[1],
                       kind: monaco.languages.CompletionItemKind.Function,
-                      insertText: param
+                      insertText: param,
+                      range
                     })
                   )
               };
@@ -546,7 +558,8 @@ export const ScriptEditor = (props: {
                       label: id,
                       detail: scriptInfo.name,
                       kind: monaco.languages.CompletionItemKind.Variable,
-                      insertText: id
+                      insertText: id,
+                      range
                     })
                   )
               };
