@@ -11,6 +11,7 @@ import zcf from '../../templates/zcf.json';
 import { importAuthenticationTemplate } from '../../state/import-export';
 import { AuthenticationTemplate } from 'bitcoin-ts';
 import { Icon } from '@blueprintjs/core';
+import { createInsecureUuidV4 } from '../../state/utils';
 
 const isValidTemplate = (result: IDETemplate | string): result is IDETemplate =>
   typeof result !== 'string';
@@ -41,6 +42,7 @@ interface WelcomePaneDispatch {
   importTemplate: typeof ActionCreators.importTemplate;
   openTemplateSettings: typeof ActionCreators.openTemplateSettings;
   resetTemplate: typeof ActionCreators.resetTemplate;
+  createScript: typeof ActionCreators.createScript;
 }
 
 const templateIconSize = 12;
@@ -51,7 +53,8 @@ export const WelcomePane = connect(
     importExport: ActionCreators.importExport,
     importTemplate: ActionCreators.importTemplate,
     openTemplateSettings: ActionCreators.openTemplateSettings,
-    resetTemplate: ActionCreators.resetTemplate
+    resetTemplate: ActionCreators.resetTemplate,
+    createScript: ActionCreators.createScript
   }
 )((props: WelcomePaneDispatch) => (
   <div className="WelcomePane EditorPane">
@@ -136,12 +139,18 @@ export const WelcomePane = connect(
           className="starter-template"
           onClick={() => {
             props.resetTemplate();
-            props.openTemplateSettings();
+            props.createScript({
+              name: 'Scratch Pad',
+              id: 'scratch_pad',
+              internalId: createInsecureUuidV4(),
+              type: 'isolated',
+              contents: "<'hello'> <'🌎'>\nOP_CAT"
+            });
           }}
         >
           <h4>
             <Icon icon={IconNames.CLEAN} iconSize={templateIconSize} />
-            Empty Template &rarr;
+            Scratch Pad &rarr;
           </h4>
           <p>A blank slate, ready for some creative genius.</p>
         </button>

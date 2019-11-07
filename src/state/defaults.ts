@@ -14,7 +14,7 @@ export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] 
 export const emptyTemplate = {
   $schema: 'https://bitauth.com/schemas/authentication-template-v0.schema.json',
   description: '',
-  name: '',
+  name: 'Untitled',
   entities: {},
   scripts: {},
   supported: [

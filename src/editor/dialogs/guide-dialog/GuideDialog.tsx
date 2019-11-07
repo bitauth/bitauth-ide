@@ -40,11 +40,11 @@ export const GuideDialog = ({
         <ul>
           <li>
             <em>Entities</em> – the individuals and/or devices participating in
-            the wallet
+            the wallet.
           </li>
           <li>
             <em>Scripts</em> – the code used by wallet software to create
-            addresses and transactions
+            addresses and transactions.
           </li>
         </ul>
         <h3>Entities</h3>
