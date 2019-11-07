@@ -101,7 +101,8 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     },
     {
       // e.g.  * ...|
-      beforeText: /^(\t|( {2}))* *( ([^*]|\*(?!\/))*)?$/,
+      beforeText: /^(\t|[ ])*[ ]\*([ ]([^*]|\*(?!\/))*)?$/,
+      oneLineAboveText: /^(\s*(\/\*\*|\*)).*/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
         appendText: '* '
@@ -109,11 +110,13 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     },
     {
       // e.g.  */|
-      beforeText: /^(\t|( {2}))* \*\/\s*$/,
-      action: {
-        indentAction: monacoLanguages.IndentAction.None,
-        removeText: 1
-      }
+      beforeText: /^(\t|[ ])*[ ]\*\/\s*$/,
+      action: { indentAction: monacoLanguages.IndentAction.None, removeText: 1 }
+    },
+    {
+      // e.g.  *-----*/|
+      beforeText: /^(\t|[ ])*[ ]\*[^/]*\*\/\s*$/,
+      action: { indentAction: monacoLanguages.IndentAction.None, removeText: 1 }
     }
   ]
 });
