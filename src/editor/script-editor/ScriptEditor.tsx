@@ -409,6 +409,9 @@ export const ScriptEditor = (props: {
         bitauthTemplatingLanguage,
         {
           provideCompletionItems: (model, position) => {
+            if (!isCorrectScript(model, props.script)) {
+              return;
+            }
             const contentBeforePosition = model.getValueInRange({
               startColumn: 1,
               startLineNumber: position.lineNumber,
@@ -421,17 +424,18 @@ export const ScriptEditor = (props: {
              * If match is `null`, the user manually triggered autocomplete:
              * show all potential variable options.
              */
-            const assumedMatch = match === null ? '' : match;
+            const assumedMatch = match === null ? [''] : match;
             const parts = assumedMatch[0].split('.');
             const targetId = parts[0];
             const operation = parts[1] as string | undefined;
             const parameter = parts[2] as string | undefined;
 
+            const word = model.getWordUntilPosition(position);
             const range: Range = {
-              endColumn: position.column,
+              startLineNumber: position.lineNumber,
               endLineNumber: position.lineNumber,
-              startColumn: position.column - assumedMatch.length,
-              startLineNumber: position.lineNumber
+              startColumn: word.startColumn,
+              endColumn: word.endColumn
             };
 
             if (operation === undefined) {
@@ -485,7 +489,7 @@ export const ScriptEditor = (props: {
               (details.variable.type !== 'HDKey' &&
                 details.variable.type !== 'Key')
             ) {
-              return null;
+              return;
             }
 
             if (parameter === undefined) {
@@ -519,7 +523,7 @@ export const ScriptEditor = (props: {
             }
 
             if (keyOperationsWhichRequireAParameter.indexOf(operation) === -1) {
-              return null;
+              return;
             }
 
             if (
@@ -561,7 +565,7 @@ export const ScriptEditor = (props: {
               };
             } else {
               console.error(`Unexpected key operations ${operation}.`);
-              return null;
+              return;
             }
           },
           triggerCharacters: ['.']

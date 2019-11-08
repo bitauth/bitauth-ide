@@ -124,7 +124,7 @@ const descriptions = Object.entries(OpcodeDescriptionsBCH)
   }, {});
 
 /**
- * Monaco hover providers are global, so we have to ensure we're
+ * Monaco hover and completion providers are global, so we have to ensure we're
  * looking at the correct script.
  */
 export const isCorrectScript = (
