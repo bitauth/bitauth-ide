@@ -390,7 +390,7 @@ export const importAuthenticationTemplate = (
     ...nonP2shLockingAndUnlockingScripts
   ];
 
-  const otherScripts = templateScripts.filter(
+  const otherScripts = remainingScripts.filter(
     script =>
       !lockingAndUnlockingScripts.some(existing => existing.id === script.id)
   );
