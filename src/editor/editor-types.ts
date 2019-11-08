@@ -211,7 +211,17 @@ export interface EditorStateScriptMode<
     | ProjectEditorMode.testedScriptEditor
     | ProjectEditorMode.scriptPairEditor;
   scriptEditorFrames: ScriptEditorFrame<ProgramState>[];
+  /**
+   * An array of the internalIds of scripts which are part of this evaluation.
+   * Used by the EvaluationViewer to recognize switches to a new set of scripts
+   * (for cache clearing).
+   */
   scriptEditorEvaluationTrace: string[];
+  /**
+   * An array of the source scripts which are part of this evaluation. Used by
+   * the EvaluationViewer to recognize viable updates to its cache.
+   */
+  scriptEditorEvaluationSource: string[];
   isP2sh: boolean;
   /**
    * Set to `undefined` if no compilations were successful (so the previous

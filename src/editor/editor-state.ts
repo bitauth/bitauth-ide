@@ -406,6 +406,10 @@ export const computeEditorState = <
     const scriptEditorEvaluationTrace = evaluationOrderedScripts.map(
       script => script.internalId
     );
+    const scriptEditorEvaluationSource = evaluationOrderedScripts.map(
+      script => script.script
+    );
+
     const scriptEditorFrames = evaluationOrderedScripts.map<
       ScriptEditorFrame<ProgramState>
     >((source, i) => ({
@@ -502,6 +506,7 @@ export const computeEditorState = <
       isP2sh,
       scriptDetails,
       scriptEditorEvaluationTrace,
+      scriptEditorEvaluationSource,
       scriptEditorFrames,
       variableDetails
     };

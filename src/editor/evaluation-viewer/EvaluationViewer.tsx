@@ -158,13 +158,13 @@ export const EvaluationViewer = (props: {
   compilation: CompilationResult;
   evaluation?: Evaluation;
   evaluationTrace: string[];
+  evaluationSource: string[];
   id: string;
   lookup?: StackItemIdentifyFunction;
-  script: string;
   scrollOffset: number;
 }) => {
   const [cachedEvaluation, setCachedEvaluation] = useState(emptyEvaluation);
-  const [cachedScript, setCachedScript] = useState('');
+  const [cachedEvaluationSource, setCachedEvaluationSource] = useState('');
   const [cachedEvaluationTrace, setCachedEvaluationTrace] = useState(['']);
   const [cachedLookup, setCachedLookup] = useState<{
     lookup: StackItemIdentifyFunction | undefined;
@@ -178,10 +178,10 @@ export const EvaluationViewer = (props: {
   }
   const hasError =
     typeof props.evaluation === 'undefined' || props.evaluation.length === 0;
-  const cacheIsUpdated = cachedScript === props.script;
-
+  const cacheIsUpdated =
+    cachedEvaluationSource === props.evaluationSource.join();
   if (!hasError && !cacheIsUpdated) {
-    setCachedScript(props.script);
+    setCachedEvaluationSource(props.evaluationSource.join());
     setCachedEvaluation(props.evaluation as Evaluation);
     setCachedLookup({ lookup: props.lookup });
     return null;

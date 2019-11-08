@@ -153,8 +153,8 @@ export const Editor = connect(
                   compilation={computed.scriptEditorFrames[i].compilation}
                   evaluation={computed.scriptEditorFrames[i].evaluation}
                   evaluationTrace={computed.scriptEditorEvaluationTrace}
+                  evaluationSource={computed.scriptEditorEvaluationSource}
                   id={computed.scriptEditorFrames[i].id}
-                  script={computed.scriptEditorFrames[i].script}
                   lookup={computed.identifyStackItems}
                   scrollOffset={scrollOffset[i]}
                 />
