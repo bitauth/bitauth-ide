@@ -287,13 +287,10 @@ export const ImportExportDialog = connect(
               let parsed;
               try {
                 parsed = JSON.parse(template);
-              } catch (e) {
-                setErrorMessage(e);
-              }
-              const result = importAuthenticationTemplate(parsed);
-              if (typeof result === 'string') {
-                setErrorMessage(result);
-              } else {
+                const result = importAuthenticationTemplate(parsed);
+                if (typeof result === 'string') {
+                  throw new Error(result);
+                }
                 if (props.isEmptyTemplate) {
                   // no need to prompt the user about overwriting an empty template
                   props.importTemplate(result);
@@ -301,8 +298,10 @@ export const ImportExportDialog = connect(
                 } else {
                   setPromptForImportOfTemplate(result);
                 }
+              } catch (e) {
+                setErrorMessage(`${e}`);
+                console.error(e);
               }
-              //
             }}
           >
             Import Template
