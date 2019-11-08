@@ -144,7 +144,7 @@ export const WelcomePane = connect(
               id: 'scratch_pad',
               internalId: createInsecureUuidV4(),
               type: 'isolated',
-              contents: "<'hello'> <'🌎'>\nOP_CAT"
+              contents: "<'hello'> <'🌎'>\nOP_CAT\nOP_HASH160"
             });
           }}
         >

@@ -68,7 +68,7 @@ const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
   ).filter(
     script => script.type === 'locking' && script.isP2SH
   ) as IDETemplateLockingScript[];
-  const lockingAndUnlockingScripts = p2shLockingScripts.reduce<
+  const p2shLockingAndUnlockingScripts = p2shLockingScripts.reduce<
     ExtractedScript[]
   >((scripts, p2shLockingScript) => {
     const redeemScriptId = `${p2shLockingScript.id}.redeem_script`;
@@ -95,6 +95,33 @@ const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
       ...unlockingScripts
     ];
   }, []);
+  const nonP2shLockingScripts = Object.values(
+    ideTemplate.scriptsByInternalId
+  ).filter(
+    script => script.type === 'locking' && !script.isP2SH
+  ) as IDETemplateLockingScript[];
+  const nonP2shLockingAndUnlockingScripts = nonP2shLockingScripts.reduce<
+    ExtractedScript[]
+  >((scripts, lockingScript) => {
+    const unlockingScripts = lockingScript.childInternalIds
+      .map(internalId => ideTemplate.scriptsByInternalId[internalId])
+      .map(ideScript => ({
+        id: ideScript.id,
+        name: ideScript.name,
+        script: ideScript.script,
+        unlocks: lockingScript.id
+      }));
+    return [
+      ...scripts,
+      {
+        id: lockingScript.id,
+        name: lockingScript.name,
+        script: lockingScript.script
+      },
+      ...unlockingScripts
+    ];
+  }, []);
+
   const testedScripts = (Object.values(ideTemplate.scriptsByInternalId).filter(
     script => script.type === 'tested'
   ) as IDETemplateTestedScript[]).reduce<ExtractedScript[]>(
@@ -131,7 +158,12 @@ const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
     name: script.name,
     script: script.script
   }));
-  return [...lockingAndUnlockingScripts, ...testedScripts, ...isolatedScripts]
+  return [
+    ...p2shLockingAndUnlockingScripts,
+    ...nonP2shLockingAndUnlockingScripts,
+    ...testedScripts,
+    ...isolatedScripts
+  ]
     .sort((a, b) => a.id.localeCompare(b.id))
     .reduce<AuthenticationTemplate['scripts']>(
       (collected, script) => ({
@@ -291,7 +323,7 @@ export const importAuthenticationTemplate = (
     []
   );
 
-  const otherScripts = templateScripts.filter(
+  const remainingScripts = templateScripts.filter(
     script =>
       !p2shScripts.some(
         existing =>
@@ -300,6 +332,67 @@ export const importAuthenticationTemplate = (
             existing.isP2SH &&
             `${existing.id}${magicSuffix}` === script.id)
       )
+  );
+
+  const remainingUnlockingScripts = remainingScripts.filter(
+    script => script.unlocks !== undefined
+  );
+
+  const lockingScriptMap = remainingUnlockingScripts
+    .map(unlocking => ({
+      lock: unlocking.unlocks as string,
+      unlock: unlocking.id
+    }))
+    .reduce(
+      (allPairs, pair) => {
+        return {
+          ...allPairs,
+          ...(allPairs[pair.lock]
+            ? {
+                [pair.lock]: [...allPairs[pair.lock], pair.unlock]
+              }
+            : { [pair.lock]: [pair.unlock] })
+        };
+      },
+      {} as { [lock: string]: string[] }
+    );
+
+  const nonP2shLockingAndUnlockingScripts = remainingScripts
+    .filter(script => script.id in lockingScriptMap)
+    .reduce<IDETemplateScript[]>((scripts, locking) => {
+      const lockingId = createInsecureUuidV4();
+      const children = remainingScripts
+        .filter(
+          scripts => lockingScriptMap[locking.id].indexOf(scripts.id) !== -1
+        )
+        .map<IDETemplateUnlockingScript>(unlocking => ({
+          type: 'unlocking',
+          id: unlocking.id,
+          internalId: createInsecureUuidV4(),
+          name: unlocking.name || 'Unnamed',
+          parentInternalId: lockingId,
+          script: unlocking.script
+        }));
+      const lockingScript: IDETemplateLockingScript = {
+        type: 'locking',
+        id: locking.id,
+        internalId: lockingId,
+        name: locking.name || 'Unnamed',
+        script: locking.script,
+        childInternalIds: children.map(c => c.internalId),
+        isP2SH: false
+      };
+      return [...scripts, ...children, lockingScript];
+    }, []);
+
+  const lockingAndUnlockingScripts = [
+    ...p2shScripts,
+    ...nonP2shLockingAndUnlockingScripts
+  ];
+
+  const otherScripts = templateScripts.filter(
+    script =>
+      !lockingAndUnlockingScripts.some(existing => existing.id === script.id)
   );
 
   const isolatedAndTestedScripts = otherScripts.reduce<IDETemplateScript[]>(
@@ -357,7 +450,11 @@ export const importAuthenticationTemplate = (
     []
   );
 
-  const allIDEScripts = [...p2shScripts, ...isolatedAndTestedScripts];
+  const allIDEScripts = [
+    ...p2shScripts,
+    ...nonP2shLockingAndUnlockingScripts,
+    ...isolatedAndTestedScripts
+  ];
 
   const templateEntities = entities.map(entity => {
     const variables =

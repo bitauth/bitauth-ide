@@ -6,7 +6,7 @@
     "owner": {
       "name": "Owner",
       "description": "The individual who can spend from this wallet.",
-      "scripts": ["p2pkh_lock", "unlock_p2pkh_lock"],
+      "scripts": ["p2pkh_lock", "unlock"],
       "variables": {
         "owner": {
           "description": "The private key which controls this wallet.",
@@ -20,15 +20,11 @@
   "scripts": {
     "p2pkh_lock": {
       "name": "P2PKH Lock",
-      "script": "OP_HASH160 <$(<p2pkh_lock.redeem_script> OP_HASH160)> OP_EQUAL"
-    },
-    "p2pkh_lock.redeem_script": {
-      "name": "P2PKH Lock Redeem Script",
       "script": "OP_DUP\nOP_HASH160 <$( <owner.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
     },
-    "unlock_p2pkh_lock": {
+    "unlock": {
       "name": "Unlock",
-      "script": "<owner.schnorr_signature.all_outputs>\n<owner.public_key> <p2pkh_lock.redeem_script>",
+      "script": "<owner.schnorr_signature.all_outputs>\n<owner.public_key>",
       "unlocks": "p2pkh_lock"
     }
   },

@@ -171,7 +171,9 @@ export const EditScriptDialog = ({
           <Button
             disabled={
               scriptName === '' ||
-              scriptName === name ||
+              (scriptName === name &&
+                scriptId === id &&
+                scriptIsP2SH === isP2SH) ||
               (!isTest && scriptId === '')
             }
             onClick={() => {
