@@ -29,11 +29,12 @@ code {
 /**
  * If your monitor isn't huge, Bitauth IDE will have horizontal scroll bars. If
  * you scroll too far, the built-in "swipe to go back" behavior could cause
- * immense frustration. Here we disable it.
+ * immense frustration. Here we disable it. We also disable vertical overscroll,
+ * since the UI should really remain stable.
  */
 html,
 body {
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
 }
 
 /**
