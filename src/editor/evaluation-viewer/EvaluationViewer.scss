@@ -63,7 +63,7 @@ $hex-color: #5bb498;
     }
     & > .header-bar-content {
       z-index: 10;
-      position: fixed;
+      position: relative;
     }
   }
 
