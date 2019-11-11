@@ -45,6 +45,18 @@ const variableTypes: {
 const variableTypeDescriptions: {
   [key in IDEVariable['type']]: React.ReactNode;
 } = {
+  AddressData: (
+    <span>
+      <p>
+        Address Data is the most low-level variable type. It must be collected
+        and stored each time a script is generated (usually, a locking script).
+      </p>
+      <p>
+        Address Data can include any type of data, and can be used in any way.
+        For more persistent data, use <code>WalletData</code>.
+      </p>
+    </span>
+  ),
   CurrentBlockHeight: (
     <span>
       <p>
@@ -84,18 +96,6 @@ const variableTypeDescriptions: {
       <p>
         When using the Key type, any necessary HD (Hierarchical-Deterministic)
         derivation must be completed prior to compilation.
-      </p>
-    </span>
-  ),
-  AddressData: (
-    <span>
-      <p>
-        Address Data is the most low-level variable type. It must be collected
-        and stored each time a script is generated (usually, a locking script).
-      </p>
-      <p>
-        Address Data can include any type of data, and can be used in any way.
-        For more persistent data, use <code>WalletData</code>.
       </p>
     </span>
   ),
@@ -167,7 +167,7 @@ export const EditVariableDialog = ({
         setVariableName((variable && variable.name) || '');
         setVariableDescription((variable && variable.description) || '');
         setVariableId((variable && variable.id) || '');
-        setVariableType((variable && variable.type) || 'Key');
+        setVariableType((variable && variable.type) || 'AddressData');
         setVariableMock((variable && variable.mock) || onesKey);
         setVariableMockHex('');
         setVariableMockError('');
@@ -196,24 +196,27 @@ export const EditVariableDialog = ({
               setVariableType(type);
               switch (type) {
                 case 'CurrentBlockHeight':
-                  setVariableName('Current Block Height');
+                  if (variableName === '')
+                    setVariableName('Current Block Height');
                   setVariableId('block_height');
                   break;
                 case 'CurrentBlockTime':
-                  setVariableName('Current Block Time');
+                  if (variableName === '')
+                    setVariableName('Current Block Time');
                   setVariableId('block_time');
                   break;
                 case 'HDKey':
-                  setVariableName(`${entity.name}'s HD Key`);
+                  if (variableName === '')
+                    setVariableName(`${entity.name}'s HD Key`);
                   setVariableId(`${entity.id}_hdkey`);
                   break;
                 case 'Key':
-                  setVariableName(`${entity.name}'s Key`);
+                  if (variableName === '')
+                    setVariableName(`${entity.name}'s Key`);
                   setVariableId(`${entity.id}_key`);
                   break;
                 case 'AddressData':
                 case 'WalletData':
-                  setVariableName('');
                   setVariableId('');
                   break;
                 default:
