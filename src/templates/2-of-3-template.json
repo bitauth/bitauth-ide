@@ -71,7 +71,7 @@
         {
           "name": "Test Safety Number",
           "setup": "",
-          "check": "<0xfcf0561a7198e73b73e9d870bf3600b6a8e3514f> OP_EQUAL"
+          "check": "<0x7c1983c98849a499d68854a1e86a8e879550c1fb> OP_EQUAL"
         }
       ]
     }
