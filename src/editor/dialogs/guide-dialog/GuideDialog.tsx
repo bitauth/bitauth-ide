@@ -54,7 +54,7 @@ export const GuideDialog = ({
           <em>variables</em> for which they are responsible. There are currently
           6 variable types: <em>Key</em>, <em>HDKey</em>, <em>WalletData</em>,{' '}
           <em>AddressData</em>, <em>CurrentBlockHeight</em>, and{' '}
-          <em>CurrentBlockTime</em>.
+          <em>CurrentBlockTime</em> (details below).
         </p>
         <p>
           When a wallet is created, each entity shares the public elements of
@@ -169,6 +169,54 @@ export const GuideDialog = ({
           script, which might be defined as <code>&lt;8&gt; OP_NUM2BIN</code>,
           padding <code>my_number</code> to 8 bytes.
         </p>
+        <h3>Variable Types</h3>
+        <p>
+          Each variable has a type which specifies its role in a template. There
+          are currently 6 variable types:
+        </p>
+        <ul>
+          <li>
+            <code>AddressData</code>– Address Data is the most low-level
+            variable type. It must be collected and stored each time a script is
+            generated (usually, a locking script). Address Data can include any
+            type of data, and can be used in any way. For more persistent data,
+            use <code>WalletData</code>.
+          </li>
+          <li>
+            <code>CurrentBlockHeight</code>– The Current Block Height type
+            provides the current block height as a Script Number at the time of
+            compilation. This is useful when computing a height for
+            <code>OP_CHECKLOCKTIMEVERIFY</code>/
+            <code>OP_CHECKSEQUENCEVERIFY</code> which is relative to the height
+            at the moment a script is created (usually, a locking script).
+          </li>
+          <li>
+            <code>CurrentBlockTime</code>– The Current Block Time type provides
+            the current block time (at the time of compilation) as a Script
+            Number. This is useful when computing a time for
+            <code>OP_CHECKLOCKTIMEVERIFY</code>/
+            <code>OP_CHECKSEQUENCEVERIFY</code> which is relative to the current
+            time at the moment a script is created (usually, a locking script).
+          </li>
+          <li>
+            <code>HDKey</code>– The HD Key (Hierarchical-Deterministic Key) type
+            automatically manages key generation and mapping in a standard way.
+            For greater control, use a Key. (NOTE: HDKey is not yet supported by
+            Bitauth IDE.)
+          </li>
+          <li>
+            <code>Key</code>– The Key type provides fine-grained control over
+            key generation and mapping. Most templates should instead use{' '}
+            <code>HDKey</code>.
+          </li>
+          <li>
+            <code>WalletData</code>– The Wallet Data type provides a static
+            piece of data – collected once and stored at the time of wallet
+            creation. Wallet Data is persisted for the life of the wallet,
+            rather than changing from locking script to locking script. For
+            address-specific data, use <code>AddressData</code>.
+          </li>
+        </ul>
         <h3>Variable Operations</h3>
         <p>
           Some variable types provide operations which are accessed with a

@@ -48,36 +48,38 @@ const variableTypeDescriptions: {
   CurrentBlockHeight: (
     <span>
       <p>
-        The Current Block Height type provides the current block height as a
-        Script Number.
+        The Current Block Height type provides the current block height (at the
+        time of compilation) as a Script Number.
       </p>
       <p>
-        This is useful when computing a height for OP_CHECKLOCKTIMEVERIFY which
-        is relative to the height at the moment a script is created (usually, a
-        locking script).
+        This is useful when computing a height for{' '}
+        <code>OP_CHECKLOCKTIMEVERIFY</code>/<code>OP_CHECKSEQUENCEVERIFY</code>{' '}
+        which is relative to the height at the moment a script is created
+        (usually, a locking script).
       </p>
     </span>
   ),
   CurrentBlockTime: (
     <span>
       <p>
-        The Current Block Time type provides the current block time as a Script
-        Number.
+        The Current Block Time type provides the current block time (at the time
+        of compilation) as a Script Number.
       </p>
       <p>
-        This is useful when computing a time for OP_CHECKLOCKTIMEVERIFY which is
-        relative to the current time at the moment a script is created (usually,
-        a locking script).
+        This is useful when computing a time for{' '}
+        <code>OP_CHECKLOCKTIMEVERIFY</code>/<code>OP_CHECKSEQUENCEVERIFY</code>{' '}
+        which is relative to the current time at the moment a script is created
+        (usually, a locking script).
       </p>
     </span>
   ),
   HDKey:
-    'The HD Key (Hierarchical-Deterministic Key) type automatically manages key generation and mapping in a standard way. For greater control, use a Key. NOTE: HDKey is not yet supported by this IDE.',
+    'The HD Key (Hierarchical-Deterministic Key) type automatically manages key generation and mapping in a standard way. For greater control, use a Key. (NOTE: HDKey is not yet supported by Bitauth IDE.)',
   Key: (
     <span>
       <p>
         The Key type provides fine-grained control over key generation and
-        mapping. Most templates should instead use an HD Key.
+        mapping. Most templates should instead use <code>HDKey</code>.
       </p>
       <p>
         When using the Key type, any necessary HD (Hierarchical-Deterministic)
@@ -93,7 +95,7 @@ const variableTypeDescriptions: {
       </p>
       <p>
         Address Data can include any type of data, and can be used in any way.
-        For more persistent data, use Wallet Data.
+        For more persistent data, use <code>WalletData</code>.
       </p>
     </span>
   ),
@@ -105,8 +107,8 @@ const variableTypeDescriptions: {
       </p>
       <p>
         Wallet Data is persisted for the life of the wallet, rather than
-        changing from locking script to locking script. For transaction-specific
-        data, use Address Data.
+        changing from locking script to locking script. For address-specific
+        data, use <code>AddressData</code>.
       </p>
     </span>
   )
