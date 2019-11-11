@@ -58,10 +58,14 @@ export const EntityVariableEditor = connect(
     <div className="EntityVariableEditor EditorPane">
       <h2>Entity Variables</h2>
       <div className="entity-variables">
-        {props.entity.variableInternalIds.map(internalId => {
-          const variable = props.variablesByInternalId[internalId];
-          const name = variableName(variable);
-          return (
+        {props.entity.variableInternalIds
+          .map(internalId => {
+            const variable = props.variablesByInternalId[internalId];
+            const name = variableName(variable);
+            return { internalId, variable, name };
+          })
+          .sort((a, b) => a.variable.id.localeCompare(b.variable.id))
+          .map(({ internalId, variable, name }) => (
             <Card
               key={internalId}
               className="variable"
@@ -87,8 +91,7 @@ export const EntityVariableEditor = connect(
                 <div className="description">{variable.description}</div>
               )}
             </Card>
-          );
-        })}
+          ))}
         <div
           className="add-variable"
           onClick={() => {
