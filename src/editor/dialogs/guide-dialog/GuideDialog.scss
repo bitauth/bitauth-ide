@@ -3,6 +3,10 @@
   padding: 2em 6em 3em;
   font-size: initial;
 
+  // Scroll inside dialog to avoid blueprint bug in Firefox: https://github.com/palantir/blueprint/issues/1008
+  height: 95vh;
+  overflow: scroll;
+
   h2 {
     margin-top: 30px;
     font-size: 24px;
