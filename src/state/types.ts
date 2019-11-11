@@ -8,6 +8,7 @@ import {
   Sha256,
   Secp256k1
 } from 'bitcoin-ts';
+import { EvaluationViewerSettings } from '../editor/editor-types';
 
 export enum IDEMode {
   /**
@@ -261,6 +262,7 @@ export interface AppState {
    */
   currentTemplate: IDETemplate;
   currentVmId: keyof IDELoadedVMs;
+  evaluationViewerSettings: EvaluationViewerSettings;
   authenticationVirtualMachines: IDELoadedVMs | null;
   crypto: IDELoadedCrypto | null;
   activeDialog: ActiveDialog;

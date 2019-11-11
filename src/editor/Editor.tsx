@@ -18,7 +18,8 @@ import {
   ComputedEditorState,
   EditorStateScriptMode,
   ScriptEditorPane,
-  ScriptEvaluationViewerPane
+  ScriptEvaluationViewerPane,
+  EvaluationViewerSettings
 } from './editor-types';
 import { ActionCreators } from '../state/reducer';
 import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
@@ -49,6 +50,7 @@ interface EditorDispatch {
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
   createEntity: typeof ActionCreators.createEntity;
+  changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
 }
 
 interface EditorProps<ProgramState extends IDESupportedProgramState>
@@ -58,6 +60,7 @@ interface EditorProps<ProgramState extends IDESupportedProgramState>
   currentScripts: CurrentScripts;
   currentEntities: CurrentEntities;
   activeDialog: ActiveDialog;
+  evaluationViewerSettings: EvaluationViewerSettings;
 }
 
 export const Editor = connect(
@@ -66,7 +69,8 @@ export const Editor = connect(
     currentlyEditingInternalId: state.currentlyEditingInternalId,
     currentScripts: getCurrentScripts(state),
     currentEntities: getCurrentEntities(state),
-    activeDialog: state.activeDialog
+    activeDialog: state.activeDialog,
+    evaluationViewerSettings: state.evaluationViewerSettings
   }),
   {
     closeDialog: ActionCreators.closeDialog,
@@ -74,7 +78,9 @@ export const Editor = connect(
     createScript: ActionCreators.createScript,
     editScript: ActionCreators.editScript,
     deleteScript: ActionCreators.deleteScript,
-    createEntity: ActionCreators.createEntity
+    createEntity: ActionCreators.createEntity,
+    changeEvaluationViewerSettings:
+      ActionCreators.changeEvaluationViewerSettings
   }
 )((props: EditorProps<IDESupportedProgramState>) => {
   const [projectExplorerWidth, setProjectExplorerWidth] = useState(21);
@@ -150,6 +156,7 @@ export const Editor = connect(
                 />
               ) : (
                 <EvaluationViewer
+                  showControls={i === 0}
                   compilation={computed.scriptEditorFrames[i].compilation}
                   evaluation={computed.scriptEditorFrames[i].evaluation}
                   evaluationTrace={computed.scriptEditorEvaluationTrace}
@@ -157,6 +164,10 @@ export const Editor = connect(
                   id={computed.scriptEditorFrames[i].id}
                   lookup={computed.identifyStackItems}
                   scrollOffset={scrollOffset[i]}
+                  evaluationViewerSettings={props.evaluationViewerSettings}
+                  changeEvaluationViewerSettings={
+                    props.changeEvaluationViewerSettings
+                  }
                 />
               );
 

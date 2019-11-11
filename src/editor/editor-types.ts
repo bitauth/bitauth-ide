@@ -4,7 +4,8 @@ import {
   ErrorState,
   MinimumProgramState,
   AuthenticationProgramCommon,
-  CompilationResult
+  CompilationResult,
+  AlternateStackState
 } from 'bitcoin-ts';
 import {
   IDETemplateScript,
@@ -97,6 +98,7 @@ export type Evaluation<
 export interface IDESupportedProgramState
   extends MinimumProgramState,
     StackState,
+    AlternateStackState,
     ExecutionStackState,
     ErrorState<string> {}
 
@@ -230,4 +232,25 @@ export interface EditorStateScriptMode<
   identifyStackItems: StackItemIdentifyFunction | undefined;
   variableDetails: VariableDetails;
   scriptDetails: ScriptDetails;
+}
+
+/**
+ * Object representing the current global settings for all evaluation viewers.
+ */
+export interface EvaluationViewerSettings {
+  /**
+   * If `true`, the EvaluationViewer should aggressively attempt to replace
+   * valid Script Numbers on the stack with their numerical representation.
+   */
+  parseScriptNumbers: boolean;
+  /**
+   * If `true`, the EvaluationViewer should show the AlternativeStack rather
+   * than the normal stack.
+   */
+  showAlternateStack: boolean;
+  /**
+   * If `true`, the EvaluationViewer should shorten long stack items by only
+   * showing a few of their initial and final bytes. (E.g. `0x1234...7890`.)
+   */
+  abbreviateLongStackItems: boolean;
 }

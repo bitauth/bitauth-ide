@@ -37,6 +37,11 @@ export const defaultState: AppState = {
   savedTemplates: [],
   currentTemplate: defaultTemplate,
   currentVmId: 'BCH_2019_05',
+  evaluationViewerSettings: {
+    abbreviateLongStackItems: true,
+    parseScriptNumbers: true,
+    showAlternateStack: false
+  },
   authenticationVirtualMachines: null,
   crypto: null,
   activeDialog: ActiveDialog.none,

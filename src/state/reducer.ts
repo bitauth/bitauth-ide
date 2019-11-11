@@ -21,6 +21,7 @@ import { defaultState, emptyTemplate } from './defaults';
 import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
 import { importAuthenticationTemplate } from './import-export';
+import { EvaluationViewerSettings } from '../editor/editor-types';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {
@@ -423,6 +424,9 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentTemplate = template;
     this.draftState.currentlyEditingInternalId = '';
     this.draftState.currentEditingMode = 'template-settings';
+  }
+  changeEvaluationViewerSettings(settings: EvaluationViewerSettings) {
+    this.draftState.evaluationViewerSettings = settings;
   }
 }
 

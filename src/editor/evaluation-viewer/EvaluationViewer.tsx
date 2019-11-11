@@ -12,10 +12,13 @@ import {
   EvaluationViewerSpacer,
   StackItemIdentifyFunction,
   EvaluationViewerLine,
-  IDESupportedProgramState
+  IDESupportedProgramState,
+  EvaluationViewerSettings
 } from '../editor-types';
-import { Tooltip, Popover } from '@blueprintjs/core';
+import { Tooltip, Popover, Button } from '@blueprintjs/core';
 import { unknownValue } from '../../utils';
+import { IconNames } from '@blueprintjs/icons';
+import { ActionCreators } from '../../state/reducer';
 
 (window as any).b = bitcoinTs;
 
@@ -66,15 +69,29 @@ const stackItem = (itemIndex: number, hex: string, content: JSX.Element) => (
   </Popover>
 );
 
+const abbreviationPrefixAndSuffixLength = 12;
+const abbreviateStackItem = (hex: string) =>
+  hex.length <= abbreviationPrefixAndSuffixLength * 2
+    ? hex
+    : `${hex.substring(
+        0,
+        abbreviationPrefixAndSuffixLength
+      )}\u2026${hex.substring(
+        hex.length - abbreviationPrefixAndSuffixLength,
+        hex.length
+      )}`;
+
 const EvaluationLine = ({
   line,
   lineIndex,
   error,
+  settings,
   lookup
 }: {
   lineIndex: number;
   line: EvaluationViewerLine<IDESupportedProgramState>;
   error: Errors;
+  settings: EvaluationViewerSettings;
   lookup?: StackItemIdentifyFunction;
 }) => (
   <div
@@ -118,7 +135,10 @@ const EvaluationLine = ({
       line.spacers.indexOf(EvaluationViewerSpacer.skippedConditional) !== -1 ? (
         <span className="unchanged" />
       ) : (
-        line.state.stack.map((item, itemIndex) => {
+        (settings.showAlternateStack
+          ? line.state.alternateStack
+          : line.state.stack
+        ).map((item, itemIndex) => {
           const name = lookup ? lookup(item) : false;
           const hex = `0x${binToHex(item)}`;
           if (name !== false) {
@@ -129,7 +149,7 @@ const EvaluationLine = ({
             );
           }
           const number = parseBytesAsScriptNumber(item);
-          if (typeof number === 'bigint') {
+          if (typeof number === 'bigint' && settings.parseScriptNumbers) {
             return stackItem(
               itemIndex,
               hex,
@@ -139,7 +159,11 @@ const EvaluationLine = ({
           return stackItem(
             itemIndex,
             hex,
-            <span className="stack-item hex">{hex}</span>
+            <span className="stack-item hex">
+              {settings.abbreviateLongStackItems
+                ? abbreviateStackItem(hex)
+                : hex}
+            </span>
           );
         })
       )
@@ -162,6 +186,9 @@ export const EvaluationViewer = (props: {
   id: string;
   lookup?: StackItemIdentifyFunction;
   scrollOffset: number;
+  showControls: boolean;
+  evaluationViewerSettings: EvaluationViewerSettings;
+  changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
 }) => {
   const [cachedEvaluation, setCachedEvaluation] = useState(emptyEvaluation);
   const [cachedEvaluationSource, setCachedEvaluationSource] = useState('');
@@ -203,12 +230,129 @@ export const EvaluationViewer = (props: {
               }`}
             >
               <div className="header-bar-content">
-                <EvaluationLine
-                  line={evaluation[0]}
-                  lineIndex={0}
-                  error={Errors.none}
-                  lookup={lookup}
-                />
+                {props.showControls ? (
+                  <div className="controls">
+                    <div className="viewing-stack">
+                      {props.evaluationViewerSettings.showAlternateStack ? (
+                        <Tooltip
+                          content="Currently showing the alternate stack. Click to switch to the stack."
+                          portalClassName="control-tooltip"
+                          position="right"
+                        >
+                          <Button
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                showAlternateStack: false
+                              });
+                            }}
+                          >
+                            Alternate Stack
+                          </Button>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          content="Currently showing the stack. Click to switch the alternate stack."
+                          portalClassName="control-tooltip"
+                          position="right"
+                        >
+                          <Button
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                showAlternateStack: true
+                              });
+                            }}
+                          >
+                            Stack
+                          </Button>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <div className="toggles">
+                      {props.evaluationViewerSettings.parseScriptNumbers ? (
+                        <Tooltip
+                          content="Show Script Numbers in hex format"
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            icon={IconNames.CODE}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                parseScriptNumbers: false
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          content="Show Script Numbers in numerical format"
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            icon={IconNames.NUMERICAL}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                parseScriptNumbers: true
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+
+                      {props.evaluationViewerSettings
+                        .abbreviateLongStackItems ? (
+                        <Tooltip
+                          content="Show full contents of long stack items"
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            className="shrink"
+                            icon={IconNames.MAXIMIZE}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                abbreviateLongStackItems: false
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          content="Abbreviate long stack items (e.g. '0x1233...7890')"
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            className="shrink"
+                            icon={IconNames.MINIMIZE}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                abbreviateLongStackItems: true
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                    </div>
+                    {/* TODO: https://github.com/bitauth/bitauth-ide/issues/8
+                    button to compact stack items: IconNames.GROUP_OBJECTS, IconNames.UNGROUP_OBJECTS */}
+                  </div>
+                ) : (
+                  <EvaluationLine
+                    line={evaluation[0]}
+                    lineIndex={0}
+                    error={Errors.none}
+                    lookup={lookup}
+                    settings={props.evaluationViewerSettings}
+                  />
+                )}
               </div>
             </div>
 
@@ -230,6 +374,7 @@ export const EvaluationViewer = (props: {
                         : Errors.current
                       : Errors.none
                   }
+                  settings={props.evaluationViewerSettings}
                   lookup={lookup}
                 />
               ))}
