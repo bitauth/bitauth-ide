@@ -361,11 +361,11 @@ export const EditVariableDialog = ({
               }}
             >
               <Icon icon={IconNames.TRASH} iconSize={10} />
-              Delete Script
+              Delete Variable
             </Button>
             <Alert
               cancelButtonText="Cancel"
-              confirmButtonText="Delete Script"
+              confirmButtonText="Delete Variable"
               intent={Intent.DANGER}
               isOpen={promptDelete}
               canEscapeKeyCancel={true}
@@ -373,6 +373,8 @@ export const EditVariableDialog = ({
               onCancel={() => setPromptDelete(false)}
               onConfirm={() => {
                 deleteVariable(variableInternalId);
+                setPromptDelete(false);
+                closeDialog();
               }}
             >
               <p>
