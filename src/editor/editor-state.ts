@@ -22,8 +22,8 @@ import {
   getCompilerOperationsBCH
 } from 'bitcoin-ts';
 import {
-  getResolvedVariables,
-  ResolvedVariable
+  getResolvedIdentifier,
+  ResolvedIdentifier
 } from '../btl-utils/editor-tooling';
 import {
   extractSamplesFromReductionTrace,
@@ -96,15 +96,12 @@ const bitcoinCashOpcodeIdentifiers = Object.entries(OpcodesBCH)
 };
 
 const createStackItemIdentificationFunction = (
-  resolvedVariables: {
-    variable: string;
-    bytecode: Uint8Array;
-  }[]
+  resolvedIdentifiers: ResolvedIdentifier[]
 ): StackItemIdentifyFunction => {
-  const dictionary = resolvedVariables.reduce<{
+  const dictionary = resolvedIdentifiers.reduce<{
     [stringifiedArray: string]: string;
   }>(
-    (dict, item) => ({ ...dict, [item.bytecode.toString()]: item.variable }),
+    (dict, item) => ({ ...dict, [item.bytecode.toString()]: item.identifier }),
     {}
   );
   return item => dictionary[item.toString()] || false;
@@ -445,19 +442,6 @@ export const computeEditorState = <
       }
     }
 
-    const identifyStackItems =
-      evaluationOrderedCompilationResults.length === 0
-        ? undefined
-        : createStackItemIdentificationFunction(
-            evaluationOrderedCompilationResults.reduce<ResolvedVariable[]>(
-              (vars, result) =>
-                result.success === true
-                  ? [...vars, ...getResolvedVariables(result.resolve)]
-                  : vars,
-              []
-            )
-          );
-
     /**
      * Map variable InternalIds to entity InternalIds
      */
@@ -487,6 +471,29 @@ export const computeEditorState = <
         }
       };
     }, {});
+
+    const providedVariableIdentifiers = Object.entries({
+      ...data.addressData,
+      ...data.walletData
+    }).map<ResolvedIdentifier>(([name, bytecode]) => ({
+      identifier: name,
+      bytecode
+    }));
+
+    const resolvedIdentifiers = evaluationOrderedCompilationResults.reduce<
+      ResolvedIdentifier[]
+    >(
+      (vars, result) =>
+        result.success === true
+          ? [...vars, ...getResolvedIdentifier(result.resolve)]
+          : vars,
+      []
+    );
+
+    const identifyStackItems = createStackItemIdentificationFunction([
+      ...providedVariableIdentifiers,
+      ...resolvedIdentifiers
+    ]);
 
     const scriptDetails = Object.values(
       state.currentTemplate.scriptsByInternalId

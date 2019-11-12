@@ -10,24 +10,30 @@ export interface MonacoMarkerDataRequired {
   endColumn: number;
 }
 
-export interface ResolvedVariable {
-  variable: string;
+export interface ResolvedIdentifier {
+  identifier: string;
   bytecode: Uint8Array;
 }
 
-export const getResolvedVariables = (
+export const getResolvedIdentifier = (
   compiledScript: ResolvedScript
-): ResolvedVariable[] =>
-  compiledScript.reduce<ResolvedVariable[]>((variables, segment) => {
+): ResolvedIdentifier[] =>
+  compiledScript.reduce<ResolvedIdentifier[]>((variables, segment) => {
     switch (segment.type) {
       case 'push':
       case 'evaluation':
-        return [...variables, ...getResolvedVariables(segment.value)];
+        return [...variables, ...getResolvedIdentifier(segment.value)];
       case 'bytecode':
         if ('variable' in segment) {
           return [
             ...variables,
-            { variable: segment.variable, bytecode: segment.value }
+            { identifier: segment.variable, bytecode: segment.value }
+          ];
+        }
+        if ('script' in segment) {
+          return [
+            ...variables,
+            { identifier: segment.script, bytecode: segment.value }
           ];
         }
       // eslint-disable-line no-fallthrough
