@@ -33,6 +33,7 @@ export const getResolvedIdentifier = (
         if ('script' in segment) {
           return [
             ...variables,
+            ...getResolvedIdentifier(segment.source),
             { identifier: segment.script, bytecode: segment.value }
           ];
         }

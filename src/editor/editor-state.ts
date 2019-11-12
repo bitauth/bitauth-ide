@@ -472,14 +472,6 @@ export const computeEditorState = <
       };
     }, {});
 
-    const providedVariableIdentifiers = Object.entries({
-      ...data.addressData,
-      ...data.walletData
-    }).map<ResolvedIdentifier>(([name, bytecode]) => ({
-      identifier: name,
-      bytecode
-    }));
-
     const resolvedIdentifiers = evaluationOrderedCompilationResults.reduce<
       ResolvedIdentifier[]
     >(
@@ -490,10 +482,9 @@ export const computeEditorState = <
       []
     );
 
-    const identifyStackItems = createStackItemIdentificationFunction([
-      ...providedVariableIdentifiers,
-      ...resolvedIdentifiers
-    ]);
+    const identifyStackItems = createStackItemIdentificationFunction(
+      resolvedIdentifiers
+    );
 
     const scriptDetails = Object.values(
       state.currentTemplate.scriptsByInternalId
