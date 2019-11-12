@@ -251,6 +251,7 @@ export const ScriptEditor = (props: {
     | undefined
     | typeof monacoEditor);
   const [editScriptDialogIsOpen, setEditScriptDialogIsOpen] = useState(false);
+  const [latestInternalId, setLatestInternalId] = useState('');
 
   const handleResize = () => editor && editor.layout();
   useEffect(() => {
@@ -594,6 +595,17 @@ export const ScriptEditor = (props: {
       };
     }
   });
+
+  if (latestInternalId !== props.internalId) {
+    /**
+     * Since we re-use the same editor instance for multiple scripts, switching
+     * to a longer script causes the editor to highlight the range which was
+     * suddenly "added". Here we just deselect it to be less annoying.
+     */
+    editor && editor.setPosition({ column: 1, lineNumber: 1 });
+    setLatestInternalId(props.internalId);
+    return null;
+  }
 
   return (
     <div className="ScriptEditor">
