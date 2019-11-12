@@ -240,6 +240,7 @@ export const EvaluationViewer = (props: {
                           position="right"
                         >
                           <Button
+                            className="alt-stack"
                             onClick={() => {
                               props.changeEvaluationViewerSettings({
                                 ...props.evaluationViewerSettings,

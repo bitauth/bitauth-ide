@@ -98,6 +98,12 @@ $hex-color: #5bb498;
         &:hover {
           color: #fff;
         }
+        &.alt-stack {
+          color: rgba(255, 255, 0, 0.8);
+          &:hover {
+            color: rgba(255, 255, 0, 1);
+          }
+        }
       }
 
       svg {
