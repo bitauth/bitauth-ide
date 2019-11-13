@@ -290,7 +290,8 @@ export const EditVariableDialog = ({
                   ) : (
                     variableMockHex !== '' && (
                       <p>
-                        Result: <code>0x{variableMockHex}</code>
+                        Result:{' '}
+                        <code className="result">0x{variableMockHex}</code>
                       </p>
                     )
                   )}
