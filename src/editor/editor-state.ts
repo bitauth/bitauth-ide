@@ -14,12 +14,14 @@ import {
   CompilationData,
   sampledEvaluateReductionTraceNodes,
   CompilerOperationDataBCH,
-  createAuthenticationProgramExternalStateCommonEmpty,
   createCompiler,
   createAuthenticationProgramStateCommon,
   AuthenticationProgramStateBCH,
   SampledEvaluationResult,
-  getCompilerOperationsBCH
+  getCompilerOperationsBCH,
+  createAuthenticationProgramExternalStateCommon,
+  AuthenticationProgramCommon,
+  hexToBin
 } from 'bitcoin-ts';
 import {
   getResolvedIdentifier,
@@ -276,12 +278,55 @@ export const computeEditorState = <
     state.currentTemplate
   );
 
-  const externalState = {
-    ...createAuthenticationProgramExternalStateCommonEmpty(),
-    locktime: currentTimeUTC,
-    sequenceNumber: 0,
-    version: 0
+  enum Fill {
+    length = 32,
+    outpointTransactionHash1 = 1,
+    outpointTransactionHash2 = 2
+  }
+
+  const nextCashChannelHash160 = '0f5e17008f9e050c80e63f80c178c91d0d6a0c70';
+  const nextCashChannelP2sh = hexToBin(`a914${nextCashChannelHash160}87`);
+  const otherOutputBytecode = hexToBin('00');
+
+  // TODO: make the scenario configurable from the IDE (currently hard-coded for CashChannels)
+  const contextProgram: AuthenticationProgramCommon = {
+    inputIndex: 0,
+    sourceOutput: {
+      lockingBytecode: Uint8Array.of(),
+      satoshis: BigInt(20000)
+    },
+    spendingTransaction: {
+      inputs: [
+        {
+          outpointIndex: 0,
+          outpointTransactionHash: new Uint8Array(Fill.length).fill(
+            Fill.outpointTransactionHash1
+          ),
+          sequenceNumber: 0,
+          unlockingBytecode: Uint8Array.of() // thrown away
+        },
+        {
+          outpointIndex: 0,
+          outpointTransactionHash: new Uint8Array(Fill.length).fill(
+            Fill.outpointTransactionHash2
+          ),
+          sequenceNumber: 0,
+          unlockingBytecode: Uint8Array.of() // thrown away
+        }
+      ],
+      locktime: currentTimeUTC,
+      outputs: [
+        { lockingBytecode: nextCashChannelP2sh, satoshis: BigInt(10000) },
+        { lockingBytecode: otherOutputBytecode, satoshis: BigInt(10000) }
+      ],
+      version: 0
+    }
   };
+
+  const externalState = createAuthenticationProgramExternalStateCommon(
+    contextProgram,
+    crypto.sha256
+  );
   const data = getIDECompilationData(state);
   const createCreateStateWithStack = <Opcodes, Errors>(stack: Uint8Array[]) => (
     instructions: ReadonlyArray<AuthenticationInstruction<Opcodes>>
