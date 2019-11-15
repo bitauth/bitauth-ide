@@ -2312,10 +2312,10 @@ binary-extensions@^1.0.0:
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-1.13.1.tgz#598afe54755b2868a5330d2aff9d4ebb53209b65"
   integrity sha512-Un7MIEDdUC5gNpcGDV97op1Ywk748MpHcFTHoYs6qnj1Z3j7I53VG3nwZhKzoBZmbdRNnb6WRdFlwl7tSDuZGw==
 
-bitcoin-ts@^1.8.1:
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/bitcoin-ts/-/bitcoin-ts-1.8.1.tgz#8a3a3b8b51fd28124aa9c387f061691ab5ba5aa8"
-  integrity sha512-zN58zy5KFjiQoUW+JjGSu55oGk8c01FdvSoe+sCHkfg9RXMSQIuu6tRQxRWLmqGrDvvv7Ug2WIrJTZil7+srCg==
+bitcoin-ts@^1.8.2:
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/bitcoin-ts/-/bitcoin-ts-1.8.2.tgz#e89a900492ea0e19a21c3ee7462168cfd5f89b20"
+  integrity sha512-VBXSZPreM/MGGUj/o9W5VzGevEgfi7F8yv1bz80drrnttAB1+65f3COSJRDTZsYiFUir2LCRCNS/aep7fHpuRg==
 
 block-stream@*:
   version "0.0.9"
