@@ -2,6 +2,8 @@
 
 **[Bitauth IDE](https://bitauth.com/ide)** is an integrated development environment for bitcoin authentication. You can [find a full walk-through and video about it in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).
 
+Get help or share feedback in the [Bitauth IDE Telegram group](https://t.me/bitauth_ide).
+
 ![bitauth-ide-dark](https://user-images.githubusercontent.com/904007/53257400-021e9b80-3698-11e9-86ca-c87f3b8f0bf1.png)
 
 ### Debug Unlocking and Locking Scripts Together
