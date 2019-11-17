@@ -138,6 +138,17 @@ export const HeaderBar = connect(
         </Popover>
         {wrapInterfaceTooltip(
           <a
+            className="link"
+            href="https://t.me/bitauth_ide"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon icon={IconNames.CHAT} iconSize={12} /> Join Chat
+          </a>,
+          'Get help or share feedback in the community Telegram group →'
+        )}
+        {wrapInterfaceTooltip(
+          <a
             className="link github-logo"
             href="https://github.com/bitauth/bitauth-ide/issues"
             target="_blank"
@@ -148,7 +159,6 @@ export const HeaderBar = connect(
           </a>,
           'Please report bugs in our GitHub issue tracker →'
         )}
-
         {wrapInterfaceTooltip(
           <a
             className="link"
