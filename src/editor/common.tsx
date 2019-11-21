@@ -72,10 +72,6 @@ export const wrapInterfaceTooltip = (
 
 export const variableIcon = (type: IDEVariable['type']) => {
   switch (type) {
-    case 'CurrentBlockHeight':
-      return IconNames.NUMERICAL;
-    case 'CurrentBlockTime':
-      return IconNames.TIME;
     case 'HDKey':
       return IconNames.DIAGRAM_TREE;
     case 'Key':

@@ -13,7 +13,7 @@
     "@types/react-dom": "16.9.4",
     "@types/react-redux": "^7.1.2",
     "@types/webpack-env": "^1.14.1",
-    "bitcoin-ts": "^1.8.2",
+    "bitcoin-ts": "^1.9.0",
     "cz-conventional-changelog": "^3.0.2",
     "immer-reducer": "^0.7.8",
     "logrocket": "^1.0.3",

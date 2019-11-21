@@ -169,10 +169,10 @@ export const GuideDialog = ({
           script, which might be defined as <code>&lt;8&gt; OP_NUM2BIN</code>,
           padding <code>my_number</code> to 8 bytes.
         </p>
-        <h3>Variable Types</h3>
+        <h3>Custom Variable Types</h3>
         <p>
           Each variable has a type which specifies its role in a template. There
-          are currently 6 variable types:
+          are currently 4 custom variable types:
         </p>
         <ul>
           <li>
@@ -181,22 +181,6 @@ export const GuideDialog = ({
             generated (usually, a locking script). Address Data can include any
             type of data, and can be used in any way. For more persistent data,
             use <code>WalletData</code>.
-          </li>
-          <li>
-            <code>CurrentBlockHeight</code>– The Current Block Height type
-            provides the current block height as a Script Number at the time of
-            compilation. This is useful when computing a height for
-            <code>OP_CHECKLOCKTIMEVERIFY</code>/
-            <code>OP_CHECKSEQUENCEVERIFY</code> which is relative to the height
-            at the moment a script is created (usually, a locking script).
-          </li>
-          <li>
-            <code>CurrentBlockTime</code>– The Current Block Time type provides
-            the current block time (at the time of compilation) as a Script
-            Number. This is useful when computing a time for
-            <code>OP_CHECKLOCKTIMEVERIFY</code>/
-            <code>OP_CHECKSEQUENCEVERIFY</code> which is relative to the current
-            time at the moment a script is created (usually, a locking script).
           </li>
           <li>
             <code>HDKey</code>– The HD Key (Hierarchical-Deterministic Key) type
@@ -217,7 +201,7 @@ export const GuideDialog = ({
             address-specific data, use <code>AddressData</code>.
           </li>
         </ul>
-        <h3>Variable Operations</h3>
+        <h3>Key Variable Operations</h3>
         <p>
           Some variable types provide operations which are accessed with a
           period (<code>.</code>), e.g. the public key of the <code>owner</code>{' '}
@@ -358,6 +342,159 @@ export const GuideDialog = ({
           OP_HASH160, followed by a push of the generated redeem script hash,
           followed by the bytecode for OP_EQUAL.
         </p>
+        <h3>Built-in Variable Types</h3>
+        <p>
+          Built-in variables provide access to important data for advance
+          scripts:
+        </p>
+        <ul>
+          <li>
+            <code>current_block_height</code>– Provides the current block height
+            as a Script Number at the time of compilation. This is useful when
+            computing a height for <code>OP_CHECKLOCKTIMEVERIFY</code> or
+            <code>OP_CHECKSEQUENCEVERIFY</code> which is relative to the current
+            height at the moment a script is created (usually, a locking
+            script).
+          </li>
+          <li>
+            <code>current_block_time</code>– Provides the current block time (at
+            the time of compilation) as a Script Number. This is useful when
+            computing a time for <code>OP_CHECKLOCKTIMEVERIFY</code> or
+            <code>OP_CHECKSEQUENCEVERIFY</code> which is relative to the current
+            time at the moment a script is created (usually, a locking script).
+          </li>
+          <li>
+            <code>signing_serialization</code>– Provides access to both the full
+            contents and individual components of the transaction's signing
+            serialization.
+          </li>
+        </ul>
+        <h4>Signing Serialization Operations</h4>
+        <p>
+          Signing Serialization information is useful for defining
+          "covenant"-style scripts which validate properties of the final
+          transaction. This is done by duplicating a signature provided in an
+          unlocking script, and validating it with both <code>OP_CHECKSIG</code>{' '}
+          and <code>OP_CHECKDATASIG</code>, passing the expected signing
+          serialization as the message.
+        </p>
+        <p>
+          With the guarantee that a signing serialization is complete and
+          correct, it's possible to perform much more complex validation, like
+          restricting output amounts and destinations.
+        </p>
+        <p>
+          The following signing serialization operations provide access to
+          components of the serialization:
+        </p>
+        <ul>
+          <li>
+            <code>signing_serialization.version</code>– The transaction's
+            version number.
+          </li>
+          <li>
+            <code>signing_serialization.transaction_outpoints_hash</code>– The
+            hash of all transaction outpoints.
+          </li>
+          <li>
+            <code>signing_serialization.transaction_sequence_numbers_hash</code>
+            – The hash of all transaction sequence numbers.
+          </li>
+          <li>
+            <code>signing_serialization.outpoint_transaction_hash</code>– The
+            transaction hash (A.K.A. ID) of the outpoint being spent by the
+            current input.
+          </li>
+          <li>
+            <code>signing_serialization.outpoint_index</code>– The index of the
+            outpoint being spent by the current input.
+          </li>
+          <li>
+            <code>signing_serialization.covered_bytecode</code>– The{' '}
+            <code>coveredBytecode</code> provided to the compiler for this
+            compilation.
+          </li>
+          <li>
+            <code>signing_serialization.output_value</code>– The output value of
+            the outpoint being spent by the current input.
+          </li>
+          <li>
+            <code>signing_serialization.sequence_number</code>– The sequence
+            number of the outpoint being spent by the current input.
+          </li>
+          <li>
+            <code>signing_serialization.corresponding_output_hash</code>– The
+            hash of the transaction output with the same index as the current
+            input. If no output with the same index exists, 32 bytes of{' '}
+            <code>0x00</code>.
+          </li>
+          <li>
+            <code>signing_serialization.transaction_outputs_hash</code>– The
+            hash of all transaction outputs.
+          </li>
+          <li>
+            <code>signing_serialization.locktime</code>– The transaction's
+            locktime.
+          </li>
+        </ul>
+        <p>
+          The following operations provide access to the complete signing
+          serialization as generated by each algorithm:
+        </p>
+        <ul>
+          <li>
+            <code>signing_serialization.all_outputs</code>– The concatenation
+            of: <code>version</code>, <code>transaction_outpoints_hash</code>,{' '}
+            <code>transaction_sequence_numbers_hash</code>,{' '}
+            <code>covered_bytecode</code>,<code>output_value</code>,{' '}
+            <code>transaction_outputs_hash</code>, <code>0x41</code> (the byte
+            representing this signing serialization type), and{' '}
+            <code>0x000000</code> (the BCH fork ID).
+          </li>
+          <li>
+            <code>signing_serialization.all_outputs_single_input</code>– The
+            concatenation of: <code>version</code>, 64 bytes of{' '}
+            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
+            <code>output_value</code>, <code>transaction_outputs_hash</code>,{' '}
+            <code>0xc1</code> (the byte representing this signing serialization
+            type), and <code>0x000000</code> (fork ID).
+          </li>
+          <li>
+            <code>signing_serialization.corresponding_output</code>– The
+            concatenation of: <code>version</code>,{' '}
+            <code>transaction_outpoints_hash</code>, 32 bytes of{' '}
+            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
+            <code>output_value</code>, <code>corresponding_output_hash</code>{' '}
+            (or if no corresponding output exists, 32 bytes of <code>0x00</code>
+            ), <code>0x43</code> (the byte representing this signing
+            serialization type), and <code>0x000000</code> (fork ID).
+          </li>
+          <li>
+            <code>signing_serialization.corresponding_output_single_input</code>
+            – The concatenation of: <code>version</code>, 64 bytes of{' '}
+            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
+            <code>output_value</code>, <code>corresponding_output_hash</code>{' '}
+            (or if no corresponding output exists, 32 bytes of <code>0x00</code>
+            ), <code>0xc3</code> (the byte representing this signing
+            serialization type), and <code>0x000000</code> (fork ID).
+          </li>
+          <li>
+            <code>signing_serialization.no_outputs</code>– The concatenation of:{' '}
+            <code>version</code>, <code>transaction_outpoints_hash</code>, 32
+            bytes of <code>0x00</code>, <code>covered_bytecode</code>,{' '}
+            <code>output_value</code>, 32 bytes of <code>0x00</code>,{' '}
+            <code>0x42</code> (the byte representing this signing serialization
+            type), and <code>0x000000</code> (fork ID).
+          </li>
+          <li>
+            <code>signing_serialization.no_outputs_single_input</code>– The
+            concatenation of: <code>version</code>, 64 bytes of{' '}
+            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
+            <code>output_value</code>, 32 bytes of <code>0x00</code>,{' '}
+            <code>0xc2</code> (the byte representing this signing serialization
+            type), and <code>0x000000</code> (fork ID).
+          </li>
+        </ul>
         <h2>Getting Started</h2>
         <p>
           The easiest way to get started working with Bitauth IDE is to review

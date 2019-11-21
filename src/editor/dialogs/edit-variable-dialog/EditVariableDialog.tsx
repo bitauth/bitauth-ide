@@ -34,8 +34,6 @@ const variableTypes: {
   value: IDEVariable['type'];
   disabled?: boolean;
 }[] = [
-  { label: 'Current Block Height', value: 'CurrentBlockHeight' },
-  { label: 'Current Block Time', value: 'CurrentBlockTime' },
   { label: 'HD Key (Not Yet Available)', value: 'HDKey', disabled: true },
   { label: 'Key', value: 'Key' },
   { label: 'Address Data', value: 'AddressData' },
@@ -54,34 +52,6 @@ const variableTypeDescriptions: {
       <p>
         Address Data can include any type of data, and can be used in any way.
         For more persistent data, use <code>WalletData</code>.
-      </p>
-    </span>
-  ),
-  CurrentBlockHeight: (
-    <span>
-      <p>
-        The Current Block Height type provides the current block height (at the
-        time of compilation) as a Script Number.
-      </p>
-      <p>
-        This is useful when computing a height for{' '}
-        <code>OP_CHECKLOCKTIMEVERIFY</code>/<code>OP_CHECKSEQUENCEVERIFY</code>{' '}
-        which is relative to the height at the moment a script is created
-        (usually, a locking script).
-      </p>
-    </span>
-  ),
-  CurrentBlockTime: (
-    <span>
-      <p>
-        The Current Block Time type provides the current block time (at the time
-        of compilation) as a Script Number.
-      </p>
-      <p>
-        This is useful when computing a time for{' '}
-        <code>OP_CHECKLOCKTIMEVERIFY</code>/<code>OP_CHECKSEQUENCEVERIFY</code>{' '}
-        which is relative to the current time at the moment a script is created
-        (usually, a locking script).
       </p>
     </span>
   ),
@@ -195,16 +165,6 @@ export const EditVariableDialog = ({
               const type = e.currentTarget.value as IDEVariable['type'];
               setVariableType(type);
               switch (type) {
-                case 'CurrentBlockHeight':
-                  if (variableName === '')
-                    setVariableName('Current Block Height');
-                  setVariableId('block_height');
-                  break;
-                case 'CurrentBlockTime':
-                  if (variableName === '')
-                    setVariableName('Current Block Time');
-                  setVariableId('block_time');
-                  break;
                 case 'HDKey':
                   if (variableName === '')
                     setVariableName(`${entity.name}'s HD Key`);
@@ -280,79 +240,74 @@ export const EditVariableDialog = ({
             }}
           />
         </FormGroup>
-        {variableType !== 'CurrentBlockHeight' &&
-          variableType !== 'CurrentBlockTime' && (
-            <FormGroup
-              helperText={
-                <span>
-                  {variableMockError !== '' ? (
-                    <p>{variableMockError}</p>
-                  ) : (
-                    variableMockHex !== '' && (
-                      <p>
-                        Result:{' '}
-                        <code className="result">0x{variableMockHex}</code>
-                      </p>
-                    )
-                  )}
-                  {variableType === 'Key' ? (
-                    <p>
-                      A valid, testing private key encoded in BTL. (E.g. as a
-                      HexLiteral, this will be
-                      <code>0x[64 characters]</code>. Test values must fall
-                      within the allowed range for Secp256k1.)
-                    </p>
-                  ) : variableType === 'WalletData' ||
-                    variableType === 'AddressData' ? (
-                    <p>
-                      A testing value for this{' '}
-                      {variableType === 'AddressData' ? 'Address' : 'Wallet'}{' '}
-                      Data, encoded in BTL. E.g. a bigint literal like{' '}
-                      <code>123</code>, a hex literal like <code>0xc0de</code>,
-                      a UTF8 string like <code>'test'</code>, or even a push
-                      like <code>&lt;"abc"&gt;</code>.
-                    </p>
-                  ) : (
-                    ''
-                  )}
+        <FormGroup
+          helperText={
+            <span>
+              {variableMockError !== '' ? (
+                <p>{variableMockError}</p>
+              ) : (
+                variableMockHex !== '' && (
                   <p>
-                    This is used during development in Bitauth IDE, and is
-                    exported as part of the authentication template.
+                    Result: <code className="result">0x{variableMockHex}</code>
                   </p>
-                </span>
+                )
+              )}
+              {variableType === 'Key' ? (
+                <p>
+                  A valid, testing private key encoded in BTL. (E.g. as a
+                  HexLiteral, this will be
+                  <code>0x[64 characters]</code>. Test values must fall within
+                  the allowed range for Secp256k1.)
+                </p>
+              ) : variableType === 'WalletData' ||
+                variableType === 'AddressData' ? (
+                <p>
+                  A testing value for this{' '}
+                  {variableType === 'AddressData' ? 'Address' : 'Wallet'} Data,
+                  encoded in BTL. E.g. a bigint literal like <code>123</code>, a
+                  hex literal like <code>0xc0de</code>, a UTF8 string like{' '}
+                  <code>'test'</code>, or even a push like{' '}
+                  <code>&lt;"abc"&gt;</code>.
+                </p>
+              ) : (
+                ''
+              )}
+              <p>
+                This is used during development in Bitauth IDE, and is exported
+                as part of the authentication template.
+              </p>
+            </span>
+          }
+          label="IDE Value"
+          labelFor="variable-value"
+          inline={true}
+        >
+          <InputGroup
+            id="variable-value"
+            value={variableMock}
+            autoComplete="off"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value;
+              setVariableMock(value);
+              const compiled = compileScriptMock(value);
+              if (compiled.success) {
+                setVariableMockError('');
+                setVariableMockHex(binToHex(compiled.bytecode));
+              } else {
+                setVariableMockError(
+                  `Compilation error${
+                    compiled.errors.length > 1 ? 's' : ''
+                  }: ${compiled.errors
+                    .map(
+                      ({ error, range }) =>
+                        `${error} [${range.startLineNumber}, ${range.startColumn}]`
+                    )
+                    .join(', ')}`
+                );
               }
-              label="IDE Value"
-              labelFor="variable-value"
-              inline={true}
-            >
-              <InputGroup
-                id="variable-value"
-                value={variableMock}
-                autoComplete="off"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  const value = e.target.value;
-                  setVariableMock(value);
-                  const compiled = compileScriptMock(value);
-                  if (compiled.success) {
-                    setVariableMockError('');
-                    setVariableMockHex(binToHex(compiled.bytecode));
-                  } else {
-                    setVariableMockError(
-                      `Compilation error${
-                        compiled.errors.length > 1 ? 's' : ''
-                      }: ${compiled.errors
-                        .map(
-                          ({ error, range }) =>
-                            `${error} [${range.startLineNumber}, ${range.startColumn}]`
-                        )
-                        .join(', ')}`
-                    );
-                  }
-                }}
-              />
-            </FormGroup>
-          )}
-
+            }}
+          />
+        </FormGroup>
         {variableInternalId && variable !== undefined && (
           <div>
             <Button

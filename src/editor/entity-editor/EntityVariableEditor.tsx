@@ -16,13 +16,6 @@ import {
 } from '../common';
 import { ActionCreators } from '../../state/reducer';
 
-const variableName = (variable: IDEVariable) =>
-  variable.type === 'CurrentBlockHeight'
-    ? 'Current Block Height'
-    : variable.type === 'CurrentBlockTime'
-    ? 'Current Block Time'
-    : variable.name;
-
 interface EntityVariablesProps {
   entityInternalId: string;
   entity: IDETemplateEntity;
@@ -61,7 +54,7 @@ export const EntityVariableEditor = connect(
         {props.entity.variableInternalIds
           .map(internalId => {
             const variable = props.variablesByInternalId[internalId];
-            const name = variableName(variable);
+            const name = variable.name;
             return { internalId, variable, name };
           })
           .sort((a, b) => a.variable.id.localeCompare(b.variable.id))

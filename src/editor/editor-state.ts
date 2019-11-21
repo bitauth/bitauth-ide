@@ -176,64 +176,66 @@ const getIDECompilationData = (
 ): CompilationData<CompilerOperationDataBCH> => {
   return Object.values(state.currentTemplate.variablesByInternalId).reduce<
     CompilationData<CompilerOperationDataBCH>
-  >((data, variable) => {
-    switch (variable.type) {
-      case 'CurrentBlockHeight':
-        return { ...data, currentBlockHeight: currentBlock };
-      case 'CurrentBlockTime':
-        return { ...data, currentBlockTime: new Date(currentTimeUTC) };
-      case 'HDKey':
-        throw new Error('Not yet implemented.');
-      case 'Key':
-      case 'AddressData':
-      case 'WalletData':
-        const mock = compileScriptMock(variable.mock);
-        if (mock.success !== true) {
-          console.error(
-            'Unexpected variable mock compilation error. Variable:',
-            variable,
-            'Result:',
-            mock
-          );
-          return data;
-        }
-        switch (variable.type) {
-          case 'Key':
-            const privateKeys = (data.keys && data.keys.privateKeys) || {};
-            return {
-              ...data,
-              keys: {
-                privateKeys: {
-                  ...privateKeys,
+  >(
+    (data, variable) => {
+      switch (variable.type) {
+        case 'HDKey':
+          throw new Error('Not yet implemented.');
+        case 'Key':
+        case 'AddressData':
+        case 'WalletData':
+          const mock = compileScriptMock(variable.mock);
+          if (mock.success !== true) {
+            console.error(
+              'Unexpected variable mock compilation error. Variable:',
+              variable,
+              'Result:',
+              mock
+            );
+            return data;
+          }
+          switch (variable.type) {
+            case 'Key':
+              const privateKeys = (data.keys && data.keys.privateKeys) || {};
+              return {
+                ...data,
+                keys: {
+                  privateKeys: {
+                    ...privateKeys,
+                    [variable.id]: mock.bytecode
+                  }
+                }
+              };
+            case 'AddressData':
+              const addressData = data.addressData || {};
+              return {
+                ...data,
+                addressData: {
+                  ...addressData,
                   [variable.id]: mock.bytecode
                 }
-              }
-            };
-          case 'AddressData':
-            const addressData = data.addressData || {};
-            return {
-              ...data,
-              addressData: {
-                ...addressData,
-                [variable.id]: mock.bytecode
-              }
-            };
-          case 'WalletData':
-            const walletData = data.walletData || {};
-            return {
-              ...data,
-              walletData: {
-                ...walletData,
-                [variable.id]: mock.bytecode
-              }
-            };
-        }
-      // eslint-disable-next-line no-fallthrough
-      default:
-        unknownValue(variable);
-        return data;
+              };
+            case 'WalletData':
+              const walletData = data.walletData || {};
+              return {
+                ...data,
+                walletData: {
+                  ...walletData,
+                  [variable.id]: mock.bytecode
+                }
+              };
+          }
+        // eslint-disable-next-line no-fallthrough
+        default:
+          unknownValue(variable);
+          return data;
+      }
+    },
+    {
+      currentBlockHeight: currentBlock,
+      currentBlockTime: new Date(currentTimeUTC)
     }
-  }, {});
+  );
 };
 
 /**

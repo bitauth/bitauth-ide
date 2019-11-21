@@ -4,13 +4,6 @@ import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
 import { importAuthenticationTemplate } from './import-export';
 import { isImportRoute } from '../init/routing';
 
-export const supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[] = [
-  'BCH_2019_05',
-  'BCH_2019_11',
-  'BSV_2018_11',
-  'BTC_2017_08'
-];
-
 export const emptyTemplate = {
   $schema: 'https://bitauth.com/schemas/authentication-template-v0.schema.json',
   description: '',
@@ -18,8 +11,8 @@ export const emptyTemplate = {
   entities: {},
   scripts: {},
   supported: [
-    'BCH_2019_05',
-    'BCH_2019_11'
+    'BCH_2019_11',
+    'BCH_2020_05'
   ] as AuthenticationVirtualMachineIdentifier[],
   version: 0 as 0
 };
@@ -36,7 +29,7 @@ export const defaultState: AppState = {
   // TODO: from local storage
   savedTemplates: [],
   currentTemplate: defaultTemplate,
-  currentVmId: 'BCH_2019_05',
+  currentVmId: 'BCH_2019_11',
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
     parseScriptNumbers: true,

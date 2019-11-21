@@ -156,12 +156,15 @@ export type IDETemplateScript =
 
 export type DisableId = true;
 
-export type IDESupportedVM = AuthenticationVirtualMachineIdentifier;
+export type IDESupportedVM = Exclude<
+  AuthenticationVirtualMachineIdentifier,
+  'BCH_2019_05'
+>;
 
 export type IDESupportedVmStore = { [key in IDESupportedVM]: any };
 
 export interface IDELoadedVMs extends IDESupportedVmStore {
-  BCH_2019_05: AuthenticationVirtualMachine<
+  BCH_2020_05: AuthenticationVirtualMachine<
     AuthenticationProgramBCH,
     AuthenticationProgramStateBCH
   >;

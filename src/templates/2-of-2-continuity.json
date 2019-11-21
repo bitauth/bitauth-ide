@@ -14,12 +14,6 @@
           "name": "Signer 1's HDKey",
           "description": ""
         },
-        "block_time": {
-          "type": "CurrentBlockTime",
-          "description": "",
-          "mock": "",
-          "name": ""
-        },
         "delay_seconds": {
           "description": "The waiting period (from the time the wallet is created) after which the Trusted Party can assist with delayed recoveries. The delay is measured in seconds, e.g. 1 day is 86400. Here we set the delay to 30 days (2592000).",
           "name": "Recovery Delay (Seconds)",
@@ -62,7 +56,7 @@
     },
     "lock.redeem_script": {
       "name": "2-of-2 Vault Redeem Script",
-      "script": "OP_IF\n  <$(\n    <block_time> <delay_seconds>\n    OP_ADD\n  )>\n  OP_CHECKLOCKTIMEVERIFY OP_DROP\n  <trusted.public_key>\n  OP_CHECKSIGVERIFY\n  <1>\nOP_ELSE\n  <2>\nOP_ENDIF\n<first.public_key> <second.public_key> <2>\nOP_CHECKMULTISIG"
+      "script": "OP_IF\n  <$(\n    <current_block_time> <delay_seconds>\n    OP_ADD\n  )>\n  OP_CHECKLOCKTIMEVERIFY OP_DROP\n  <trusted.public_key>\n  OP_CHECKSIGVERIFY\n  <1>\nOP_ELSE\n  <2>\nOP_ENDIF\n<first.public_key> <second.public_key> <2>\nOP_CHECKMULTISIG"
     },
     "recover_1": {
       "name": "Recover – Signer 1",

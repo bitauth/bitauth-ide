@@ -2,12 +2,12 @@ import {
   Range,
   CompilationResultResolve,
   ResolvedScript,
-  CompilerKeyOperationsBCH,
+  CompilerOperationsKeyBCH,
   CompilationResultReduce,
   ScriptReductionTraceChildNode,
   ScriptReductionTraceContainerNode,
   binToHex,
-  SigningSerializationIdentifier
+  SigningSerializationAlgorithmIdentifier
 } from 'bitcoin-ts';
 import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
@@ -96,7 +96,7 @@ const selectReductionSourceSegmentAtPosition = (
 };
 
 const getKeyOperationDescriptions = (parameter?: string) => {
-  const map: { [op in CompilerKeyOperationsBCH]: [string, string] } = {
+  const map: { [op in CompilerOperationsKeyBCH]: [string, string] } = {
     data_signature: [
       'Data Signature (ECDSA)',
       `An ECDSA signature covering the sha256 hash of the compiled bytecode ${
@@ -141,7 +141,7 @@ const keyOperationsWhichRequireAParameter = [
 ];
 
 const signatureOperationParameterDescriptions: {
-  [parameter in SigningSerializationIdentifier]: [string, string];
+  [parameter in SigningSerializationAlgorithmIdentifier]: [string, string];
 } = {
   all_outputs: [
     'A.K.A. "SIGHASH_ALL" (Recommended)',
@@ -172,7 +172,7 @@ const signatureOperationParameterDescriptions: {
 const operationPartsToDetails = (operation: string, parameter: string) => {
   return (
     getKeyOperationDescriptions(parameter)[
-      operation as CompilerKeyOperationsBCH
+      operation as CompilerOperationsKeyBCH
     ] || [
       'Unknown Operation',
       `The compiler knows about the "${operation}${
@@ -244,12 +244,12 @@ export const ScriptEditor = (props: {
   deleteScript: typeof ActionCreators.deleteScript;
   updateScript: typeof ActionCreators.updateScript;
 }) => {
-  const [editor, setEditor] = useState(undefined as
-    | undefined
-    | monacoEditor.editor.IStandaloneCodeEditor);
-  const [monaco, setMonaco] = useState(undefined as
-    | undefined
-    | typeof monacoEditor);
+  const [editor, setEditor] = useState(
+    undefined as undefined | monacoEditor.editor.IStandaloneCodeEditor
+  );
+  const [monaco, setMonaco] = useState(
+    undefined as undefined | typeof monacoEditor
+  );
   const [editScriptDialogIsOpen, setEditScriptDialogIsOpen] = useState(false);
   const [latestInternalId, setLatestInternalId] = useState('');
 
