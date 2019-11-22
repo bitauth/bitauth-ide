@@ -393,8 +393,16 @@ export const GuideDialog = ({
             version number.
           </li>
           <li>
+            <code>signing_serialization.transaction_outpoints</code>– The
+            signing serialization of all transaction outpoints.
+          </li>
+          <li>
             <code>signing_serialization.transaction_outpoints_hash</code>– The
             hash of all transaction outpoints.
+          </li>
+          <li>
+            <code>signing_serialization.transaction_sequence_numbers</code>– The
+            signing serialization of all transaction sequence numbers.
           </li>
           <li>
             <code>signing_serialization.transaction_sequence_numbers_hash</code>
@@ -410,6 +418,12 @@ export const GuideDialog = ({
             outpoint being spent by the current input.
           </li>
           <li>
+            <code>signing_serialization.covered_bytecode_prefix</code>– The
+            prefix indicating the length of
+            <code>coveredBytecode</code> provided to the compiler for this
+            compilation. The length is encoded as a <code>BitcoinVarInt</code>.
+          </li>
+          <li>
             <code>signing_serialization.covered_bytecode</code>– The{' '}
             <code>coveredBytecode</code> provided to the compiler for this
             compilation.
@@ -423,10 +437,20 @@ export const GuideDialog = ({
             number of the outpoint being spent by the current input.
           </li>
           <li>
+            <code>signing_serialization.corresponding_output</code>– The signing
+            serialization of the transaction output with the same index as the
+            current input. If no output with the same index exists, this inserts
+            no bytes.
+          </li>
+          <li>
             <code>signing_serialization.corresponding_output_hash</code>– The
             hash of the transaction output with the same index as the current
             input. If no output with the same index exists, 32 bytes of{' '}
             <code>0x00</code>.
+          </li>
+          <li>
+            <code>signing_serialization.transaction_outputs</code>– The signing
+            serialization of all transaction outputs.
           </li>
           <li>
             <code>signing_serialization.transaction_outputs_hash</code>– The
@@ -443,56 +467,63 @@ export const GuideDialog = ({
         </p>
         <ul>
           <li>
-            <code>signing_serialization.all_outputs</code>– The concatenation
-            of: <code>version</code>, <code>transaction_outpoints_hash</code>,{' '}
+            <code>signing_serialization.full_all_outputs</code>– The
+            concatenation of: <code>version</code>,{' '}
+            <code>transaction_outpoints_hash</code>,{' '}
             <code>transaction_sequence_numbers_hash</code>,{' '}
-            <code>covered_bytecode</code>,<code>output_value</code>,{' '}
-            <code>transaction_outputs_hash</code>, <code>0x41</code> (the byte
-            representing this signing serialization type), and{' '}
-            <code>0x000000</code> (the BCH fork ID).
-          </li>
-          <li>
-            <code>signing_serialization.all_outputs_single_input</code>– The
-            concatenation of: <code>version</code>, 64 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
+            <code>covered_bytecode_prefix</code>,<code>covered_bytecode</code>,
             <code>output_value</code>, <code>transaction_outputs_hash</code>,{' '}
-            <code>0xc1</code> (the byte representing this signing serialization
-            type), and <code>0x000000</code> (fork ID).
+            <code>0x41</code> (the byte representing this signing serialization
+            type), and <code>0x000000</code> (the BCH fork ID).
           </li>
           <li>
-            <code>signing_serialization.corresponding_output</code>– The
+            <code>signing_serialization.full_all_outputs_single_input</code>–
+            The concatenation of: <code>version</code>, 64 bytes of{' '}
+            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>covered_bytecode</code>, <code>output_value</code>,{' '}
+            <code>transaction_outputs_hash</code>, <code>0xc1</code> (the byte
+            representing this signing serialization type), and{' '}
+            <code>0x000000</code> (fork ID).
+          </li>
+          <li>
+            <code>signing_serialization.full_corresponding_output</code>– The
             concatenation of: <code>version</code>,{' '}
             <code>transaction_outpoints_hash</code>, 32 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
-            <code>output_value</code>, <code>corresponding_output_hash</code>{' '}
-            (or if no corresponding output exists, 32 bytes of <code>0x00</code>
+            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>covered_bytecode</code>, <code>output_value</code>,{' '}
+            <code>corresponding_output_hash</code> (or if no corresponding
+            output exists, 32 bytes of <code>0x00</code>
             ), <code>0x43</code> (the byte representing this signing
             serialization type), and <code>0x000000</code> (fork ID).
           </li>
           <li>
-            <code>signing_serialization.corresponding_output_single_input</code>
+            <code>
+              signing_serialization.full_corresponding_output_single_input
+            </code>
             – The concatenation of: <code>version</code>, 64 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
-            <code>output_value</code>, <code>corresponding_output_hash</code>{' '}
-            (or if no corresponding output exists, 32 bytes of <code>0x00</code>
+            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>covered_bytecode</code>, <code>output_value</code>,{' '}
+            <code>corresponding_output_hash</code> (or if no corresponding
+            output exists, 32 bytes of <code>0x00</code>
             ), <code>0xc3</code> (the byte representing this signing
             serialization type), and <code>0x000000</code> (fork ID).
           </li>
           <li>
-            <code>signing_serialization.no_outputs</code>– The concatenation of:{' '}
-            <code>version</code>, <code>transaction_outpoints_hash</code>, 32
-            bytes of <code>0x00</code>, <code>covered_bytecode</code>,{' '}
-            <code>output_value</code>, 32 bytes of <code>0x00</code>,{' '}
-            <code>0x42</code> (the byte representing this signing serialization
-            type), and <code>0x000000</code> (fork ID).
+            <code>signing_serialization.full_no_outputs</code>– The
+            concatenation of: <code>version</code>,{' '}
+            <code>transaction_outpoints_hash</code>, 32 bytes of{' '}
+            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>covered_bytecode</code>, <code>output_value</code>, 32 bytes
+            of <code>0x00</code>, <code>0x42</code> (the byte representing this
+            signing serialization type), and <code>0x000000</code> (fork ID).
           </li>
           <li>
-            <code>signing_serialization.no_outputs_single_input</code>– The
+            <code>signing_serialization.full_no_outputs_single_input</code>– The
             concatenation of: <code>version</code>, 64 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode</code>,{' '}
-            <code>output_value</code>, 32 bytes of <code>0x00</code>,{' '}
-            <code>0xc2</code> (the byte representing this signing serialization
-            type), and <code>0x000000</code> (fork ID).
+            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>covered_bytecode</code>, <code>output_value</code>, 32 bytes
+            of <code>0x00</code>, <code>0xc2</code> (the byte representing this
+            signing serialization type), and <code>0x000000</code> (fork ID).
           </li>
         </ul>
         <h2>Getting Started</h2>

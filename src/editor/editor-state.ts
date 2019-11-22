@@ -326,8 +326,7 @@ export const computeEditorState = <
   };
 
   const externalState = createAuthenticationProgramExternalStateCommon(
-    contextProgram,
-    crypto.sha256
+    contextProgram
   );
   const data = getIDECompilationData(state);
   const createCreateStateWithStack = <Opcodes, Errors>(stack: Uint8Array[]) => (
@@ -381,17 +380,18 @@ export const computeEditorState = <
     >((results, source, i) => {
       const previousResult = results[i - 1];
       const coveredBytecode =
-        previousResult &&
-        previousResult.success === true &&
-        previousResult.bytecode;
+        (previousResult &&
+          previousResult.success === true &&
+          previousResult.bytecode) ||
+        Uint8Array.of();
       const compilationResult = compiler.debug(source.id, {
         ...data,
-        ...(coveredBytecode && {
+        ...{
           operationData: {
             ...externalState,
             coveredBytecode
           }
-        })
+        }
       });
       return [...results, compilationResult];
     }, []);
