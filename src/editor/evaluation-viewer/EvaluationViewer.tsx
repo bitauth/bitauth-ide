@@ -175,7 +175,7 @@ const EvaluationLine = ({
             ? line.state.alternateStack
             : line.state.stack
         ]
-          .map(stack => (settings.reverseStack ? stack : stack.reverse()))
+          .map(stack => (settings.reverseStack ? stack.reverse() : stack))
           .flat()
           .map((item, index, stack) =>
             settings.groupDeepStackItems && index === 6
@@ -267,11 +267,7 @@ export const EvaluationViewer = (props: {
 
   return (
     <div className="EvaluationViewer">
-      <div
-        className={`content${showCached ? ' cached' : ''}${
-          props.evaluationViewerSettings.reverseStack ? ' reverse-stack' : ''
-        }`}
-      >
+      <div className={`content${showCached ? ' cached' : ''}`}>
         {evaluation && evaluation.length > 0 ? (
           <div>
             <div
