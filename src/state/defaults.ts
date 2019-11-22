@@ -32,7 +32,9 @@ export const defaultState: AppState = {
   currentVmId: 'BCH_2019_11',
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
+    groupDeepStackItems: true,
     parseScriptNumbers: true,
+    reverseStack: false,
     showAlternateStack: false
   },
   authenticationVirtualMachines: null,

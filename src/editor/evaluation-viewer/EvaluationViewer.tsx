@@ -57,14 +57,18 @@ enum Errors {
   past
 }
 
-const stackItem = (itemIndex: number, hex: string, content: JSX.Element) => (
+const stackItem = (
+  itemIndex: number,
+  content: string,
+  element: JSX.Element
+) => (
   <Popover
-    key={`${itemIndex}:${hex}`}
-    content={hex}
+    key={`${itemIndex}:${content}`}
+    content={content}
     portalClassName="stack-popover"
   >
-    <Tooltip content={hex} portalClassName="stack-tooltip">
-      {content}
+    <Tooltip content={content} portalClassName="stack-tooltip">
+      {element}
     </Tooltip>
   </Popover>
 );
@@ -80,6 +84,37 @@ const abbreviateStackItem = (hex: string) =>
         hex.length - abbreviationPrefixAndSuffixLength,
         hex.length
       )}`;
+
+// type StackItemDisplayType = 'named' | 'number' | 'hex'
+
+const getStackItemDisplaySettings = (
+  item: Uint8Array,
+  settings: EvaluationViewerSettings,
+  lookup?: StackItemIdentifyFunction
+) => {
+  const name = lookup ? lookup(item) : false;
+  const hex = `0x${binToHex(item)}`;
+  if (name !== false) {
+    return {
+      hex,
+      type: 'named' as const,
+      label: name
+    };
+  }
+  const number = parseBytesAsScriptNumber(item);
+  if (typeof number === 'bigint' && settings.parseScriptNumbers) {
+    return {
+      hex,
+      type: 'number' as const,
+      label: `${number}`
+    };
+  }
+  return {
+    hex,
+    type: 'hex' as const,
+    label: settings.abbreviateLongStackItems ? abbreviateStackItem(hex) : hex
+  };
+};
 
 const EvaluationLine = ({
   line,
@@ -135,37 +170,48 @@ const EvaluationLine = ({
       line.spacers.indexOf(EvaluationViewerSpacer.skippedConditional) !== -1 ? (
         <span className="unchanged" />
       ) : (
-        (settings.showAlternateStack
-          ? line.state.alternateStack
-          : line.state.stack
-        ).map((item, itemIndex) => {
-          const name = lookup ? lookup(item) : false;
-          const hex = `0x${binToHex(item)}`;
-          if (name !== false) {
+        [
+          settings.showAlternateStack
+            ? line.state.alternateStack
+            : line.state.stack
+        ]
+          .map(stack => (settings.reverseStack ? stack : stack.reverse()))
+          .flat()
+          .map((item, index, stack) =>
+            settings.groupDeepStackItems && index === 6
+              ? stack.slice(6)
+              : settings.groupDeepStackItems && index > 6
+              ? undefined
+              : item
+          )
+          .filter(
+            (item): item is Uint8Array | Uint8Array[] => item !== undefined
+          )
+          .map((item, itemIndex) => {
+            if (Array.isArray(item)) {
+              const labels = item
+                .map(innerItem =>
+                  getStackItemDisplaySettings(innerItem, settings, lookup)
+                )
+                .map(item => item.label)
+                .join(' ');
+              return stackItem(
+                itemIndex,
+                labels,
+                <span className="stack-item group">&hellip;</span>
+              );
+            }
+            const { hex, label, type } = getStackItemDisplaySettings(
+              item,
+              settings,
+              lookup
+            );
             return stackItem(
               itemIndex,
               hex,
-              <span className="stack-item named">{name}</span>
+              <span className={`stack-item ${type}`}>{label}</span>
             );
-          }
-          const number = parseBytesAsScriptNumber(item);
-          if (typeof number === 'bigint' && settings.parseScriptNumbers) {
-            return stackItem(
-              itemIndex,
-              hex,
-              <span className="stack-item number">{`${number}`}</span>
-            );
-          }
-          return stackItem(
-            itemIndex,
-            hex,
-            <span className="stack-item hex">
-              {settings.abbreviateLongStackItems
-                ? abbreviateStackItem(hex)
-                : hex}
-            </span>
-          );
-        })
+          })
       )
     ) : (
       unknownValue(error)
@@ -221,7 +267,11 @@ export const EvaluationViewer = (props: {
 
   return (
     <div className="EvaluationViewer">
-      <div className={`content${showCached ? ' cached' : ''}`}>
+      <div
+        className={`content${showCached ? ' cached' : ''}${
+          props.evaluationViewerSettings.reverseStack ? ' reverse-stack' : ''
+        }`}
+      >
         {evaluation && evaluation.length > 0 ? (
           <div>
             <div
@@ -341,9 +391,77 @@ export const EvaluationViewer = (props: {
                           />
                         </Tooltip>
                       )}
+                      {props.evaluationViewerSettings.groupDeepStackItems ? (
+                        <Tooltip
+                          content="Ungroup stack items deeper than 6."
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            className="shrink"
+                            icon={IconNames.UNGROUP_OBJECTS}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                groupDeepStackItems: false
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          content="Group stack items deeper than 6."
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            className="shrink"
+                            icon={IconNames.GROUP_OBJECTS}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                groupDeepStackItems: true
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                      {props.evaluationViewerSettings.reverseStack ? (
+                        <Tooltip
+                          content="Order stack items normally."
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            className="shrink"
+                            icon={IconNames.UNDO}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                reverseStack: false
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          content="Reverse the order of stack items."
+                          portalClassName="control-tooltip"
+                          position="left"
+                        >
+                          <Button
+                            className="shrink"
+                            icon={IconNames.REDO}
+                            onClick={() => {
+                              props.changeEvaluationViewerSettings({
+                                ...props.evaluationViewerSettings,
+                                reverseStack: true
+                              });
+                            }}
+                          />
+                        </Tooltip>
+                      )}
                     </div>
-                    {/* TODO: https://github.com/bitauth/bitauth-ide/issues/8
-                    button to compact stack items: IconNames.GROUP_OBJECTS, IconNames.UNGROUP_OBJECTS */}
                   </div>
                 ) : (
                   <EvaluationLine

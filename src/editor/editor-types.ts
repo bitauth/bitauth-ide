@@ -253,4 +253,18 @@ export interface EvaluationViewerSettings {
    * showing a few of their initial and final bytes. (E.g. `0x1234...7890`.)
    */
   abbreviateLongStackItems: boolean;
+
+  /**
+   * If `true` stack items deeper than 6 will be grouped into a single `...`
+   * item to prevent cluttering the view. (6 is a good choice because most
+   * operations can only operate on the first 6 items.)
+   */
+  groupDeepStackItems: boolean;
+
+  /**
+   * If true, reverse the direction of stack items so that new items are pushed
+   * from the left. This ensures that the most active part of the stack is
+   * displayed first.
+   */
+  reverseStack: boolean;
 }
