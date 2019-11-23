@@ -85,8 +85,6 @@ const abbreviateStackItem = (hex: string) =>
         hex.length
       )}`;
 
-// type StackItemDisplayType = 'named' | 'number' | 'hex'
-
 const getStackItemDisplaySettings = (
   item: Uint8Array,
   settings: EvaluationViewerSettings,
@@ -171,22 +169,25 @@ const EvaluationLine = ({
         <span className="unchanged" />
       ) : (
         [
-          settings.showAlternateStack
+          (settings.showAlternateStack
             ? line.state.alternateStack
             : line.state.stack
+          )
+            .map((item, index, stack) =>
+              !settings.groupDeepStackItems
+                ? item
+                : index > stack.length - 6
+                ? item
+                : index === stack.length - 6
+                ? stack.slice(0, stack.length - 6)
+                : undefined
+            )
+            .filter(
+              (item): item is Uint8Array | Uint8Array[] => item !== undefined
+            )
         ]
           .map(stack => (settings.reverseStack ? stack.reverse() : stack))
           .flat()
-          .map((item, index, stack) =>
-            settings.groupDeepStackItems && index === 6
-              ? stack.slice(6)
-              : settings.groupDeepStackItems && index > 6
-              ? undefined
-              : item
-          )
-          .filter(
-            (item): item is Uint8Array | Uint8Array[] => item !== undefined
-          )
           .map((item, itemIndex) => {
             if (Array.isArray(item)) {
               const labels = item
