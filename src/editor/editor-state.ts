@@ -97,6 +97,8 @@ const bitcoinCashOpcodeIdentifiers = Object.entries(OpcodesBCH)
   [opcode: string]: Uint8Array;
 };
 
+const ignoreList = ['0', '1'];
+
 const createStackItemIdentificationFunction = (
   resolvedIdentifiers: ResolvedIdentifier[]
 ): StackItemIdentifyFunction => {
@@ -106,7 +108,10 @@ const createStackItemIdentificationFunction = (
     (dict, item) => ({ ...dict, [item.bytecode.toString()]: item.identifier }),
     {}
   );
-  return item => dictionary[item.toString()] || false;
+  return item =>
+    (ignoreList.indexOf(item.toString()) === -1 &&
+      dictionary[item.toString()]) ||
+    false;
 };
 
 const formatScript = (
