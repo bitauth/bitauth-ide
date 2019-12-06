@@ -1,5 +1,13 @@
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { OpcodesBCH, OpcodeDescriptionsBCH, Range } from 'bitcoin-ts';
+import {
+  OpcodesBCH,
+  OpcodeDescriptionsBCH,
+  Range,
+  CompilerOperationsSigningSerializationComponentBCH,
+  CompilerOperationsKeyBCH,
+  SigningSerializationAlgorithmIdentifier,
+  BuiltInVariables
+} from 'bitcoin-ts';
 
 const opcodeNames = Object.keys(OpcodesBCH).filter(
   key => key.slice(0, 3) === 'OP_'
@@ -192,4 +200,199 @@ export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemPro
         : [];
     return { suggestions };
   }
+};
+
+export const getKeyOperationDescriptions = (parameter?: string) => {
+  const map: { [op in CompilerOperationsKeyBCH]: [string, string] } = {
+    data_signature: [
+      'Data Signature (ECDSA)',
+      `An ECDSA signature covering the sha256 hash of the compiled bytecode ${
+        parameter ? `from script ID "${parameter}"` : 'of another script'
+      }.`
+    ],
+    public_key: [
+      'Public Key',
+      'The public (non-secret) key derived from this private key.'
+    ],
+    schnorr_data_signature: [
+      'Data Signature (Schnorr)',
+      `A Schnorr signature covering the sha256 hash of the compiled bytecode from ${
+        parameter ? `from script ID "${parameter}"` : 'of another script'
+      }.`
+    ],
+    schnorr_signature: [
+      'Signature (Schnorr)',
+      `A Schnorr signature covering the double sha256 hash of the serialized transaction${
+        parameter
+          ? ` (using the "${parameter}" signing serialization algorithm)`
+          : ''
+      }.`
+    ],
+    signature: [
+      'Signature (ECDSA)',
+      `An ECDSA signature covering the double sha256 hash of the serialized transaction${
+        parameter
+          ? ` (using the "${parameter}" signing serialization algorithm)`
+          : ''
+      }.`
+    ]
+  };
+  return map;
+};
+
+export const keyOperationsWhichRequireAParameter = [
+  'data_signature',
+  'schnorr_data_signature',
+  'schnorr_signature',
+  'signature'
+];
+
+export const signatureOperationParameterDescriptions: {
+  [parameter in SigningSerializationAlgorithmIdentifier]: [string, string];
+} = {
+  all_outputs: [
+    'A.K.A. "SIGHASH_ALL" (Recommended)',
+    'The recommended and most frequently used signing serialization algorithm. This signs each element of the transaction using the private key, preventing an attacker from being able to reuse the signature on a modified transaction.'
+  ],
+  all_outputs_single_input: [
+    'A.K.A. "SIGHASH_ALL" with "ANYONE_CAN_PAY"',
+    'A modification to the "all_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.'
+  ],
+  corresponding_output: [
+    'A.K.A. "SIGHASH_SINGLE"',
+    'A signing serialization algorithm which only covers the output with the same index value as the input being spent. Warning: this can cause vulnerabilities by allowing the transaction to be modified after being signed.'
+  ],
+  corresponding_output_single_input: [
+    'A.K.A. "SIGHASH_SINGLE" with "ANYONE_CAN_PAY"',
+    'A modification to the "corresponding_output" signing serialization algorithm which does not cover inputs other than the one being spent.'
+  ],
+  no_outputs: [
+    'A.K.A. "SIGHASH_NONE"',
+    'A signing serialization algorithm which only covers other inputs. Warning: this allows anyone to modify the outputs after being signed.'
+  ],
+  no_outputs_single_input: [
+    'A.K.A. "SIGHASH_NONE" with "ANYONE_CAN_PAY"',
+    'A modification to the "no_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.'
+  ]
+};
+
+const keyOperationPartsToDetails = (operation: string, parameter: string) => {
+  return (
+    getKeyOperationDescriptions(parameter)[
+      operation as CompilerOperationsKeyBCH
+    ] || [
+      'Unknown Operation',
+      `The compiler knows about the "${operation}${
+        parameter ? `.${parameter}` : ''
+      }" operation, but Bitauth IDE does not. Please open an issue on GitHub.`
+    ]
+  );
+};
+
+export const getKeyOperationDetails = (variableParts: string[]) => {
+  const hasOperation = variableParts.length > 1;
+  const [operationName, operationDescription] = hasOperation
+    ? keyOperationPartsToDetails(variableParts[1], variableParts[2])
+    : [undefined, undefined];
+  return {
+    hasOperation,
+    operationName,
+    operationDescription
+  };
+};
+
+export const builtInVariableDetails: {
+  [variableId in BuiltInVariables]: [string, string];
+} = {
+  current_block_height: [
+    'Current Block Height',
+    'Provides the current block height as a Script Number at the time of compilation. This is useful when computing a height for `OP_CHECKLOCKTIMEVERIFY` or `OP_CHECKSEQUENCEVERIFY` which is relative to the current height at the moment a script is created (usually, a locking script).'
+  ],
+  current_block_time: [
+    'Current Block Time',
+    'Provides the current block time (at the time of compilation) as a Script Number. This is useful when computing a time for `OP_CHECKLOCKTIMEVERIFY` or `OP_CHECKSEQUENCEVERIFY` which is relative to the current time at the moment a script is created (usually, a locking script).'
+  ],
+  signing_serialization: [
+    'Signing Serialization',
+    "Provides access to both the full contents and individual components of the transaction's signing serialization."
+  ]
+};
+
+export const signingSerializationOperationDetails: {
+  [component in CompilerOperationsSigningSerializationComponentBCH]: [
+    string,
+    string
+  ];
+} = {
+  corresponding_output: [
+    'Corresponding Output',
+    'The signing serialization of the transaction output with the same index as the current input. If no output with the same index exists, this inserts no bytes.'
+  ],
+  corresponding_output_hash: [
+    'Corresponding Output Hash',
+    'The hash of the transaction output with the same index as the current input. If no output with the same index exists, 32 bytes of `0x00`.'
+  ],
+  covered_bytecode: [
+    'Covered Bytecode',
+    'The `coveredBytecode` provided to the compiler for this compilation.'
+  ],
+  covered_bytecode_prefix: [
+    'Covered Bytecode Prefix',
+    'The prefix indicating the length of `coveredBytecode` provided to the compiler for this compilation. The length is encoded as a `BitcoinVarInt`.'
+  ],
+  locktime: ['Locktime', "The transaction's locktime."],
+  outpoint_index: [
+    'Outpoint Index',
+    'The index of the outpoint being spent by the current input.'
+  ],
+  outpoint_transaction_hash: [
+    'Outpoint Transaction Hash',
+    'The transaction hash (A.K.A. ID) of the outpoint being spent by the current input.'
+  ],
+  output_value: [
+    'Output Value',
+    'The output value of the outpoint being spent by the current input.'
+  ],
+  sequence_number: [
+    'Sequence Number',
+    'The sequence number of the outpoint being spent by the current input.'
+  ],
+  transaction_outpoints: [
+    'Transaction Outpoints',
+    'The signing serialization of all transaction outpoints.'
+  ],
+  transaction_outpoints_hash: [
+    'Transaction Outpoints Hash',
+    'The hash of all transaction outpoints.'
+  ],
+  transaction_outputs: [
+    'Transaction Outputs',
+    'The signing serialization of all transaction outputs.'
+  ],
+  transaction_outputs_hash: [
+    'Transaction Outputs Hash',
+    'The hash of all transaction outputs.'
+  ],
+  transaction_sequence_numbers: [
+    'Transaction Sequence Numbers',
+    'The signing serialization of all transaction sequence numbers.'
+  ],
+  transaction_sequence_numbers_hash: [
+    'Transaction Sequence Numbers Hash',
+    'The hash of all transaction sequence numbers.'
+  ],
+  version: ['Version', "The transaction's version number."]
+};
+
+export const getSigningSerializationOperationDetails = (operation: string) => {
+  const operationInfo =
+    operation in signingSerializationOperationDetails
+      ? signingSerializationOperationDetails[
+          operation as CompilerOperationsSigningSerializationComponentBCH
+        ]
+      : [
+          'Unknown',
+          'This operation is not understood by Bitauth IDE. Please report this bug.'
+        ];
+  return { name: operationInfo[0], description: operationInfo[1] };
 };
