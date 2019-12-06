@@ -7,7 +7,9 @@ import {
   ScriptReductionTraceChildNode,
   ScriptReductionTraceContainerNode,
   binToHex,
-  SigningSerializationAlgorithmIdentifier
+  SigningSerializationAlgorithmIdentifier,
+  BuiltInVariables,
+  CompilerOperationsSigningSerializationComponentBCH
 } from 'bitcoin-ts';
 import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
@@ -169,7 +171,7 @@ const signatureOperationParameterDescriptions: {
   ]
 };
 
-const operationPartsToDetails = (operation: string, parameter: string) => {
+const keyOperationPartsToDetails = (operation: string, parameter: string) => {
   return (
     getKeyOperationDescriptions(parameter)[
       operation as CompilerOperationsKeyBCH
@@ -182,16 +184,92 @@ const operationPartsToDetails = (operation: string, parameter: string) => {
   );
 };
 
-const getOperationDetails = (variableParts: string[]) => {
+const getKeyOperationDetails = (variableParts: string[]) => {
   const hasOperation = variableParts.length > 1;
   const [operationName, operationDescription] = hasOperation
-    ? operationPartsToDetails(variableParts[1], variableParts[2])
+    ? keyOperationPartsToDetails(variableParts[1], variableParts[2])
     : [undefined, undefined];
   return {
     hasOperation,
     operationName,
     operationDescription
   };
+};
+
+const getSigningSerializationOperationDetails = (operation: string) => {
+  const details: {
+    [component in CompilerOperationsSigningSerializationComponentBCH]: [
+      string,
+      string
+    ];
+  } = {
+    corresponding_output: [
+      'Corresponding Output',
+      'The signing serialization of the transaction output with the same index as the current input. If no output with the same index exists, this inserts no bytes.'
+    ],
+    corresponding_output_hash: [
+      'Corresponding Output Hash',
+      'The hash of the transaction output with the same index as the current input. If no output with the same index exists, 32 bytes of `0x00`.'
+    ],
+    covered_bytecode: [
+      'Covered Bytecode',
+      'The `coveredBytecode` provided to the compiler for this compilation.'
+    ],
+    covered_bytecode_prefix: [
+      'Covered Bytecode Prefix',
+      'The prefix indicating the length of `coveredBytecode` provided to the compiler for this compilation. The length is encoded as a `BitcoinVarInt`.'
+    ],
+    locktime: ['Locktime', "The transaction's locktime."],
+    outpoint_index: [
+      'Outpoint Index',
+      'The index of the outpoint being spent by the current input.'
+    ],
+    outpoint_transaction_hash: [
+      'Outpoint Transaction Hash',
+      'The transaction hash (A.K.A. ID) of the outpoint being spent by the current input.'
+    ],
+    output_value: [
+      'Output Value',
+      'The output value of the outpoint being spent by the current input.'
+    ],
+    sequence_number: [
+      'Sequence Number',
+      'The sequence number of the outpoint being spent by the current input.'
+    ],
+    transaction_outpoints: [
+      'Transaction Outpoints',
+      'The signing serialization of all transaction outpoints.'
+    ],
+    transaction_outpoints_hash: [
+      'Transaction Outpoints Hash',
+      'The hash of all transaction outpoints.'
+    ],
+    transaction_outputs: [
+      'Transaction Outputs',
+      'The signing serialization of all transaction outputs.'
+    ],
+    transaction_outputs_hash: [
+      'Transaction Outputs Hash',
+      'The hash of all transaction outputs.'
+    ],
+    transaction_sequence_numbers: [
+      'Transaction Sequence Numbers',
+      'The signing serialization of all transaction sequence numbers.'
+    ],
+    transaction_sequence_numbers_hash: [
+      'Transaction Sequence Numbers Hash',
+      'The hash of all transaction sequence numbers.'
+    ],
+    version: ['Version', "The transaction's version number."]
+  };
+  const operationInfo =
+    operation in details
+      ? details[operation as CompilerOperationsSigningSerializationComponentBCH]
+      : [
+          'Unknown',
+          'This operation is not understood by Bitauth IDE. Please report this bug.'
+        ];
+  return { name: operationInfo[0], description: operationInfo[1] };
 };
 
 const updateMarkers = (
@@ -334,33 +412,80 @@ export const ScriptEditor = (props: {
                 if ('variable' in segment) {
                   const parts = segment.variable.split('.');
                   const variableId = parts[0];
-                  const details = props.variableDetails[variableId];
-                  if (details !== undefined) {
-                    const {
-                      hasOperation,
-                      operationName,
-                      operationDescription
-                    } = getOperationDetails(parts);
-                    return {
-                      contents: [
-                        {
-                          value: `${
-                            details.variable.name
-                              ? `**${details.variable.name}**`
-                              : ''
-                          } – ${
-                            hasOperation ? operationName : details.variable.type
-                          } (${details.entity.name})`
-                        },
-                        ...(hasOperation
-                          ? [{ value: operationDescription as string }]
-                          : []),
-                        ...(details.variable.description
-                          ? [{ value: details.variable.description }]
-                          : [])
-                      ],
-                      range
-                    };
+                  switch (variableId) {
+                    case BuiltInVariables.currentBlockTime:
+                      return {
+                        contents: [
+                          {
+                            value: '**Current Block Time**'
+                          },
+                          {
+                            value:
+                              'Provides the current block time (at the time of compilation) as a Script Number. This is useful when computing a time for `OP_CHECKLOCKTIMEVERIFY` or `OP_CHECKSEQUENCEVERIFY` which is relative to the current time at the moment a script is created (usually, a locking script).'
+                          }
+                        ],
+                        range
+                      };
+                    case BuiltInVariables.currentBlockHeight:
+                      return {
+                        contents: [
+                          {
+                            value: '**Current Block Height**'
+                          },
+                          {
+                            value:
+                              'Provides the current block height as a Script Number at the time of compilation. This is useful when computing a height for `OP_CHECKLOCKTIMEVERIFY` or `OP_CHECKSEQUENCEVERIFY` which is relative to the current height at the moment a script is created (usually, a locking script).'
+                          }
+                        ],
+                        range
+                      };
+                    case BuiltInVariables.signingSerialization:
+                      const {
+                        description,
+                        name
+                      } = getSigningSerializationOperationDetails(parts[1]);
+                      return {
+                        contents: [
+                          {
+                            value: `**${name}**`
+                          },
+                          {
+                            value: description
+                          }
+                        ],
+                        range
+                      };
+                    default:
+                      const details = props.variableDetails[variableId];
+                      if (details !== undefined) {
+                        const {
+                          hasOperation,
+                          operationName,
+                          operationDescription
+                        } = getKeyOperationDetails(parts);
+                        return {
+                          contents: [
+                            {
+                              value: `${
+                                details.variable.name
+                                  ? `**${details.variable.name}**`
+                                  : ''
+                              } – ${
+                                hasOperation
+                                  ? operationName
+                                  : details.variable.type
+                              } (${details.entity.name})`
+                            },
+                            ...(hasOperation
+                              ? [{ value: operationDescription as string }]
+                              : []),
+                            ...(details.variable.description
+                              ? [{ value: details.variable.description }]
+                              : [])
+                          ],
+                          range
+                        };
+                      }
                   }
                 } else if ('script' in segment) {
                   const details = props.scriptDetails[segment.script];
