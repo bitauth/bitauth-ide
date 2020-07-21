@@ -1,5 +1,5 @@
 import { Middleware } from 'redux';
-import { extractTemplate } from './import-export';
+import { exportAuthenticationTemplate } from './import-export';
 import { AppState } from './types';
 import { emptyTemplate } from './defaults';
 import { localStorageBackupPrefix } from '../editor/constants';
@@ -8,23 +8,28 @@ let hasLogged = false;
 const emptyTemplateString = JSON.stringify(emptyTemplate);
 
 export enum LocalStorageEvents {
-  GuidePopoverDismissed = 'BITAUTH_IDE_GUIDE_POPOVER_DISMISSED'
+  GuidePopoverDismissed = 'BITAUTH_IDE_GUIDE_POPOVER_DISMISSED',
 }
 
 export const automaticallySaveTemplateToLocalStorage: Middleware<
   {},
   AppState
-> = store => next => action => {
+> = (store) => (next) => (action) => {
+  const result = next(action);
   const state = store.getState();
-  const saveKey = `${localStorageBackupPrefix}${state.appLoadTime.toISOString()}`;
+  if (state.templateLoadTime === undefined) {
+    return result;
+  }
+  const saveKey = `${localStorageBackupPrefix}${state.templateLoadTime.toISOString()}`;
   if (!hasLogged) {
     hasLogged = true;
     console.log(
       `Automatically saving work to local storage key: ${saveKey} – if something goes wrong, you can reload the app and import the saved JSON template from there.`
     );
   }
-  const result = next(action);
-  const template = JSON.stringify(extractTemplate(state.currentTemplate));
+  const template = JSON.stringify(
+    exportAuthenticationTemplate(state.currentTemplate)
+  );
   /**
    * Avoid polluting local storage if the user doesn't touch anything.
    */

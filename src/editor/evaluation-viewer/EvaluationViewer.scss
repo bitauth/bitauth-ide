@@ -4,14 +4,21 @@ $hex-color: #5bb498;
   background: var(--stack-vis-background-color);
   line-height: 14px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
+  display: flex;
+
+  .evaluation {
+    margin-top: 18px;
+    padding-bottom: 14px;
+  }
 
   .content {
     height: 100%;
     white-space: nowrap;
+    flex: 1;
   }
 
-  .cached {
+  .cached .state {
     opacity: 0.5;
   }
 
@@ -31,39 +38,52 @@ $hex-color: #5bb498;
         padding: 0.25em 0.5em;
         list-style: none;
         animation: error-animation 1s ease;
-        & > .error-message {
+        .error-message {
           color: #fff;
-          line-height: 1.3em;
+          padding: 1px 2px;
+          line-height: 18px;
         }
-        & > .line-and-column {
+        .line-and-column {
           margin-left: 2px;
           opacity: 0.5;
         }
       }
+
+      .assistance-popover-target .bp3-popover-target {
+        display: inline;
+      }
+
+      .bp3-popover-target .error-message {
+        background-color: var(--editor-background-color);
+        border-radius: 3px;
+      }
     }
   }
 
-  $initialStateVerticalPadding: 8;
-  $initialStateHeight: 14;
-
   .header-bar {
-    margin: 0 0 4px;
-    padding: #{$initialStateVerticalPadding}px 0;
-    height: #{$initialStateHeight}px;
+    height: 30px;
     box-sizing: initial;
-
-    &:before {
-      content: '';
+    display: flex;
+    align-items: center;
+    &:before,
+    & > .header-bar-content-fade {
+      position: fixed;
       height: 30px;
       width: 100%;
+    }
+    &:before {
+      content: '';
       background: var(--editor-background-color);
-      position: fixed;
-      margin-top: -8px;
       z-index: 5;
     }
     & > .header-bar-content {
       z-index: 10;
       position: relative;
+    }
+    & > .header-bar-content-fade {
+      z-index: 15;
+      box-shadow: 0px 3px 7px 5px inset var(--editor-background-color);
+      pointer-events: none;
     }
   }
 
@@ -71,6 +91,8 @@ $hex-color: #5bb498;
     display: flex;
     align-content: center;
     justify-content: space-between;
+    height: 30px;
+    align-items: center;
 
     .viewing-stack {
       margin-left: 10px;
@@ -83,6 +105,64 @@ $hex-color: #5bb498;
       right: 0;
     }
 
+    .scenario-switcher {
+      & > select {
+        background: var(--editor-background-color);
+        color: #fffc;
+        font-size: 12px;
+        border-radius: 0;
+        box-shadow: none;
+        border-left: 1px solid #fff;
+        border-right: 1px solid;
+        border-color: var(--stack-vis-background-color);
+        width: initial;
+
+        &:hover,
+        &:focus {
+          background: var(--interface-background-color);
+          border-color: var(--editor-background-color);
+          outline: none;
+        }
+      }
+      .bp3-icon {
+        top: 9px;
+      }
+    }
+
+    .scenario-detail-icon {
+      width: 30px;
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      height: 16px;
+      color: var(--toolbar-icon-color);
+
+      &.scenario-generation-error {
+        color: #ffd700;
+      }
+      &-error {
+        color: #ff2600;
+      }
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+    .shrink svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .bp3-icon:focus,
+    .bp3-icon:hover,
+    .bp3-button:focus,
+    .bp3-button:hover {
+      outline: none;
+      color: #fff;
+    }
+
     .bp3-button {
       background: none;
       border: none;
@@ -91,49 +171,47 @@ $hex-color: #5bb498;
       height: 16px;
       padding: 0;
       font-size: 12px;
+      color: var(--toolbar-icon-color);
 
-      &,
       .bp3-icon {
-        color: rgba(255, 255, 255, 0.7);
+        color: inherit;
+      }
+
+      &.stack,
+      &.alt-stack {
+        padding: 0 4px;
+      }
+      &.alt-stack {
+        color: #ffd700cc;
         &:hover {
-          color: #fff;
-        }
-        &.alt-stack {
-          color: rgba(255, 255, 0, 0.8);
-          &:hover {
-            color: rgba(255, 255, 0, 1);
-          }
+          color: #ffd700ff;
         }
       }
 
-      svg {
-        width: 14px;
-        height: 14px;
-      }
-      &.shrink svg {
-        width: 12px;
-        height: 12px;
-      }
+      &:focus,
       &:hover {
+        outline: none;
         background-color: var(--interface-background-color);
         box-shadow: none;
       }
     }
   }
 
-  .scroll-decoration:after {
+  &.header-scroll-decoration .header-bar:after {
     content: '';
     display: block;
     width: 100%;
     height: 6px;
     position: absolute;
-    top: #{$initialStateVerticalPadding * 2 + $initialStateHeight}px;
+    top: 30px;
     box-shadow: var(--scrolled-under-shadow);
   }
 
   .state {
     height: 18px;
     padding-left: 12px;
+    align-items: center;
+    display: flex;
 
     &.highlight {
       padding-left: 10px;
@@ -149,9 +227,15 @@ $hex-color: #5bb498;
       border-left: 2px solid #14691e;
     }
 
-    // TODO: can failure highlighting not be annoying?
-    // &.dirty-stack {}
-    // &.fail {}
+    &.active-cursor {
+      background-color: var(--editor-background-color);
+      .stack-item {
+        background-color: var(--interface-background-color);
+      }
+      &.success {
+        background-color: #14691e44;
+      }
+    }
   }
 
   .stack-item {
@@ -171,6 +255,9 @@ $hex-color: #5bb498;
     &.number {
       color: #b5cea8;
     }
+    &.binary {
+      color: #a8bcce;
+    }
     &.hex {
       color: $hex-color;
     }
@@ -183,6 +270,9 @@ $hex-color: #5bb498;
         margin-right: 6px;
         vertical-align: middle;
       }
+      &.error-with-help {
+        background-color: #b3675a11;
+      }
     }
   }
 
@@ -192,43 +282,135 @@ $hex-color: #5bb498;
     height: 100%;
     margin-right: 4px;
 
-    &.conditional-executed {
+    &.spacer-conditional-executed {
       border-right: 1px solid #d68d7288;
     }
-    &.conditional-skipped {
+    &.spacer-conditional-skipped {
       border-right: 1px solid #d68d7222;
     }
-    &.evaluation {
+    &.spacer-evaluation {
       border-right: 1px solid #ffd700aa;
     }
   }
 }
 
-.stack-tooltip,
-.stack-popover {
+.stack-popover,
+.control-tooltip,
+.control-popover,
+.help-popover {
   $tooltip-background: var(--interface-background-color);
   .bp3-popover-content {
-    max-width: 400px !important;
-    overflow-wrap: break-word;
     background: $tooltip-background !important;
-    font-family: var(--monospace-font-family);
-    color: $hex-color !important;
-    padding: 12px;
   }
   .bp3-popover-arrow-fill {
     fill: $tooltip-background !important;
   }
 }
 
-.control-tooltip {
-  $tooltip-background: var(--interface-background-color);
+.control-popover {
   .bp3-popover-content {
-    background: $tooltip-background !important;
+    max-width: 500px !important;
+  }
+}
+
+.help-popover {
+  .bp3-popover-content {
+    color: #fff !important;
+    padding: 4px 12px;
+    max-width: 600px !important;
+    padding: 14px;
+    line-height: 20px;
+  }
+  .help-popover-scroll {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  em {
+    font-weight: bold;
+    font-style: normal;
+  }
+  code {
+    background-color: var(--editor-background-color);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  summary,
+  ol,
+  ul {
+    margin-bottom: 8px;
+  }
+
+  .assistance-section {
+    margin: 14px 0;
+    & + .assistance-section {
+      padding-top: 14px;
+      border-top: 1px dashed var(--editor-background-color);
+    }
+    &:first-child {
+      margin-top: 0;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .error-signed-message-hex {
+    font-family: var(--monospace-font-family);
+    color: $hex-color !important;
+    background-color: var(--editor-background-color);
+    border-radius: 3px;
+    padding: 0px 4px;
+  }
+}
+
+.generated-scenario {
+  overflow: auto;
+  background-color: var(--editor-background-color);
+  display: block;
+  border-radius: 3px;
+  padding: 1em;
+  max-height: 100px;
+  pre {
+    margin: 0;
+  }
+}
+
+.generated-scenario-log {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: 0 none;
+  line-height: inherit;
+  color: inherit;
+  opacity: 0.9;
+  display: inline-block;
+  margin: 1em 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+  &:hover {
+    opacity: 1;
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.control-tooltip,
+.control-popover {
+  .bp3-popover-content {
     color: #fff !important;
     padding: 4px 12px;
   }
-  .bp3-popover-arrow-fill {
-    fill: $tooltip-background !important;
+}
+
+.stack-popover {
+  .bp3-popover-content {
+    max-width: 400px !important;
+    overflow-wrap: break-word;
+    font-family: var(--monospace-font-family);
+    color: $hex-color !important;
+    padding: 12px;
   }
 }
 

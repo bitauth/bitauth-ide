@@ -3,18 +3,70 @@
 
   .script-section,
   .entities-section {
-    &:hover .add-button {
-      visibility: visible;
+    &:hover .add-button,
+    .add-button:focus {
+      opacity: 1;
     }
   }
 
   .add-button {
-    visibility: hidden;
+    -webkit-appearance: none;
+    border: 0;
+    background: 0 none;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    text-align: inherit;
+    opacity: 0;
+    transition: opacity 0.2s;
     display: inline-block;
     line-height: 0;
     vertical-align: middle;
-    margin-left: 6px;
-    margin-bottom: 2px;
+    margin: 0 0 2px 6px;
+    padding: 0;
+  }
+
+  .no-button-style {
+    -webkit-appearance: none;
+    border: 0;
+    background: 0 none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    margin: 0;
+    padding: 0;
+    display: block;
+    width: 100%;
+    color: inherit;
+    text-align: inherit;
+    cursor: pointer;
+
+    &:focus,
+    &.activatable:hover {
+      outline: none;
+      li {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    &:active > li {
+      border-left: 2px solid #8addff;
+    }
+
+    &.activatable {
+      pointer-events: all;
+    }
+
+    &.active {
+      cursor: default;
+      pointer-events: none;
+
+      .title-area,
+      & > li {
+        border-left-color: #2a5b8b;
+        background-color: transparent !important;
+      }
+    }
   }
 
   .title-area {
@@ -25,7 +77,6 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    cursor: pointer;
 
     .title {
       flex-grow: 1;
@@ -61,10 +112,6 @@
   .title-area,
   li {
     border-left: 2px solid transparent;
-
-    &.active {
-      border-left-color: #2a5b8b;
-    }
   }
 
   li {
@@ -75,13 +122,8 @@
       color: #fff4;
       vertical-align: middle;
       margin-right: 6px;
-    }
-
-    &.activatable {
-      cursor: pointer;
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-      }
+      outline: none;
+      pointer-events: all;
     }
   }
 }

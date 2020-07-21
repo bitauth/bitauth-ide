@@ -7,7 +7,7 @@ import { Classes, Dialog } from '@blueprintjs/core';
 
 export const GuideDialog = ({
   activeDialog,
-  closeDialog
+  closeDialog,
 }: {
   activeDialog: ActiveDialog;
   closeDialog: typeof ActionCreators.closeDialog;
@@ -31,12 +31,12 @@ export const GuideDialog = ({
         <p>
           When you work in Bitauth IDE, you're working on a{' '}
           <em>Bitauth Template</em>. It's a JSON file which fully describes the
-          authentication scheme for a bitcoin wallet. Compatible wallet software
-          can import your template and generate a fully-functional wallet, even
-          for complex, multi-party schemes. The IDE lets you write, test, and
-          export Bitauth templates.
+          authentication protocol for a bitcoin wallet. Compatible wallet
+          software can import your template and generate a fully-functional
+          wallet, even for complex, multi-party protocols. Bitauth IDE lets you
+          write, test, and export Bitauth templates.
         </p>
-        <p>Bitauth templates include two primary concepts:</p>
+        <p>Bitauth templates include three primary concepts:</p>
         <ul>
           <li>
             <em>Entities</em> – the individuals and/or devices participating in
@@ -46,15 +46,18 @@ export const GuideDialog = ({
             <em>Scripts</em> – the code used by wallet software to create
             addresses and transactions.
           </li>
+          <li>
+            <em>Scenarios</em> – a set of example situations used for testing
+            and fee estimation.
+          </li>
         </ul>
         <h3>Entities</h3>
         <p>
           A Bitauth template defines a set of <em>entities</em> which will use
           the template. Each entity can be assigned one or more{' '}
           <em>variables</em> for which they are responsible. There are currently
-          6 variable types: <em>Key</em>, <em>HDKey</em>, <em>WalletData</em>,{' '}
-          <em>AddressData</em>, <em>CurrentBlockHeight</em>, and{' '}
-          <em>CurrentBlockTime</em> (details below).
+          4 variable types: <em>HdKey</em>, <em>Key</em>, <em>WalletData</em>,{' '}
+          and <em>AddressData</em> (details below).
         </p>
         <p>
           When a wallet is created, each entity shares the public elements of
@@ -63,8 +66,8 @@ export const GuideDialog = ({
         </p>
         <h3>Scripts</h3>
         <p>
-          Bitauth templates define a set of scripts used by the entities. There
-          are 4 types of scripts:
+          all Bitauth templates define a set of scripts which are used by its
+          entities. There are 4 types of scripts:
         </p>
         <ul>
           <li>
@@ -85,6 +88,29 @@ export const GuideDialog = ({
             script.
           </li>
         </ul>
+        <h3>Scenarios</h3>
+        <p>
+          Bitauth templates may define one or more scenarios to be used by its
+          scripts. Scenarios are like built-in examples for a template – a
+          scenario can define:
+        </p>
+        <ul>
+          <li>
+            <em>Variable values</em> – example variable values to use during
+            development of scripts and for fee estimation in multi-entity
+            wallets.
+          </li>
+          <li>
+            <em>Transaction context</em> – an example context in which the
+            scenario occurs, including specific values for transaction{' '}
+            <code>version</code>, <code>locktime</code>, inputs, and outputs.
+          </li>
+        </ul>
+        <p>
+          With scenarios, you can test scripts at different moments in time,
+          with different variable values, and in different transaction contexts.
+          See <code>Developing Scenarios</code> below for details.
+        </p>
         <h2>Bitauth Templating Language (BTL)</h2>
         <p>
           Bitauth template scripts are written in{' '}
@@ -105,11 +131,13 @@ export const GuideDialog = ({
           also find resources describing bitcoin opcodes online.
         </p>
         <h3>Literal Data Types</h3>
-        <p>BTL supports 3 literal data types:</p>
+        <p>BTL supports 4 literal data types:</p>
         <ul>
           <li>
             <em>Hex literals</em> – hex-encoded data, prefixed with{' '}
-            <code>0x</code>, e.g. <code>0xc0de</code>.
+            <code>0x</code>, e.g. <code>0xc0de</code>. For improved readability,
+            underscores (<code>_</code>) can be used as separators within the
+            hex literal, e.g. <code>0x0000_1111_0000_1111</code>.
           </li>
           <li>
             <em>UTF8 literals</em> – UTF8-encoded data, surrounded by single
@@ -125,10 +153,17 @@ export const GuideDialog = ({
             .
           </li>
           <li>
-            <em>BigInt literals</em> – integers, e.g. <code>1234</code>.
-            (Bitauth IDE supports arbitrary integer sizes, but numbers which
-            overflow 64 bits are considered non-standard and may not be
-            supported in the future.)
+            <em>BigInt literals</em> – integers, e.g. <code>1234</code>. For
+            improved readability, underscores (<code>_</code>) can be used as
+            separators within the BigInt literal, e.g.{' '}
+            <code>1_000_000_000</code>.
+          </li>
+          <li>
+            <em>Binary literals</em> – binary-encoded integers, e.g.{' '}
+            <code>0b00101010</code>. For improved readability, underscores (
+            <code>_</code>) can be used as separators within the binary literal,
+            e.g. <code>0b0010_1010_0000_0000</code>. Binary literals are
+            converted to integers
           </li>
         </ul>
         <h3>Push Statements</h3>
@@ -183,15 +218,14 @@ export const GuideDialog = ({
             use <code>WalletData</code>.
           </li>
           <li>
-            <code>HDKey</code>– The HD Key (Hierarchical-Deterministic Key) type
+            <code>HdKey</code>– The HD Key (Hierarchical-Deterministic Key) type
             automatically manages key generation and mapping in a standard way.
-            For greater control, use a Key. (NOTE: HDKey is not yet supported by
-            Bitauth IDE.)
+            For greater control, use a Key.
           </li>
           <li>
             <code>Key</code>– The Key type provides fine-grained control over
             key generation and mapping. Most templates should instead use{' '}
-            <code>HDKey</code>.
+            <code>HdKey</code>.
           </li>
           <li>
             <code>WalletData</code>– The Wallet Data type provides a static
@@ -210,7 +244,7 @@ export const GuideDialog = ({
         </p>
         <p>
           Several operations are available to <code>Key</code> and{' '}
-          <code>HDKey</code> variables:
+          <code>HdKey</code> variables:
         </p>
         <ul>
           <li>
@@ -344,7 +378,7 @@ export const GuideDialog = ({
         </p>
         <h3>Built-in Variable Types</h3>
         <p>
-          Built-in variables provide access to important data for advance
+          Built-in variables provide access to important data for advanced
           scripts:
         </p>
         <ul>
@@ -418,7 +452,7 @@ export const GuideDialog = ({
             outpoint being spent by the current input.
           </li>
           <li>
-            <code>signing_serialization.covered_bytecode_prefix</code>– The
+            <code>signing_serialization.covered_bytecode_length</code>– The
             prefix indicating the length of
             <code>coveredBytecode</code> provided to the compiler for this
             compilation. The length is encoded as a <code>BitcoinVarInt</code>.
@@ -471,15 +505,15 @@ export const GuideDialog = ({
             concatenation of: <code>version</code>,{' '}
             <code>transaction_outpoints_hash</code>,{' '}
             <code>transaction_sequence_numbers_hash</code>,{' '}
-            <code>covered_bytecode_prefix</code>,<code>covered_bytecode</code>,
+            <code>covered_bytecode_length</code>,<code>covered_bytecode</code>,
             <code>output_value</code>, <code>transaction_outputs_hash</code>,{' '}
             <code>0x41</code> (the byte representing this signing serialization
-            type), and <code>0x000000</code> (the BCH fork ID).
+            type), and <code>0x000000</code> (fork ID).
           </li>
           <li>
             <code>signing_serialization.full_all_outputs_single_input</code>–
             The concatenation of: <code>version</code>, 64 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>0x00</code>, <code>covered_bytecode_length</code>,{' '}
             <code>covered_bytecode</code>, <code>output_value</code>,{' '}
             <code>transaction_outputs_hash</code>, <code>0xc1</code> (the byte
             representing this signing serialization type), and{' '}
@@ -489,7 +523,7 @@ export const GuideDialog = ({
             <code>signing_serialization.full_corresponding_output</code>– The
             concatenation of: <code>version</code>,{' '}
             <code>transaction_outpoints_hash</code>, 32 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>0x00</code>, <code>covered_bytecode_length</code>,{' '}
             <code>covered_bytecode</code>, <code>output_value</code>,{' '}
             <code>corresponding_output_hash</code> (or if no corresponding
             output exists, 32 bytes of <code>0x00</code>
@@ -501,7 +535,7 @@ export const GuideDialog = ({
               signing_serialization.full_corresponding_output_single_input
             </code>
             – The concatenation of: <code>version</code>, 64 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>0x00</code>, <code>covered_bytecode_length</code>,{' '}
             <code>covered_bytecode</code>, <code>output_value</code>,{' '}
             <code>corresponding_output_hash</code> (or if no corresponding
             output exists, 32 bytes of <code>0x00</code>
@@ -512,7 +546,7 @@ export const GuideDialog = ({
             <code>signing_serialization.full_no_outputs</code>– The
             concatenation of: <code>version</code>,{' '}
             <code>transaction_outpoints_hash</code>, 32 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>0x00</code>, <code>covered_bytecode_length</code>,{' '}
             <code>covered_bytecode</code>, <code>output_value</code>, 32 bytes
             of <code>0x00</code>, <code>0x42</code> (the byte representing this
             signing serialization type), and <code>0x000000</code> (fork ID).
@@ -520,12 +554,38 @@ export const GuideDialog = ({
           <li>
             <code>signing_serialization.full_no_outputs_single_input</code>– The
             concatenation of: <code>version</code>, 64 bytes of{' '}
-            <code>0x00</code>, <code>covered_bytecode_prefix</code>,{' '}
+            <code>0x00</code>, <code>covered_bytecode_length</code>,{' '}
             <code>covered_bytecode</code>, <code>output_value</code>, 32 bytes
             of <code>0x00</code>, <code>0xc2</code> (the byte representing this
             signing serialization type), and <code>0x000000</code> (fork ID).
           </li>
         </ul>
+        <h2>Developing Scenarios</h2>
+        <p>
+          Scenarios provide control over the "test transaction" used internally
+          by Bitauth IDE to produce the live evaluation trace. Because the IDE
+          does not currently provide a GUI editor for scenarios, they must be
+          added or modified in the JSON template source using the template
+          import/export feature.
+        </p>
+        <p>
+          To add a new scenario, add a <code>scenarios</code> property to the
+          JSON template using the import/export dialog. Much like the{' '}
+          <code>scripts</code> property, the <code>scenarios</code> property
+          maps scenario IDs to scenario objects, e.g.{' '}
+          <code>{`"scenarios": {"my_scenario": {"name": "My Scenario", "transaction": {"locktime": 100} }},`}</code>
+          . Hover over each property to read its built-in documentation. You can
+          also use the <code>Command+Space</code> or <code>Ctrl+Space</code>{' '}
+          hotkey to activate autocomplete suggestions for available properties.
+        </p>
+        <p>
+          Once you've added some scenarios, you can reference them from
+          unlocking scripts and script tests. Add a <code>passes</code> and/or{' '}
+          <code>fails</code> array of scenario IDs to each script or test to
+          indicate which scenarios should cause them to pass or fail evaluation,
+          respectively. See the <code>2-of-2 with Business Continuity</code>{' '}
+          built-in template for a full example.
+        </p>
         <h2>Getting Started</h2>
         <p>
           The easiest way to get started working with Bitauth IDE is to review
@@ -542,14 +602,24 @@ export const GuideDialog = ({
             href="https://github.com/bitauth/bitauth-ide/issues"
           >
             open an issue on GitHub
-          </a>{' '}
-          or{' '}
+          </a>
+          ,{' '}
           <a
             target="_blank"
             rel="noopener noreferrer"
             href="https://twitter.com/bitjson"
           >
-            message me on twitter
+            message me
+          </a>
+          , or{' '}
+          <a
+            className="link"
+            href="https://t.me/bitauth_ide"
+            target="_blank"
+            rel="noopener noreferrer"
+            tabIndex={2}
+          >
+            join the community chat
           </a>
           .
         </p>

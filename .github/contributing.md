@@ -2,16 +2,32 @@
 
 Pull requests are welcome! Here are some miscellaneous notes on the project.
 
-### Why did we eject `create-react-app`?
+# Running Bitauth IDE locally
 
-To get Monaco working fully, we need to add some steps to the build process. We're currently only adding the following lines to `webpack.config.js`:
+First, clone the Bitauth IDE repo, and install its dependencies, then run `yarn start`:
 
-```js
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-
-// later, inside the `plugins` array:
-
-new MonacoWebpackPlugin({ languages: [] });
+```
+cd bitauth-ide
+yarn
+yarn start
 ```
 
-That's all. If you can figure out a way to do that without ejecting, please send a pull request!
+# link libauth
+
+To work on `libauth` and Bitauth IDE simultaneously, you can link the `libauth` package inside this one.
+
+Clone [libauth](https://github.com/bitauth/libauth/), then run `yarn link` from within the `libauth` directory:
+
+```
+cd libauth
+yarn link
+```
+
+Then inside the `bitauth-ide`, link the `libauth` package:
+
+```
+cd bitauth-ide
+yarn link libauth
+```
+
+It's recommended you use the `yarn watch:module` task within the `libauth` repo while developing.

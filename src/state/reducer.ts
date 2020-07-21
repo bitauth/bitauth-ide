@@ -2,7 +2,7 @@ import {
   ImmerReducer,
   createReducerFunction,
   createActionCreators,
-  setPrefix
+  setPrefix,
 } from 'immer-reducer';
 import {
   AppState,
@@ -15,7 +15,8 @@ import {
   IDETemplateTestedScript,
   IDESupportedVM,
   IDEVariable,
-  IDETemplateTestCheckScript
+  WalletTreeClass,
+  IDEActivatableScript,
 } from './types';
 import { defaultState, emptyTemplate } from './defaults';
 import { unknownValue } from '../utils';
@@ -37,6 +38,11 @@ class App extends ImmerReducer<AppState> {
   openTemplateSettings() {
     this.draftState.currentEditingMode = 'template-settings';
   }
+  attemptInvalidImport(invalidTemplate: string) {
+    this.draftState.pendingTemplateImport = invalidTemplate;
+    this.openWelcomePane();
+    this.importExport();
+  }
   updateTemplateName(name: string) {
     this.draftState.currentTemplate.name = name;
   }
@@ -45,7 +51,7 @@ class App extends ImmerReducer<AppState> {
   }
   updateTemplateSupportedVM(vm: IDESupportedVM, enable: boolean) {
     const vms = this.draftState.currentTemplate.supportedVirtualMachines.filter(
-      id => id !== vm
+      (id) => id !== vm
     );
     this.draftState.currentTemplate.supportedVirtualMachines = enable
       ? [...vms, vm]
@@ -62,6 +68,7 @@ class App extends ImmerReducer<AppState> {
     if (typeof empty === 'string') {
       throw new Error('Invalid empty template.');
     }
+    this.draftState.templateLoadTime = new Date();
     this.draftState.currentTemplate = empty;
   }
   showWelcomePane() {
@@ -73,7 +80,7 @@ class App extends ImmerReducer<AppState> {
   createEntity({
     internalId,
     name,
-    id
+    id,
   }: {
     internalId: string;
     name: string;
@@ -86,7 +93,7 @@ class App extends ImmerReducer<AppState> {
       description: '',
       scriptInternalIds: [],
       usesAllScripts: true,
-      variableInternalIds: []
+      variableInternalIds: [],
     };
     this.draftState.currentEditingMode = 'entity';
     this.draftState.currentlyEditingInternalId = internalId;
@@ -122,12 +129,14 @@ class App extends ImmerReducer<AppState> {
     ].scriptInternalIds.reduce(
       (map, internalId) => ({
         ...map,
-        [internalId]: true
+        [internalId]: true,
       }),
       {} as { [internalId: string]: boolean }
     );
     const merged = { ...previousValues, ...changes };
-    const result = Object.keys(merged).filter(internalId => merged[internalId]);
+    const result = Object.keys(merged).filter(
+      (internalId) => merged[internalId]
+    );
     this.draftState.currentTemplate.entitiesByInternalId[
       internalId
     ].scriptInternalIds = result;
@@ -136,7 +145,7 @@ class App extends ImmerReducer<AppState> {
     const variables = this.draftState.currentTemplate.entitiesByInternalId[
       internalId
     ].variableInternalIds;
-    variables.forEach(variableInternalId => {
+    variables.forEach((variableInternalId) => {
       delete this.draftState.currentTemplate.variablesByInternalId[
         variableInternalId
       ];
@@ -151,14 +160,12 @@ class App extends ImmerReducer<AppState> {
     description,
     id,
     type,
-    mock
   }: {
     owningEntityInternalId: string;
     internalId?: string;
     name: string;
     description: string;
     id: string;
-    mock: string;
     type: IDEVariable['type'];
   }) {
     const variableInternalId = internalId || createInsecureUuidV4();
@@ -170,7 +177,6 @@ class App extends ImmerReducer<AppState> {
     variable.description = description;
     variable.id = id;
     variable.type = type;
-    variable.mock = mock;
     this.draftState.currentTemplate.variablesByInternalId[
       variableInternalId
     ] = variable;
@@ -185,14 +191,14 @@ class App extends ImmerReducer<AppState> {
     const entities = Object.keys(
       this.draftState.currentTemplate.entitiesByInternalId
     );
-    entities.forEach(entityInternalId => {
+    entities.forEach((entityInternalId) => {
       const variables = this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ].variableInternalIds;
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ].variableInternalIds = variables.filter(
-        variableInternalId => variableInternalId !== internalId
+        (variableInternalId) => variableInternalId !== internalId
       );
     });
     delete this.draftState.currentTemplate.variablesByInternalId[internalId];
@@ -205,9 +211,74 @@ class App extends ImmerReducer<AppState> {
   activateScript(internalId: string) {
     this.draftState.currentEditingMode = 'script';
     this.draftState.currentlyEditingInternalId = internalId;
+
+    const activatedScript = this.draftState.currentTemplate.scriptsByInternalId[
+      internalId
+    ] as IDEActivatableScript;
+
+    const passesScenarioInternalIds =
+      'passesInternalIds' in activatedScript &&
+      activatedScript.passesInternalIds !== undefined
+        ? activatedScript.passesInternalIds
+        : [];
+
+    const failsScenarioInternalIds =
+      'failsInternalIds' in activatedScript &&
+      activatedScript.failsInternalIds !== undefined
+        ? activatedScript.failsInternalIds
+        : [];
+
+    const availableScenarioInternalIds = [
+      ...passesScenarioInternalIds,
+      ...failsScenarioInternalIds,
+    ];
+
+    if (
+      this.draftState.lastSelectedScenarioInternalId !== undefined &&
+      availableScenarioInternalIds.includes(
+        this.draftState.lastSelectedScenarioInternalId
+      )
+    ) {
+      this.draftState.currentScenarioInternalId = this.draftState.lastSelectedScenarioInternalId;
+      return;
+    }
+
+    const hydratedSortScenarios = (internalIds: string[]) =>
+      internalIds
+        .map(
+          (internalId) =>
+            this.draftState.currentTemplate.scenariosByInternalId[internalId]
+        )
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((scenario) => scenario.internalId);
+
+    /**
+     * The list of scenarios which apply to this script, with `passes` before
+     * `fails`, sorted lexicographically.
+     */
+    const lexicographicallySortedPassThenFail = [
+      ...hydratedSortScenarios(passesScenarioInternalIds),
+      ...hydratedSortScenarios(failsScenarioInternalIds),
+    ];
+
+    const firstInternalId = lexicographicallySortedPassThenFail[0] as
+      | string
+      | undefined;
+    this.draftState.currentScenarioInternalId = firstInternalId;
   }
   importScript() {
     this.draftState.activeDialog = ActiveDialog.importScript;
+  }
+  assignScriptModel({
+    internalId,
+    monacoModel,
+  }: {
+    internalId: string;
+    monacoModel: any;
+  }) {
+    this.draftState.currentTemplate.scriptsByInternalId[
+      internalId
+    ].monacoModel = monacoModel;
   }
   newScript() {
     this.draftState.activeDialog = ActiveDialog.newScript;
@@ -216,22 +287,22 @@ class App extends ImmerReducer<AppState> {
     internalId,
     name,
     id,
-    isP2SH
+    isP2SH,
+    isPushed,
   }: {
     internalId: string;
     name: string;
     id: string;
     isP2SH?: boolean;
+    isPushed?: boolean;
   }) {
-    if (
-      this.draftState.currentTemplate.scriptsByInternalId[internalId].type ===
-      'test-check'
-    ) {
-      const realInternalId = (this.draftState.currentTemplate
-        .scriptsByInternalId[internalId] as IDETemplateTestCheckScript)
-        .testSetupInternalId;
+    const currentScript = this.draftState.currentTemplate.scriptsByInternalId[
+      internalId
+    ];
+    if (currentScript.type === 'test-check') {
+      const setupInternalId = currentScript.testSetupInternalId;
       this.draftState.currentTemplate.scriptsByInternalId[
-        realInternalId
+        setupInternalId
       ].name = name;
       return;
     }
@@ -241,6 +312,11 @@ class App extends ImmerReducer<AppState> {
       (this.draftState.currentTemplate.scriptsByInternalId[
         internalId
       ] as IDETemplateLockingScript).isP2SH = isP2SH;
+    }
+    if (isPushed !== undefined) {
+      (this.draftState.currentTemplate.scriptsByInternalId[
+        internalId
+      ] as IDETemplateTestedScript).pushed = isPushed;
     }
   }
   createScript(script: {
@@ -261,7 +337,7 @@ class App extends ImmerReducer<AppState> {
           type: script.type,
           script: script.contents || '',
           id: script.id,
-          name: script.name
+          name: script.name,
         };
         this.draftState.currentlyEditingInternalId = script.internalId;
         return;
@@ -276,17 +352,22 @@ class App extends ImmerReducer<AppState> {
           id: script.id,
           name: script.name,
           childInternalIds: [childUnlockingId],
-          isP2SH: true
+          isP2SH: true,
         };
         this.draftState.currentTemplate.scriptsByInternalId[
           childUnlockingId
         ] = {
-          internalId: childUnlockingId,
-          type: 'unlocking',
-          script: '',
+          ageLock: undefined,
+          estimate: undefined,
+          failsInternalIds: [],
           id: `unlock_${script.id}`,
+          internalId: childUnlockingId,
           name: 'Unlock',
-          parentInternalId: script.internalId
+          parentInternalId: script.internalId,
+          passesInternalIds: [],
+          script: '',
+          timeLockType: undefined,
+          type: 'unlocking',
         };
         this.draftState.currentlyEditingInternalId = undefined;
         return;
@@ -295,12 +376,17 @@ class App extends ImmerReducer<AppState> {
         this.draftState.currentTemplate.scriptsByInternalId[
           script.internalId
         ] = {
-          internalId: script.internalId,
-          type: script.type,
-          script: '',
+          ageLock: undefined,
+          estimate: undefined,
+          failsInternalIds: [],
           id: script.id,
+          internalId: script.internalId,
           name: script.name,
-          parentInternalId: lockingInternalId
+          parentInternalId: lockingInternalId,
+          passesInternalIds: [],
+          script: '',
+          timeLockType: undefined,
+          type: script.type,
         };
         const lock = this.draftState.currentTemplate.scriptsByInternalId[
           lockingInternalId
@@ -315,7 +401,7 @@ class App extends ImmerReducer<AppState> {
             isP2SH: true,
             name: lock.name,
             script: lock.script,
-            type: 'locking'
+            type: 'locking',
           };
         }
         (this.draftState.currentTemplate.scriptsByInternalId[
@@ -334,18 +420,20 @@ class App extends ImmerReducer<AppState> {
           id: `${script.id}_check`,
           internalId: checkInternalId,
           name: '',
-          testSetupInternalId
+          testSetupInternalId,
         };
         this.draftState.currentTemplate.scriptsByInternalId[
           testSetupInternalId
         ] = {
-          type: script.type,
-          script: '',
+          failsInternalIds: [],
           id: script.id,
           internalId: testSetupInternalId,
           name: script.name,
           parentInternalId,
-          testCheckInternalId: checkInternalId
+          passesInternalIds: [],
+          script: '',
+          testCheckInternalId: checkInternalId,
+          type: script.type,
         };
         const parent = this.draftState.currentTemplate.scriptsByInternalId[
           parentInternalId
@@ -372,9 +460,9 @@ class App extends ImmerReducer<AppState> {
         ? deleteTarget.childInternalIds
         : deleteTarget.type === 'test-setup'
         ? [deleteTarget.testCheckInternalId]
-        : [])
+        : []),
     ];
-    deleteInternalIds.forEach(scriptInternalId => {
+    deleteInternalIds.forEach((scriptInternalId) => {
       delete this.draftState.currentTemplate.scriptsByInternalId[
         scriptInternalId
       ];
@@ -383,11 +471,11 @@ class App extends ImmerReducer<AppState> {
     const remaining = Object.keys(
       this.draftState.currentTemplate.scriptsByInternalId
     );
-    remaining.forEach(iId => {
+    remaining.forEach((iId) => {
       const script = this.draftState.currentTemplate.scriptsByInternalId[iId];
       if (script.type === 'tested' || script.type === 'locking') {
         script.childInternalIds = script.childInternalIds.filter(
-          childId => deleteInternalIds.indexOf(childId) === -1
+          (childId) => deleteInternalIds.indexOf(childId) === -1
         );
         if (script.childInternalIds.length === 0) {
           this.draftState.currentTemplate.scriptsByInternalId[iId] = {
@@ -395,7 +483,7 @@ class App extends ImmerReducer<AppState> {
             id: script.id,
             script: script.script,
             internalId: script.internalId,
-            name: script.name
+            name: script.name,
           };
         }
       }
@@ -404,14 +492,14 @@ class App extends ImmerReducer<AppState> {
     const entities = Object.keys(
       this.draftState.currentTemplate.entitiesByInternalId
     );
-    entities.forEach(entityInternalId => {
+    entities.forEach((entityInternalId) => {
       const entity = this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ];
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ].scriptInternalIds = entity.scriptInternalIds.filter(
-        iId => deleteInternalIds.indexOf(iId) === -1
+        (iId) => deleteInternalIds.indexOf(iId) === -1
       );
     });
     this.draftState.currentEditingMode = 'template-settings';
@@ -421,12 +509,31 @@ class App extends ImmerReducer<AppState> {
     this.draftState.activeDialog = ActiveDialog.none;
   }
   importTemplate(template: AppState['currentTemplate']) {
+    this.draftState.templateLoadTime = new Date();
     this.draftState.currentTemplate = template;
     this.draftState.currentlyEditingInternalId = '';
     this.draftState.currentEditingMode = 'template-settings';
+    this.draftState.pendingTemplateImport = undefined;
   }
   changeEvaluationViewerSettings(settings: EvaluationViewerSettings) {
     this.draftState.evaluationViewerSettings = settings;
+  }
+  toggleWalletTreeNode(id: string, className: string, isExpanded: boolean) {
+    if (className === WalletTreeClass.wallet) {
+      this.draftState.wallets.walletsByInternalId[id].isExpanded = isExpanded;
+    }
+    if (className === WalletTreeClass.address) {
+      this.draftState.wallets.addressesByInternalId[id].isExpanded = isExpanded;
+    }
+  }
+  toggleAllWalletTreeNodes(isExpanded: boolean) {
+    [
+      ...Object.values(this.draftState.wallets.walletsByInternalId),
+      ...Object.values(this.draftState.wallets.addressesByInternalId),
+    ].map((node) => (node.isExpanded = isExpanded));
+  }
+  switchScenario(scenarioInternalId: string) {
+    this.draftState.currentScenarioInternalId = scenarioInternalId;
   }
 }
 

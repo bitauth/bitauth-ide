@@ -1,519 +1,508 @@
 import {
   AppState,
+  IDETemplateEntity,
+  IDETemplateUnlockingScript,
   IDETemplateLockingScript,
+  IDETemplateTestCheckScript,
   IDETemplateTestedScript,
   IDETemplateTestSetupScript,
   IDETemplateIsolatedScript,
-  IDETemplateEntity,
-  IDETemplateScript,
-  IDETemplateUnlockingScript,
-  IDETemplateTestCheckScript,
-  IDEVariable
+  IDEVariable,
+  IDETemplateScenario,
 } from './types';
 import {
   AuthenticationTemplate,
+  validateAuthenticationTemplate,
+  parseAuthenticationTemplateScripts,
+  AuthenticationTemplateEntity,
+  AuthenticationTemplateVariable,
+  AuthenticationTemplateScriptTested,
+  AuthenticationTemplateScriptLocking,
+  AuthenticationTemplateScriptUnlocking,
   AuthenticationTemplateScript,
-  AuthenticationTemplateScriptTest
-} from 'bitcoin-ts';
+} from '@bitauth/libauth';
 import { createInsecureUuidV4 } from './utils';
 import { bitauthAuthenticationTemplateSchema } from '../editor/constants';
+import { unknownValue } from '../utils';
 
-// TODO: attempt to extract all P2SH scripts (which don't follow our `magicSuffix` convention) from imports.
-// const extractPattern = (string: string, pattern: RegExp) => {
-//   const result = pattern.exec(string);
-//   return result ? result[1] : false;
-// };
-// const extractRedeemScript = (lockingScript: string) =>
-//   extractPattern(
-//     lockingScript,
-//     /^\s*OP_HASH160\s*<\s*\$\(\s*<\s*([\s\S]*)\s>\s*OP_HASH160\s*\)\s*>\s*OP_EQUAL\s*$/
-//   );
-// const extractUnlockingScriptFromUnlockingP2SH = (
-//   unlocks: string,
-//   unlockingScript: string
-// ) =>
-//   extractPattern(
-//     unlockingScript,
-//     new RegExp(`^([\\s\\S]*\\S)\\s*<\\s*${unlocks}\\.redeem_script\\s*>\\s*$`)
-//   );
-// const extractP2sh = (
-//   lockingScriptId: string,
-//   lockingScript: string,
-//   unlockingScript: string
-// ) => {
-//   const redeemScript = extractRedeemScript(lockingScript);
-//   const trimmedUnlock = extractUnlockingScriptFromUnlockingP2SH(
-//     lockingScriptId,
-//     unlockingScript
-//   );
-//   return redeemScript && trimmedUnlock
-//     ? { unlockingScript: trimmedUnlock, lockingScript: redeemScript }
-//     : false;
-// };
-
-const buildLockingScriptForP2SH = (redeemScriptId: string) =>
-  `OP_HASH160 <$(<${redeemScriptId}> OP_HASH160)> OP_EQUAL`;
-
-const buildUnlockingScriptForP2SH = (
-  redeemScriptId: string,
-  strippedUnlockingScript: string
-) => `${strippedUnlockingScript} <${redeemScriptId}>`;
-
-type ExtractedScript = AuthenticationTemplateScript & { id: string };
-
-const extractTemplateScripts = (ideTemplate: AppState['currentTemplate']) => {
-  // first assemble all the locking scripts, save both the redeem_script and the true locking script
-  const p2shLockingScripts = Object.values(
-    ideTemplate.scriptsByInternalId
-  ).filter(
-    script => script.type === 'locking' && script.isP2SH
-  ) as IDETemplateLockingScript[];
-  const p2shLockingAndUnlockingScripts = p2shLockingScripts.reduce<
-    ExtractedScript[]
-  >((scripts, p2shLockingScript) => {
-    const redeemScriptId = `${p2shLockingScript.id}.redeem_script`;
-    const unlockingScripts = p2shLockingScript.childInternalIds
-      .map(internalId => ideTemplate.scriptsByInternalId[internalId])
-      .map(ideScript => ({
-        id: ideScript.id,
-        name: ideScript.name,
-        script: buildUnlockingScriptForP2SH(redeemScriptId, ideScript.script),
-        unlocks: p2shLockingScript.id
-      }));
-    return [
-      ...scripts,
-      {
-        id: p2shLockingScript.id,
-        name: p2shLockingScript.name,
-        script: buildLockingScriptForP2SH(redeemScriptId)
-      },
-      {
-        id: redeemScriptId,
-        name: `${p2shLockingScript.name} Redeem Script`,
-        script: p2shLockingScript.script
-      },
-      ...unlockingScripts
-    ];
-  }, []);
-  const nonP2shLockingScripts = Object.values(
-    ideTemplate.scriptsByInternalId
-  ).filter(
-    script => script.type === 'locking' && !script.isP2SH
-  ) as IDETemplateLockingScript[];
-  const nonP2shLockingAndUnlockingScripts = nonP2shLockingScripts.reduce<
-    ExtractedScript[]
-  >((scripts, lockingScript) => {
-    const unlockingScripts = lockingScript.childInternalIds
-      .map(internalId => ideTemplate.scriptsByInternalId[internalId])
-      .map(ideScript => ({
-        id: ideScript.id,
-        name: ideScript.name,
-        script: ideScript.script,
-        unlocks: lockingScript.id
-      }));
-    return [
-      ...scripts,
-      {
-        id: lockingScript.id,
-        name: lockingScript.name,
-        script: lockingScript.script
-      },
-      ...unlockingScripts
-    ];
-  }, []);
-
-  const testedScripts = (Object.values(ideTemplate.scriptsByInternalId).filter(
-    script => script.type === 'tested'
-  ) as IDETemplateTestedScript[]).reduce<ExtractedScript[]>(
-    (scripts, testedScript) => {
-      return [
-        ...scripts,
-        {
-          id: testedScript.id,
-          name: testedScript.name,
-          script: testedScript.script,
-          tests: testedScript.childInternalIds.map(internalId => {
-            const testSetup = ideTemplate.scriptsByInternalId[
-              internalId
-            ] as IDETemplateTestSetupScript;
-            const testCheck =
-              ideTemplate.scriptsByInternalId[testSetup.testCheckInternalId];
-            return {
-              name: testSetup.name,
-              setup: testSetup.script,
-              check: testCheck.script
-            };
-          })
-        }
-      ];
-    },
-    []
-  );
-  const isolatedScripts = (Object.values(
-    ideTemplate.scriptsByInternalId
-  ).filter(
-    script => script.type === 'isolated'
-  ) as IDETemplateIsolatedScript[]).map<ExtractedScript>(script => ({
-    id: script.id,
-    name: script.name,
-    script: script.script
-  }));
-  return [
-    ...p2shLockingAndUnlockingScripts,
-    ...nonP2shLockingAndUnlockingScripts,
-    ...testedScripts,
-    ...isolatedScripts
-  ]
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .reduce<AuthenticationTemplate['scripts']>(
-      (collected, script) => ({
-        ...collected,
-        [script.id]: {
-          ...(script.name ? { name: script.name } : {}),
-          script: script.script,
-          ...(script.tests ? { tests: script.tests } : {}),
-          ...(script.unlocks ? { unlocks: script.unlocks } : {})
-        }
-      }),
-      {}
-    );
-};
-
-export const extractTemplate = (
-  currentTemplate: AppState['currentTemplate']
-): AuthenticationTemplate => ({
-  $schema: bitauthAuthenticationTemplateSchema,
-  description: currentTemplate.description,
-  name: currentTemplate.name,
-  entities: Object.values(currentTemplate.entitiesByInternalId)
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .reduce(
-      (collected, ideEntity) => ({
-        ...collected,
-        [ideEntity.id]: {
-          name: ideEntity.name,
-          description: ideEntity.description,
-          scripts: ideEntity.usesAllScripts
-            ? Object.values(currentTemplate.scriptsByInternalId).map(
-                ideScript => ideScript.id
-              )
-            : ideEntity.scriptInternalIds.map(
-                internalId => currentTemplate.scriptsByInternalId[internalId].id
-              ),
-          variables: ideEntity.variableInternalIds.reduce((all, internalId) => {
-            const variable = currentTemplate.variablesByInternalId[internalId];
-            // const id = variable.id;
-            // delete variable.id;
-            const exported = { ...variable, id: undefined };
-            return {
-              ...all,
-              [variable.id]: exported
-            };
-          }, {})
-        }
-      }),
-      {}
-    ),
-  scripts: extractTemplateScripts(currentTemplate),
-  supported: [...currentTemplate.supportedVirtualMachines].sort((a, b) =>
-    a.localeCompare(b)
-  ),
-  version: 0
-});
-
-// TODO: clean up tech debt
 /**
- * This method was original written for a template format with arrays for
- * `entities` and `scripts`. It can probably be majorly simplified.
+ * Normalize an authentication template, giving every item a unique internal ID
+ * for use in the IDE.
+ *
+ * @param maybeTemplate -  the authentication template to import
+ * @param generateId - an optional method which returns a new ID each time it's
+ * called (defaults to `createInsecureUuidV4`, but can be modified to allow for
+ * determinism in testing)
  */
 export const importAuthenticationTemplate = (
-  template: Partial<AuthenticationTemplate>
+  maybeTemplate: unknown,
+  generateId = createInsecureUuidV4
 ): AppState['currentTemplate'] | string => {
-  if (!template) {
-    return 'No authentication template provided.';
+  const template = validateAuthenticationTemplate(maybeTemplate);
+  if (typeof template === 'string') {
+    return template;
   }
-  if (template.version !== 0) {
-    return 'Only version 0 authentication templates are currently supported.';
-  }
-  if (template.name !== undefined && typeof template.name !== 'string') {
-    return `If provided, the 'name' property must be a string.`;
-  }
-  if (
-    template.description !== undefined &&
-    typeof template.description !== 'string'
-  ) {
-    return `If provided, the 'description' property must be a string.`;
-  }
-  if (typeof template.entities !== 'object') {
-    return `The 'entities' property must be an object.`;
-  }
-  if (typeof template.scripts !== 'object') {
-    return `The 'scripts' property must be an object.`;
-  }
-  if (!Array.isArray(template.supported)) {
-    return `The 'supported' property must be an array.`;
+  const sorted = parseAuthenticationTemplateScripts(template.scripts);
+  if (typeof sorted === 'string') {
+    return sorted;
   }
 
-  const scripts = Object.entries(template.scripts).map(([key, value]) => ({
-    id: key,
-    name: value.name,
-    script: value.script,
-    tests: value.tests,
-    unlocks: value.unlocks
-  }));
-
-  const entities = Object.entries(template.entities).map(([key, value]) => ({
-    id: key,
-    description: value.description,
-    name: value.name,
-    scripts: value.scripts,
-    variables: value.variables
-  }));
-
-  // try to detect our internal `.redeem_script` convention:
-  const magicSuffix = '.redeem_script';
-  const candidateRedeemScripts = scripts.filter(
-    script => script.id.indexOf(magicSuffix) !== -1
-  );
-  const matchedLockingScripts = scripts.filter(script =>
-    candidateRedeemScripts.some(candidate => {
-      return (
-        candidate.id.substring(0, candidate.id.length - magicSuffix.length) ===
-        script.id
-      );
-    })
-  );
-  const templateScripts = scripts;
-  const p2shScripts = matchedLockingScripts.reduce<IDETemplateScript[]>(
-    (scripts, script) => {
-      const redeemScriptId = `${script.id}${magicSuffix}`;
-      const lockingId = createInsecureUuidV4();
-      const matchingScript = templateScripts.find(s => s.id === redeemScriptId);
-      if (matchingScript === undefined) {
-        throw new Error('Could not find matching locking script.');
-      }
-      const children = templateScripts
-        .filter(s => s.unlocks === script.id)
-        .map<IDETemplateUnlockingScript>(unlocking => ({
-          type: 'unlocking',
-          id: unlocking.id,
-          internalId: createInsecureUuidV4(),
-          name: unlocking.name || 'Unnamed',
-          parentInternalId: lockingId,
-          script: unlocking.script
-            ? unlocking.script
-                .replace(
-                  new RegExp(`<\s*${redeemScriptId.replace('.', '\\.')}\s*>`), // eslint-disable-line no-useless-escape
-                  ''
-                )
-                .trim()
-            : ''
-        }));
-      const locking: IDETemplateLockingScript = {
-        type: 'locking',
-        id: script.id,
-        name: script.name || 'Unnamed',
-        script: matchingScript.script,
-        childInternalIds: children.map(c => c.internalId),
-        internalId: lockingId,
-        isP2SH: true
-      };
-      return [...scripts, locking, ...children];
-    },
+  const scriptsIds = Object.keys(template.scripts);
+  const entityIds = Object.keys(template.entities);
+  const variableIds = Object.values(template.entities).reduce<string[]>(
+    (all, entity) =>
+      entity.variables === undefined
+        ? all
+        : [...all, ...Object.keys(entity.variables)],
     []
   );
+  const scenarioIds =
+    template.scenarios === undefined ? [] : Object.keys(template.scenarios);
 
-  const remainingScripts = templateScripts.filter(
-    script =>
-      !p2shScripts.some(
-        existing =>
-          existing.id === script.id ||
-          (existing.type === 'locking' &&
-            existing.isP2SH &&
-            `${existing.id}${magicSuffix}` === script.id)
-      )
-  );
+  const templateIds = [
+    ...entityIds,
+    ...scriptsIds,
+    ...variableIds,
+    ...scenarioIds,
+  ];
 
-  const remainingUnlockingScripts = remainingScripts.filter(
-    script => script.unlocks !== undefined
-  );
+  /**
+   * An object mapping each ID to its newly generated `internalId`. (Note,
+   * internal IDs for script tests are generated later.)
+   */
+  const internalIdMap = templateIds.reduce<{
+    [templateId: string]: string;
+  }>((map, templateId) => ({ ...map, [templateId]: generateId() }), {});
 
-  const lockingScriptMap = remainingUnlockingScripts
-    .map(unlocking => ({
-      lock: unlocking.unlocks as string,
-      unlock: unlocking.id
-    }))
-    .reduce(
-      (allPairs, pair) => {
-        return {
-          ...allPairs,
-          ...(allPairs[pair.lock]
-            ? {
-                [pair.lock]: [...allPairs[pair.lock], pair.unlock]
-              }
-            : { [pair.lock]: [pair.unlock] })
-        };
-      },
-      {} as { [lock: string]: string[] }
-    );
+  const unlockingScripts = Object.entries(sorted.unlocking).map<
+    IDETemplateUnlockingScript
+  >(([id, script]) => ({
+    ageLock: script.ageLock,
+    estimate: script.estimate,
+    failsInternalIds:
+      script.fails === undefined
+        ? []
+        : script.fails.map((id) => internalIdMap[id]),
+    id,
+    internalId: internalIdMap[id],
+    name: script.name ?? 'Unnamed Unlock',
+    parentInternalId: internalIdMap[script.unlocks],
+    passesInternalIds:
+      script.passes === undefined
+        ? []
+        : script.passes.map((id) => internalIdMap[id]),
+    script: script.script,
+    timeLockType: script.timeLockType,
+    type: 'unlocking',
+  }));
 
-  const nonP2shLockingAndUnlockingScripts = remainingScripts
-    .filter(script => script.id in lockingScriptMap)
-    .reduce<IDETemplateScript[]>((scripts, locking) => {
-      const lockingId = createInsecureUuidV4();
-      const children = remainingScripts
-        .filter(
-          scripts => lockingScriptMap[locking.id].indexOf(scripts.id) !== -1
-        )
-        .map<IDETemplateUnlockingScript>(unlocking => ({
-          type: 'unlocking',
-          id: unlocking.id,
-          internalId: createInsecureUuidV4(),
-          name: unlocking.name || 'Unnamed',
-          parentInternalId: lockingId,
-          script: unlocking.script
-        }));
-      const lockingScript: IDETemplateLockingScript = {
-        type: 'locking',
-        id: locking.id,
-        internalId: lockingId,
-        name: locking.name || 'Unnamed',
-        script: locking.script,
-        childInternalIds: children.map(c => c.internalId),
-        isP2SH: false
+  const lockingScripts = Object.entries(sorted.locking).map<
+    IDETemplateLockingScript
+  >(([id, script]) => ({
+    id,
+    internalId: internalIdMap[id],
+    name: script.name ?? 'Unnamed Lock',
+    script: script.script,
+    type: 'locking',
+    isP2SH: script.lockingType === 'p2sh',
+    childInternalIds: Object.values(unlockingScripts)
+      .filter((script) => script.parentInternalId === internalIdMap[id])
+      .map((script) => script.internalId),
+  }));
+
+  const otherScripts = Object.entries(sorted.other).map<
+    IDETemplateIsolatedScript
+  >(([id, script]) => ({
+    id,
+    internalId: internalIdMap[id],
+    name: script.name ?? 'Unnamed Script',
+    script: script.script,
+    type: 'isolated',
+  }));
+
+  const testedAndTestScripts = Object.entries(sorted.tested).reduce<
+    (
+      | IDETemplateTestedScript
+      | IDETemplateTestSetupScript
+      | IDETemplateTestCheckScript
+    )[]
+  >((all, testedScriptEntries) => {
+    const [testedScriptId, testedScript] = testedScriptEntries;
+    const testedInternalId = internalIdMap[testedScriptId];
+
+    const testScripts = testedScript.tests.reduce<
+      (IDETemplateTestSetupScript | IDETemplateTestCheckScript)[]
+    >((tScripts, test) => {
+      const setupId = generateId();
+      const checkId = generateId();
+      const setup: IDETemplateTestSetupScript = {
+        type: 'test-setup',
+        id: setupId.replace(/-/g, '_'),
+        internalId: setupId,
+        name: test.name ?? 'Unnamed Test',
+        parentInternalId: testedInternalId,
+        script: test.setup ?? '',
+        testCheckInternalId: checkId,
+        failsInternalIds:
+          test.fails === undefined
+            ? []
+            : test.fails.map((id) => internalIdMap[id]),
+        passesInternalIds:
+          test.passes === undefined
+            ? []
+            : test.passes.map((id) => internalIdMap[id]),
       };
-      return [...scripts, ...children, lockingScript];
+      const check: IDETemplateTestCheckScript = {
+        type: 'test-check',
+        id: checkId.replace(/-/g, '_'),
+        internalId: checkId,
+        name: '',
+        script: test.check,
+        testSetupInternalId: setupId,
+      };
+      return [...tScripts, setup, check];
     }, []);
 
-  const lockingAndUnlockingScripts = [
-    ...p2shScripts,
-    ...nonP2shLockingAndUnlockingScripts
+    const testSetupInternalIds = testScripts
+      .filter((script) => script.type === 'test-setup')
+      .map((script) => script.internalId);
+
+    const ideTestedScript: IDETemplateTestedScript = {
+      id: testedScriptId,
+      internalId: testedInternalId,
+      pushed: testedScript.pushed ?? false,
+      childInternalIds: testSetupInternalIds,
+      name: testedScript.name ?? 'Unnamed Tested Script',
+      script: testedScript.script,
+      type: 'tested',
+    };
+
+    return [...all, ideTestedScript, ...testScripts];
+  }, []);
+
+  const allScripts = [
+    ...unlockingScripts,
+    ...lockingScripts,
+    ...otherScripts,
+    ...testedAndTestScripts,
   ];
 
-  const otherScripts = remainingScripts.filter(
-    script =>
-      !lockingAndUnlockingScripts.some(existing => existing.id === script.id)
+  const scriptsByInternalId: AppState['currentTemplate']['scriptsByInternalId'] = allScripts.reduce(
+    (all, script) => ({
+      ...all,
+      [script.internalId]: script,
+    }),
+    {}
   );
 
-  const isolatedAndTestedScripts = otherScripts.reduce<IDETemplateScript[]>(
-    (scripts, script) => {
-      const parentInternalId = createInsecureUuidV4();
-      if (Array.isArray(script.tests)) {
-        const testScripts = (script.tests as Array<
-          AuthenticationTemplateScriptTest
-        >).reduce<(IDETemplateTestSetupScript | IDETemplateTestCheckScript)[]>(
-          (tScripts, test) => {
-            const setupId = createInsecureUuidV4();
-            const checkId = createInsecureUuidV4();
-            const setup: IDETemplateTestSetupScript = {
-              type: 'test-setup',
-              id: setupId.replace(/-/g, '_'),
-              internalId: setupId,
-              name: test.name || 'Unnamed',
-              parentInternalId,
-              script: test.setup || '',
-              testCheckInternalId: checkId
-            };
-            const check: IDETemplateTestCheckScript = {
-              type: 'test-check',
-              id: checkId.replace(/-/g, '_'),
-              internalId: checkId,
-              name: '',
-              script: test.check || '',
-              testSetupInternalId: setupId
-            };
-            return [...tScripts, setup, check];
-          },
-          []
-        );
-        const tested: IDETemplateTestedScript = {
-          type: 'tested',
-          childInternalIds: testScripts
-            .filter(s => s.type === 'test-setup')
-            .map(s => s.internalId),
-          internalId: parentInternalId,
-          id: script.id,
-          script: script.script || '',
-          name: script.name || 'Unnamed'
-        };
-        return [...scripts, tested, ...testScripts];
-      }
-      const isolated: IDETemplateIsolatedScript = {
-        type: 'isolated',
-        id: script.id,
-        script: script.script || '',
-        internalId: parentInternalId,
-        name: script.name || 'Unnamed'
-      };
-      return [...scripts, isolated];
-    },
+  const entitiesByInternalId: AppState['currentTemplate']['entitiesByInternalId'] = Object.entries(
+    template.entities
+  ).reduce((all, entityEntry) => {
+    const [id, entity] = entityEntry;
+    const internalId = internalIdMap[id];
+    const scriptInternalIds =
+      entity.scripts === undefined
+        ? []
+        : entity.scripts.map((scriptId) => internalIdMap[scriptId]);
+    const variableInternalIds =
+      entity.variables === undefined
+        ? []
+        : Object.keys(entity.variables).map(
+            (variableId) => internalIdMap[variableId]
+          );
+
+    const ideEntity: IDETemplateEntity = {
+      description: entity.description ?? '',
+      id,
+      internalId,
+      name: entity.name ?? 'Unnamed Entity',
+      scriptInternalIds,
+      usesAllScripts: false,
+      variableInternalIds,
+    };
+    return { ...all, [internalId]: ideEntity };
+  }, {});
+
+  const variables = Object.values(template.entities).reduce<IDEVariable[]>(
+    (all, entity) =>
+      entity.variables === undefined
+        ? all
+        : [
+            ...all,
+            ...Object.entries(entity.variables).reduce<IDEVariable[]>(
+              (entityVariables, entries) => {
+                const [variableId, variable] = entries;
+                return [
+                  ...entityVariables,
+                  {
+                    id: variableId,
+                    internalId: internalIdMap[variableId],
+                    ...variable,
+                    description: variable.description ?? '',
+                    name: variable.name ?? variableId,
+                  },
+                ];
+              },
+              []
+            ),
+          ],
     []
   );
 
-  const allIDEScripts = [
-    ...p2shScripts,
-    ...nonP2shLockingAndUnlockingScripts,
-    ...isolatedAndTestedScripts
-  ];
+  const variablesByInternalId: AppState['currentTemplate']['variablesByInternalId'] = variables.reduce(
+    (all, variable) => ({
+      ...all,
+      [variable.internalId]: variable,
+    }),
+    {}
+  );
 
-  const templateEntities = entities.map(entity => {
-    const variables =
-      entity.variables === undefined
-        ? []
-        : Object.entries(entity.variables).map<[string, IDEVariable]>(
-            ([id, variableConfig]) => [
-              createInsecureUuidV4(),
-              {
-                id,
-                ...variableConfig
-              } as IDEVariable
-            ]
-          );
-    const ideEntity: IDETemplateEntity = {
-      id: entity.id,
-      internalId: createInsecureUuidV4(),
-      name: entity.name || 'Unnamed',
-      description: entity.description || '',
-      scriptInternalIds: Array.isArray(entity.scripts)
-        ? entity.scripts
-            .map((id: string) => {
-              const script = allIDEScripts.find(script => script.id === id);
-              return script ? [script.internalId] : [];
-            })
-            .flat()
-        : [],
-      usesAllScripts: false,
-      variableInternalIds: variables.map(([internalId]) => internalId)
-    };
-    return {
-      ideEntity,
-      variables
-    };
-  });
-
-  // TODO: check contents of variables to confirm they're properly-formed
+  const scenariosByInternalId: AppState['currentTemplate']['scenariosByInternalId'] =
+    template.scenarios === undefined
+      ? {}
+      : Object.entries(template.scenarios).reduce((all, scenarioEntry) => {
+          const [id, scenario] = scenarioEntry;
+          const internalId = internalIdMap[id];
+          const ideScenario: IDETemplateScenario = {
+            data: scenario.data,
+            description: scenario.description ?? '',
+            extends: scenario.extends,
+            id,
+            internalId,
+            name: scenario.name ?? 'Unnamed Scenario',
+            transaction: scenario.transaction,
+            value: scenario.value,
+          };
+          return { ...all, [internalId]: ideScenario };
+        }, {});
 
   return {
-    name: template.name || '',
-    description: template.description || '',
-    entitiesByInternalId: templateEntities
-      .map(({ ideEntity }) => ideEntity)
-      .reduce<{
-        [internalId: string]: IDETemplateEntity;
-      }>((byId, entity) => ({ ...byId, [entity.internalId]: entity }), {}),
-    scriptsByInternalId: allIDEScripts.reduce<{
-      [internalId: string]: IDETemplateScript;
-    }>((scripts, script) => ({ ...scripts, [script.internalId]: script }), {}),
-    supportedVirtualMachines: template.supported || [],
-    variablesByInternalId: templateEntities
-      .map(({ variables }) => variables)
-      .flat()
-      .reduce(
-        (variables, [internalId, variable]) => ({
-          ...variables,
-          [internalId]: variable
-        }),
-        {}
-      )
+    name: template.name ?? 'Unnamed Template',
+    description: template.description ?? '',
+    entitiesByInternalId,
+    scenariosByInternalId,
+    scriptsByInternalId,
+    supportedVirtualMachines: template.supported ?? [],
+    variablesByInternalId,
+  };
+};
+
+// TODO: fix usesAllScripts everywhere
+
+export const exportAuthenticationTemplate = (
+  currentTemplate: AppState['currentTemplate']
+): AuthenticationTemplate => {
+  const entities = Object.values(currentTemplate.entitiesByInternalId).reduce<
+    AuthenticationTemplate['entities']
+  >((allEntities, entity) => {
+    const variables =
+      entity.variableInternalIds.length === 0
+        ? undefined
+        : entity.variableInternalIds
+            .map(
+              (variableInternalId) =>
+                currentTemplate.variablesByInternalId[variableInternalId]
+            )
+            .reduce<NonNullable<AuthenticationTemplateEntity['variables']>>(
+              (all, variable) => {
+                const nextVariable: AuthenticationTemplateVariable =
+                  variable.type === 'HdKey'
+                    ? {
+                        ...(variable.addressOffset === undefined
+                          ? {}
+                          : { addressOffset: variable.addressOffset }),
+                        description: variable.description,
+                        ...(variable.hdPublicKeyDerivationPath === undefined
+                          ? {}
+                          : {
+                              hdPublicKeyDerivationPath:
+                                variable.hdPublicKeyDerivationPath,
+                            }),
+                        name: variable.name,
+                        ...(variable.privateDerivationPath === undefined
+                          ? {}
+                          : {
+                              privateDerivationPath:
+                                variable.privateDerivationPath,
+                            }),
+                        ...(variable.publicDerivationPath === undefined
+                          ? {}
+                          : {
+                              publicDerivationPath:
+                                variable.publicDerivationPath,
+                            }),
+                        type: variable.type,
+                      }
+                    : {
+                        description: variable.description,
+                        name: variable.name,
+                        type: variable.type,
+                      };
+
+                return {
+                  ...all,
+                  [variable.id]: nextVariable,
+                };
+              },
+              {}
+            );
+
+    const scripts =
+      entity.scriptInternalIds.length === 0
+        ? undefined
+        : entity.scriptInternalIds.map(
+            (scriptInternalId) =>
+              currentTemplate.scriptsByInternalId[scriptInternalId].id
+          );
+
+    const nextEntity = {
+      description: entity.description,
+      name: entity.name,
+      ...(scripts === undefined ? {} : { scripts }),
+      ...(variables === undefined ? {} : { variables }),
+    };
+    return { ...allEntities, [entity.id]: nextEntity };
+  }, {});
+
+  const hydrateAndSortScenariosByName = (internalIds: string[]) =>
+    internalIds
+      .map((internalId) => currentTemplate.scenariosByInternalId[internalId])
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((scenario) => scenario.id);
+
+  const scripts = Object.values(currentTemplate.scriptsByInternalId).reduce<
+    AuthenticationTemplate['scripts']
+  >((allScripts, script) => {
+    if (script.type === 'tested') {
+      const testedScript: AuthenticationTemplateScriptTested = {
+        name: script.name,
+        ...(script.pushed ? { pushed: true } : {}),
+        script: script.script,
+        tests: script.childInternalIds
+          .map(
+            (testSetupInternalId) =>
+              currentTemplate.scriptsByInternalId[
+                testSetupInternalId
+              ] as IDETemplateTestSetupScript
+          )
+          .map((setupTest) => ({
+            ...(setupTest.failsInternalIds.length === 0
+              ? {}
+              : {
+                  fails: hydrateAndSortScenariosByName(
+                    setupTest.failsInternalIds
+                  ),
+                }),
+            ...(setupTest.passesInternalIds.length === 0
+              ? {}
+              : {
+                  passes: hydrateAndSortScenariosByName(
+                    setupTest.passesInternalIds
+                  ),
+                }),
+            check: (currentTemplate.scriptsByInternalId[
+              setupTest.testCheckInternalId
+            ] as IDETemplateTestCheckScript).script,
+            name: setupTest.name,
+            ...(setupTest.script.trim() === ''
+              ? {}
+              : { setup: setupTest.script }),
+          })),
+      };
+      return {
+        ...allScripts,
+        [script.id]: testedScript,
+      };
+    }
+
+    if (script.type === 'locking') {
+      const lockingScript: AuthenticationTemplateScriptLocking = {
+        lockingType: script.isP2SH ? 'p2sh' : 'standard',
+        name: script.name,
+        script: script.script,
+      };
+      return {
+        ...allScripts,
+        [script.id]: lockingScript,
+      };
+    }
+
+    if (script.type === 'unlocking') {
+      const unlockingScript: AuthenticationTemplateScriptUnlocking = {
+        ...(script.ageLock === undefined ? {} : { ageLock: script.ageLock }),
+        ...(script.estimate === undefined ? {} : { estimate: script.estimate }),
+        ...(script.failsInternalIds.length === 0
+          ? {}
+          : {
+              fails: hydrateAndSortScenariosByName(script.failsInternalIds),
+            }),
+        ...(script.passesInternalIds.length === 0
+          ? {}
+          : {
+              passes: hydrateAndSortScenariosByName(script.passesInternalIds),
+            }),
+        name: script.name,
+        script: script.script,
+        ...(script.timeLockType === undefined
+          ? {}
+          : { timeLockType: script.timeLockType }),
+        unlocks: (currentTemplate.scriptsByInternalId[
+          script.parentInternalId
+        ] as IDETemplateLockingScript).id,
+      };
+      return {
+        ...allScripts,
+        [script.id]: unlockingScript,
+      };
+    }
+
+    if (script.type === 'isolated') {
+      const isolatedScript: AuthenticationTemplateScript = {
+        name: script.name,
+        script: script.script,
+      };
+      return {
+        ...allScripts,
+        [script.id]: isolatedScript,
+      };
+    }
+    if (script.type === 'test-check' || script.type === 'test-setup')
+      return allScripts;
+    unknownValue(script);
+    return allScripts;
+  }, {});
+
+  const scenarios = Object.values(currentTemplate.scenariosByInternalId).reduce<
+    NonNullable<AuthenticationTemplate['scenarios']>
+  >(
+    (allScenarios, scenario) => ({
+      ...allScenarios,
+      [scenario.id]: {
+        ...(scenario.data === undefined ? {} : { data: scenario.data }),
+        description: scenario.description,
+        ...(scenario.extends === undefined
+          ? {}
+          : { extends: scenario.extends }),
+        name: scenario.name,
+        ...(scenario.transaction === undefined
+          ? {}
+          : { transaction: scenario.transaction }),
+        ...(scenario.value === undefined ? {} : { value: scenario.value }),
+      },
+    }),
+    {}
+  );
+
+  return {
+    $schema: bitauthAuthenticationTemplateSchema,
+    description: currentTemplate.description,
+    name: currentTemplate.name,
+    entities,
+    ...(Object.keys(scenarios).length === 0 ? {} : { scenarios }),
+    scripts,
+    supported: [...currentTemplate.supportedVirtualMachines].sort((a, b) =>
+      a.localeCompare(b)
+    ),
+    version: 0,
   };
 };

@@ -8,17 +8,17 @@ import {
   FormGroup,
   InputGroup,
   Button,
-  Icon
+  Icon,
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { sanitizeId } from '../../common';
+import { toConventionalId } from '../../common';
 import { createInsecureUuidV4 } from '../../../state/utils';
 
 export const NewEntityDialog = ({
   activeDialog,
   closeDialog,
   currentEntities,
-  createEntity
+  createEntity,
 }: {
   currentEntities: CurrentEntities;
   activeDialog: ActiveDialog;
@@ -28,7 +28,7 @@ export const NewEntityDialog = ({
   const [entityName, setEntityName] = useState('');
   const [entityId, setEntityId] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
-  const usedIds = currentEntities.map(entity => entity.id);
+  const usedIds = currentEntities.map((entity) => entity.id);
 
   return (
     <Dialog
@@ -52,7 +52,7 @@ export const NewEntityDialog = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               setEntityName(value);
-              setEntityId(sanitizeId(value));
+              setEntityId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -82,7 +82,7 @@ export const NewEntityDialog = ({
             autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
-              setEntityId(sanitizeId(value));
+              setEntityId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -111,7 +111,7 @@ export const NewEntityDialog = ({
                 createEntity({
                   name: entityName,
                   id: entityId,
-                  internalId: createInsecureUuidV4()
+                  internalId: createInsecureUuidV4(),
                 });
                 closeDialog();
               }

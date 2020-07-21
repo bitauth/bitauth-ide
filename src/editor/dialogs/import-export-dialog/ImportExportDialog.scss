@@ -19,7 +19,16 @@
       background: var(--interface-background-color);
     }
   }
+  .error {
+    code {
+      padding: 8px 16px;
+      margin: 0 16px;
+      display: inline-block;
+      line-height: 20px;
+    }
+  }
 }
+
 .import-export-editor {
   height: 400px;
 }
@@ -38,6 +47,11 @@
     color: #fffc;
     border: 0 none;
   }
+}
+.show-next-issue-button {
+  cursor: pointer;
+  color: #3c9dda;
+  margin-left: 6px;
 }
 
 .sharing-link-popover {

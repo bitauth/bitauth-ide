@@ -5,10 +5,10 @@ import {
   MenuItem,
   Icon,
   Popover,
-  PopoverInteractionKind
+  PopoverInteractionKind,
 } from '@blueprintjs/core';
 import { ItemRenderer, Select } from '@blueprintjs/select';
-import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
+import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
 import { IDEMode, AppState, ActiveDialog } from '../state/types';
 import GitHubLogo from './github-logo.svg';
 import { IconNames } from '@blueprintjs/icons';
@@ -18,8 +18,9 @@ import { ActionCreators } from '../state/reducer';
 import { GuideDialog } from '../editor/dialogs/guide-dialog/GuideDialog';
 import {
   localStorageEventHasNeverHappened,
-  LocalStorageEvents
+  LocalStorageEvents,
 } from '../state/local-storage';
+import { workingOnWalletMode } from '../state/defaults';
 
 interface IDESupportedModes {
   id: IDEMode;
@@ -35,14 +36,14 @@ interface IDESupportedVirtualMachine {
 
 const ideModes: IDESupportedModes[] = [
   { id: IDEMode.editor, name: 'Editor Mode', disabled: false },
-  { id: IDEMode.wallet, name: 'Wallet Mode', disabled: true }
+  { id: IDEMode.wallet, name: 'Wallet Mode', disabled: !workingOnWalletMode },
 ];
 
 const vms: IDESupportedVirtualMachine[] = [
   { id: 'BCH_2019_05', name: 'BCH 2019-05 VM', disabled: false },
   { id: 'BCH_2019_11', name: 'BCH 2019-11 VM', disabled: true },
   { id: 'BTC_2017_08', name: 'BTC 2017-08 VM', disabled: true },
-  { id: 'BSV_2018_11', name: 'BSV 2018-11 VM', disabled: true }
+  { id: 'BSV_2018_11', name: 'BSV 2018-11 VM', disabled: true },
 ];
 
 const ModeSelect = Select.ofType<IDESupportedModes>();
@@ -83,23 +84,29 @@ const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
 interface HeaderDispatch {
   openGuide: typeof ActionCreators.openGuide;
   closeDialog: typeof ActionCreators.closeDialog;
+  setIDEMode: typeof ActionCreators.setIDEMode;
 }
 interface HeaderProps extends HeaderDispatch {
   activeDialog: ActiveDialog;
-  isWelcomePane: boolean;
+  ideMode: IDEMode;
 }
 
 export const HeaderBar = connect(
   (state: AppState) => ({
     activeDialog: state.activeDialog,
-    isWelcomePane: state.currentEditingMode === 'welcome'
+    ideMode: state.ideMode,
   }),
   {
     openGuide: ActionCreators.openGuide,
-    closeDialog: ActionCreators.closeDialog
+    closeDialog: ActionCreators.closeDialog,
+    setIDEMode: ActionCreators.setIDEMode,
   }
 )((props: HeaderProps) => {
   const [introPopoverVisible, setIntroPopoverVisible] = useState(false);
+  const currentIDEMode = ideModes.find((mode) => mode.id === props.ideMode);
+  if (currentIDEMode === undefined) {
+    throw new Error('Invalid IDE Mode');
+  }
   useEffect(() => {
     if (
       localStorageEventHasNeverHappened(
@@ -123,14 +130,18 @@ export const HeaderBar = connect(
           content={<p>New to Bitauth IDE? Check out the guide!</p>}
           interactionKind={PopoverInteractionKind.CLICK}
           isOpen={introPopoverVisible}
-          onInteraction={state => {
+          onInteraction={(state) => {
             if (state === false) {
               setIntroPopoverVisible(false);
             }
           }}
         >
           {wrapInterfaceTooltip(
-            <button className="link" onClick={() => props.openGuide()}>
+            <button
+              className="link"
+              onClick={() => props.openGuide()}
+              tabIndex={1}
+            >
               <Icon icon={IconNames.MANUAL} iconSize={12} /> Guide
             </button>,
             'Open the Bitauth IDE guide.'
@@ -142,6 +153,7 @@ export const HeaderBar = connect(
             href="https://t.me/bitauth_ide"
             target="_blank"
             rel="noopener noreferrer"
+            tabIndex={2}
           >
             <Icon icon={IconNames.CHAT} iconSize={12} /> Join Chat
           </a>,
@@ -153,6 +165,7 @@ export const HeaderBar = connect(
             href="https://github.com/bitauth/bitauth-ide/issues"
             target="_blank"
             rel="noopener noreferrer"
+            tabIndex={3}
           >
             <img src={GitHubLogo} alt="logo" />
             Report a bug
@@ -165,6 +178,7 @@ export const HeaderBar = connect(
             href="https://twitter.com/bitauth"
             target="_blank"
             rel="noopener noreferrer"
+            tabIndex={4}
           >
             <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Get updates
           </a>,
@@ -176,11 +190,11 @@ export const HeaderBar = connect(
           <ModeSelect
             itemRenderer={renderMode}
             items={ideModes}
-            onItemSelect={e => console.log('TODO: build wallet mode 👀', e)}
-            activeItem={ideModes[0]}
+            onItemSelect={(e) => props.setIDEMode(e.id)}
+            activeItem={currentIDEMode}
             filterable={false}
           >
-            <Button text={ideModes[0].name} rightIcon="caret-down" />
+            <Button text={currentIDEMode.name} rightIcon="caret-down" />
           </ModeSelect>
         </div>
         <div className="vm-select">
@@ -188,6 +202,7 @@ export const HeaderBar = connect(
             itemRenderer={renderVm}
             items={vms}
             onItemSelect={() =>
+              // TODO: if template supports VM, switch – otherwise ask with a popup.
               console.log(
                 'TODO: if template supports VM, switch – otherwise ask with a popup.'
               )

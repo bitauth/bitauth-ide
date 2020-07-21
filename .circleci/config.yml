@@ -1,0 +1,28 @@
+version: 2.1
+orbs:
+  cypress: cypress-io/cypress@1.25.0
+workflows:
+  build:
+    jobs:
+      - cypress/run:
+          post-install:
+            - run: apt-get update
+            - run: apt-get install -y libgbm-dev
+          executor: cypress/base-12
+          yarn: true
+          # https://github.com/facebook/create-react-app/issues/8688#issuecomment-642309787
+          command: CI=true yarn ci:serve-and-test
+          no-workspace: true
+          record: true
+          store_artifacts: true
+          post-steps:
+            - run: yarn test:unit
+            # store the created coverage report folder
+            # you can click on it in the CircleCI UI
+            # to see live static HTML site
+            - store_artifacts:
+                path: coverage
+            # print code coverage summary to the terminal
+            - run: npx nyc report
+            # send coverage to Codecov
+            - run: npx nyc report --reporter=text-lcov > coverage.lcov && npx codecov

@@ -1,9 +1,10 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "deno.enable": false,
   "eslint.validate": [
     "javascript",
     "javascriptreact",
     "typescript",
     "typescriptreact"
-  ]
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

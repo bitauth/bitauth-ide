@@ -1,13 +1,13 @@
 import {
   Range,
-  CompilationResultResolve,
   ResolvedScript,
-  CompilationResultReduce,
   ScriptReductionTraceChildNode,
-  ScriptReductionTraceContainerNode,
   binToHex,
-  BuiltInVariables
-} from 'bitcoin-ts';
+  BuiltInVariables,
+  ScriptReductionTraceScriptNode,
+  extractUnexecutedRanges,
+  containsRange,
+} from '@bitauth/libauth';
 import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
@@ -15,24 +15,23 @@ import {
   bitauthTemplatingLanguage,
   bitauthDark,
   monacoOptions,
-  prepMonaco
+  prepMonaco,
 } from './monaco-config';
 import './ScriptEditor.scss';
 import { ActionCreators } from '../../state/reducer';
 import { MonacoMarkerDataRequired } from '../../btl-utils/editor-tooling';
 import {
-  ScriptType,
   CurrentScripts,
   VariableDetails,
-  ScriptDetails
+  ScriptDetails,
 } from '../../state/types';
 import { getScriptTooltipIcon } from '../project-explorer/ProjectExplorer';
 import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
 import { wrapInterfaceTooltip } from '../common';
-import { CompilationResult } from 'bitcoin-ts';
-import { IDESupportedProgramState } from '../editor-types';
+import { CompilationResult } from '@bitauth/libauth';
+import { IDESupportedProgramState, ScriptEditorFrame } from '../editor-types';
 import {
   opcodeHoverProviderBCH,
   opcodeCompletionItemProviderBCH,
@@ -43,8 +42,9 @@ import {
   getKeyOperationDescriptions,
   keyOperationsWhichRequireAParameter,
   signatureOperationParameterDescriptions,
-  signingSerializationOperationDetails
+  signingSerializationOperationDetails,
 } from './bch-language';
+import { compilationErrorAssistance } from './error-assistance';
 
 const cursorIsAtEndOfRange = (
   cursor: { column: number; lineNumber: number },
@@ -57,18 +57,22 @@ const isWithinRange = (
   position: { lineNumber: number; column: number },
   range: Range
 ) =>
-  ((range.startLineNumber < position.lineNumber ||
-    (range.startLineNumber === position.lineNumber &&
-      range.startColumn < position.column)) &&
-    range.endLineNumber > position.lineNumber) ||
-  (range.endLineNumber === position.lineNumber &&
-    range.endColumn > position.column);
+  containsRange(
+    range,
+    {
+      endColumn: position.column,
+      endLineNumber: position.lineNumber,
+      startColumn: position.column,
+      startLineNumber: position.lineNumber,
+    },
+    false
+  );
 
 const selectResolvedSegmentAtPosition = (
   resolvedScript: ResolvedScript,
   position: { lineNumber: number; column: number }
 ): ResolvedScript[number] | undefined => {
-  const firstMatch = resolvedScript.find(segment =>
+  const firstMatch = resolvedScript.find((segment) =>
     isWithinRange(position, segment.range)
   );
   if (firstMatch !== undefined && Array.isArray(firstMatch.value)) {
@@ -82,31 +86,58 @@ const selectResolvedSegmentAtPosition = (
 };
 
 const selectReductionSourceSegmentAtPosition = (
-  reduce: ScriptReductionTraceChildNode<IDESupportedProgramState>,
+  reduce:
+    | ScriptReductionTraceScriptNode<IDESupportedProgramState>
+    | ScriptReductionTraceChildNode<IDESupportedProgramState>,
   position: { lineNumber: number; column: number }
 ): ScriptReductionTraceChildNode<IDESupportedProgramState> | undefined => {
   const matchesRange = isWithinRange(position, reduce.range);
   if (matchesRange) {
-    const container = reduce as ScriptReductionTraceContainerNode<
-      IDESupportedProgramState
-    >;
-    if (Array.isArray(container.source)) {
-      const firstMatch = container.source
-        .map(child => selectReductionSourceSegmentAtPosition(child, position))
-        .filter(selected => selected !== undefined)[0];
-      return firstMatch === undefined ? container : firstMatch;
+    if ('source' in reduce) {
+      return (
+        selectReductionSourceSegmentAtPosition(reduce.source, position) ??
+        reduce
+      );
+    }
+    if ('push' in reduce) {
+      return (
+        selectReductionSourceSegmentAtPosition(reduce.push, position) ?? reduce
+      );
+    }
+    if ('script' in reduce && Array.isArray(reduce.script)) {
+      const matches = reduce.script
+        .map((child) => selectReductionSourceSegmentAtPosition(child, position))
+        .filter((selected) => selected !== undefined);
+      const closestMatch = matches[0];
+      return closestMatch === undefined ? reduce : closestMatch;
     }
     return reduce;
   }
   return undefined;
 };
 
-const updateMarkers = (
-  monaco: typeof monacoEditor,
-  editor: monacoEditor.editor.IStandaloneCodeEditor,
-  compilation: CompilationResult,
-  script: string
-) => () => {
+type ActiveHint = {
+  range: Range;
+  hoverContents: monacoEditor.IMarkdownString[];
+};
+
+const updateMarkers = ({
+  compilation,
+  editor,
+  frame,
+  monaco,
+  script,
+  setActiveHints,
+}: {
+  compilation: CompilationResult | undefined;
+  editor: monacoEditor.editor.IStandaloneCodeEditor;
+  frame: ScriptEditorFrame<IDESupportedProgramState>;
+  monaco: typeof monacoEditor;
+  script: string;
+  setActiveHints: React.Dispatch<
+    React.SetStateAction<ActiveHint[] | undefined>
+  >;
+}) => () => {
   const model = editor.getModel();
   /**
    * Avoid updating markers if the script has changed. (This prevents error
@@ -114,11 +145,12 @@ const updateMarkers = (
    */
   if (model !== null && model.getValue() === script) {
     let markers: MonacoMarkerDataRequired[] = [];
-    if (compilation.success !== true) {
-      const raw = compilation.errors.map<MonacoMarkerDataRequired>(error => ({
+    let activeHints: ActiveHint[] = [];
+    if (compilation !== undefined && compilation.success !== true) {
+      const raw = compilation.errors.map<MonacoMarkerDataRequired>((error) => ({
         ...error.range,
         severity: monacoEditor.MarkerSeverity.Error,
-        message: error.error
+        message: error.error,
       }));
       const cursor = editor.getPosition();
       const hasFocus = editor.hasTextFocus();
@@ -126,31 +158,63 @@ const updateMarkers = (
        * Hide the error if this editor is in focus and the cursor is
        * currently at the end of the error's range (to be less annoying
        * while typing).*/
-      markers =
+      const markersNotUnderEdit =
         hasFocus && cursor !== null
-          ? raw.filter(marker => !cursorIsAtEndOfRange(cursor, marker))
+          ? raw.filter((marker) => !cursorIsAtEndOfRange(cursor, marker))
           : raw;
+
+      const hints = markersNotUnderEdit.reduce((all, marker) => {
+        const helpItem = compilationErrorAssistance.find((item) =>
+          item.regex.test(marker.message)
+        );
+        if (helpItem !== undefined) {
+          const hint: ActiveHint = {
+            hoverContents: helpItem
+              .generateHints(marker.message, frame)
+              .map((markdown) => ({ value: markdown })),
+            range: {
+              endColumn: marker.endColumn,
+              endLineNumber: marker.endLineNumber,
+              startColumn: marker.startColumn,
+              startLineNumber: marker.startLineNumber,
+            },
+          };
+          return [...all, hint];
+        }
+        return all;
+      }, [] as ActiveHint[]);
+      activeHints = hints;
+      markers = markersNotUnderEdit;
     }
+    setActiveHints(activeHints);
     monaco.editor.setModelMarkers(model, '', markers);
   }
 };
 
 export const ScriptEditor = (props: {
+  frame: ScriptEditorFrame<IDESupportedProgramState>;
   isP2SH: boolean;
-  script: string;
-  scriptType: ScriptType;
-  internalId: string;
-  id: string;
-  name: string;
-  compilation: CompilationResult;
+  isPushed: boolean;
   scriptDetails: ScriptDetails;
   variableDetails: VariableDetails;
-  setScrollOffset: React.Dispatch<React.SetStateAction<number>>;
+  setCursorLine: React.Dispatch<React.SetStateAction<undefined | number>>;
+  viewer: HTMLDivElement | undefined;
   currentScripts: CurrentScripts;
+  assignScriptModel: typeof ActionCreators.assignScriptModel;
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
   updateScript: typeof ActionCreators.updateScript;
 }) => {
+  const {
+    compilation,
+    monacoModel,
+    samples,
+    script,
+    scriptId: id,
+    scriptInternalId: internalId,
+    scriptName: name,
+    scriptType,
+  } = props.frame;
   const [editor, setEditor] = useState(
     undefined as undefined | monacoEditor.editor.IStandaloneCodeEditor
   );
@@ -159,8 +223,25 @@ export const ScriptEditor = (props: {
   );
   const [editScriptDialogIsOpen, setEditScriptDialogIsOpen] = useState(false);
   const [latestInternalId, setLatestInternalId] = useState('');
+  const [activeHints, setActiveHints] = useState(
+    undefined as ActiveHint[] | undefined
+  );
 
-  const handleResize = () => editor && editor.layout();
+  const tryResize = () => {
+    if (editor !== undefined) {
+      editor.layout();
+    }
+  };
+  const handleResize = () => {
+    tryResize();
+    /**
+     * With the new React Concurrent Mode enabled, rendering may not yet be
+     * complete. This just ensures that the layout will eventually be right,
+     * even if there's significant lag.
+     */
+    setTimeout(tryResize, 2000);
+    setTimeout(tryResize, 10000);
+  };
   useEffect(() => {
     window.addEventListener('resize', handleResize);
     return () => {
@@ -170,48 +251,109 @@ export const ScriptEditor = (props: {
 
   useEffect(() => {
     if (monaco !== undefined && editor !== undefined) {
+      if (monacoModel === undefined) {
+        const newModel = monaco.editor.createModel(
+          script,
+          bitauthTemplatingLanguage
+        );
+        props.assignScriptModel({ internalId, monacoModel: newModel });
+      } else {
+        if (editor.getModel() !== monacoModel) {
+          editor.setModel(monacoModel);
+          /**
+           * https://github.com/bitauth/bitauth-ide/issues/39
+           */
+          editor.changeViewZones((accessor) => {
+            const domNode = document.createElement('div');
+            domNode.classList.add('editor-top-margin-view-zone');
+            accessor.addZone({ afterLineNumber: 0, domNode });
+          });
+        }
+      }
+      editor.layout();
+    }
+  }, [editor, internalId, monaco, monacoModel, props, script]);
+
+  useEffect(() => {
+    if (monaco !== undefined && editor !== undefined) {
+      const compilationErrorAssistanceHoverProvider = monaco.languages.registerHoverProvider(
+        bitauthTemplatingLanguage,
+        {
+          provideHover: (model, position) => {
+            if (!isCorrectScript(model, script)) {
+              return;
+            }
+            if (activeHints !== undefined) {
+              const matchingHint = activeHints.find((hint) =>
+                isWithinRange(position, hint.range)
+              );
+              if (matchingHint !== undefined) {
+                return {
+                  contents: matchingHint.hoverContents,
+                  range: matchingHint.range,
+                };
+              }
+            }
+          },
+        }
+      );
+      return () => {
+        compilationErrorAssistanceHoverProvider.dispose();
+      };
+    }
+  }, [monaco, editor, compilation, activeHints, script]);
+
+  useEffect(() => {
+    if (monaco !== undefined && editor !== undefined) {
       const bytecodeHoverProvider = monaco.languages.registerHoverProvider(
         bitauthTemplatingLanguage,
         {
           provideHover: (model, position) => {
-            if (!isCorrectScript(model, props.script)) {
+            if (!isCorrectScript(model, script)) {
               return;
             }
-            const resolve = (props.compilation as CompilationResultResolve)
-              .resolve as ResolvedScript | undefined;
-            const reduce = (props.compilation as CompilationResultReduce<
-              IDESupportedProgramState
-            >).reduce as
-              | CompilationResultReduce<IDESupportedProgramState>['reduce']
-              | undefined;
-            if (resolve && reduce) {
+            if (
+              compilation !== undefined &&
+              'resolve' in compilation &&
+              'reduce' in compilation
+            ) {
               const resolvedSegment = selectResolvedSegmentAtPosition(
-                resolve,
+                compilation.resolve,
                 position
               );
               if (resolvedSegment && resolvedSegment.type === 'comment') {
                 return;
               }
               const segment = selectReductionSourceSegmentAtPosition(
-                reduce,
+                compilation.reduce,
                 position
               );
               /**
-               * Don't provide bytecode hover for the top-level segment to
-               * avoid being annoying/distracting.
+               * To avoid being annoying/distracting, we only show the bytecode
+               * hover when the selected segment begins or ends on the same line
+               * as the hover position – this prevents large container nodes
+               * from being highlighted when the cursor is hovering in some
+               * internal whitespace (like the top-level script or within
+               * multi-line pushes or evaluations).
                */
-              if (segment !== undefined && segment !== reduce) {
+              const beginsOrEndsNearPosition =
+                segment !== undefined &&
+                (position.lineNumber === segment.range.startLineNumber ||
+                  position.lineNumber === segment.range.endLineNumber);
+              if (segment !== undefined && beginsOrEndsNearPosition) {
                 return {
                   contents: [
                     {
-                      value: `**Compiled**: \`0x${binToHex(segment.bytecode)}\``
-                    }
+                      value: `**Compiled**: \`0x${binToHex(
+                        segment.bytecode
+                      )}\``,
+                    },
                   ],
-                  range: segment.range
+                  range: segment.range,
                 };
               }
             }
-          }
+          },
         }
       );
       /**
@@ -220,20 +362,18 @@ export const ScriptEditor = (props: {
        */
       const opcodeHoverProvider = monaco.languages.registerHoverProvider(
         bitauthTemplatingLanguage,
-        opcodeHoverProviderBCH(props.script)
+        opcodeHoverProviderBCH(script)
       );
       const identifierHoverProvider = monaco.languages.registerHoverProvider(
         bitauthTemplatingLanguage,
         {
           provideHover: (model, position) => {
-            if (!isCorrectScript(model, props.script)) {
+            if (!isCorrectScript(model, script)) {
               return;
             }
-            const resolve = (props.compilation as CompilationResultResolve)
-              .resolve as ResolvedScript | undefined;
-            if (resolve) {
+            if (compilation !== undefined && 'resolve' in compilation) {
               const segment = selectResolvedSegmentAtPosition(
-                resolve,
+                compilation.resolve,
                 position
               );
               if (segment !== undefined && segment.type === 'bytecode') {
@@ -247,29 +387,29 @@ export const ScriptEditor = (props: {
                       return {
                         contents: [
                           {
-                            value: `**${builtInVariableDetails[variableId][0]}**`
+                            value: `**${builtInVariableDetails[variableId][0]}**`,
                           },
                           {
-                            value: builtInVariableDetails[variableId][1]
-                          }
+                            value: builtInVariableDetails[variableId][1],
+                          },
                         ],
-                        range
+                        range,
                       };
                     case BuiltInVariables.signingSerialization:
                       const {
                         description,
-                        name
+                        name,
                       } = getSigningSerializationOperationDetails(parts[1]);
                       return {
                         contents: [
                           {
-                            value: `**${name}**`
+                            value: `**${name}**`,
                           },
                           {
-                            value: description
-                          }
+                            value: description,
+                          },
                         ],
-                        range
+                        range,
                       };
                     default:
                       const details = props.variableDetails[variableId];
@@ -277,7 +417,7 @@ export const ScriptEditor = (props: {
                         const {
                           hasOperation,
                           operationName,
-                          operationDescription
+                          operationDescription,
                         } = getKeyOperationDetails(parts);
                         return {
                           contents: [
@@ -290,16 +430,16 @@ export const ScriptEditor = (props: {
                                 hasOperation
                                   ? operationName
                                   : details.variable.type
-                              } (${details.entity.name})`
+                              } (${details.entity.name})`,
                             },
                             ...(hasOperation
                               ? [{ value: operationDescription as string }]
                               : []),
                             ...(details.variable.description
                               ? [{ value: details.variable.description }]
-                              : [])
+                              : []),
                           ],
-                          range
+                          range,
                         };
                       }
                   }
@@ -309,10 +449,10 @@ export const ScriptEditor = (props: {
                     return {
                       contents: [
                         {
-                          value: `**${details.name}** – Script`
-                        }
+                          value: `**${details.name}** – Script`,
+                        },
                       ],
-                      range
+                      range,
                     };
                   }
                 }
@@ -328,17 +468,17 @@ export const ScriptEditor = (props: {
                   return {
                     contents: [
                       {
-                        value: `**${details.variable.name}** – ${details.variable.type} (${details.entity.name})`
+                        value: `**${details.variable.name}** – ${details.variable.type} (${details.entity.name})`,
                       },
                       ...(details.variable.description
                         ? [{ value: details.variable.description }]
-                        : [])
-                    ]
+                        : []),
+                    ],
                   };
                 }
               }
             }
-          }
+          },
         }
       );
 
@@ -351,14 +491,14 @@ export const ScriptEditor = (props: {
         bitauthTemplatingLanguage,
         {
           provideCompletionItems: (model, position) => {
-            if (!isCorrectScript(model, props.script)) {
+            if (!isCorrectScript(model, script)) {
               return;
             }
             const contentBeforePosition = model.getValueInRange({
               startColumn: 1,
               startLineNumber: position.lineNumber,
               endColumn: position.column,
-              endLineNumber: position.lineNumber
+              endLineNumber: position.lineNumber,
             });
             const lastValidIdentifier = /[a-zA-Z_][.a-zA-Z0-9_-]*$/;
             const match = contentBeforePosition.match(lastValidIdentifier);
@@ -377,7 +517,7 @@ export const ScriptEditor = (props: {
               startLineNumber: position.lineNumber,
               endLineNumber: position.lineNumber,
               startColumn: word.startColumn,
-              endColumn: word.endColumn
+              endColumn: word.endColumn,
             };
 
             if (operation === undefined) {
@@ -388,7 +528,7 @@ export const ScriptEditor = (props: {
                     .map<monacoEditor.languages.CompletionItem>(
                       ([id, { variable, entity }]) => {
                         const triggerNextSuggestion =
-                          variable.type === 'Key' || variable.type === 'HDKey';
+                          variable.type === 'Key' || variable.type === 'HdKey';
                         return {
                           label: id,
                           detail: `${variable.name} – ${variable.type} (${entity.name})`,
@@ -400,10 +540,10 @@ export const ScriptEditor = (props: {
                             ? {
                                 command: {
                                   id: 'editor.action.triggerSuggest',
-                                  title: 'Suggest Operation'
-                                }
+                                  title: 'Suggest Operation',
+                                },
                               }
-                            : {})
+                            : {}),
                         };
                       }
                     ),
@@ -415,7 +555,7 @@ export const ScriptEditor = (props: {
                         detail: `${script.name} – Script`,
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: id,
-                        range
+                        range,
                       })
                     ),
                   ...Object.entries(builtInVariableDetails)
@@ -435,14 +575,14 @@ export const ScriptEditor = (props: {
                             ? {
                                 command: {
                                   id: 'editor.action.triggerSuggest',
-                                  title: 'Suggest Operation'
-                                }
+                                  title: 'Suggest Operation',
+                                },
                               }
-                            : {})
+                            : {}),
                         };
                       }
-                    )
-                ]
+                    ),
+                ],
               };
             }
 
@@ -452,7 +592,7 @@ export const ScriptEditor = (props: {
 
             if (
               details === undefined ||
-              (details.variable.type !== 'HDKey' &&
+              (details.variable.type !== 'HdKey' &&
                 details.variable.type !== 'Key')
             ) {
               if (targetId === BuiltInVariables.signingSerialization) {
@@ -468,9 +608,9 @@ export const ScriptEditor = (props: {
                         documentation: description,
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: op,
-                        range
+                        range,
                       })
-                    )
+                    ),
                 };
               }
               return;
@@ -496,13 +636,13 @@ export const ScriptEditor = (props: {
                           ? {
                               command: {
                                 id: 'editor.action.triggerSuggest',
-                                title: 'Suggest Parameter'
-                              }
+                                title: 'Suggest Parameter',
+                              },
                             }
-                          : {})
+                          : {}),
                       };
                     }
-                  )
+                  ),
               };
             }
 
@@ -526,9 +666,9 @@ export const ScriptEditor = (props: {
                       documentation: descriptions[1],
                       kind: monaco.languages.CompletionItemKind.Function,
                       insertText: param,
-                      range
+                      range,
                     })
-                  )
+                  ),
               };
             } else if (
               operation === 'data_signature' ||
@@ -543,25 +683,27 @@ export const ScriptEditor = (props: {
                       detail: scriptInfo.name,
                       kind: monaco.languages.CompletionItemKind.Variable,
                       insertText: id,
-                      range
+                      range,
                     })
-                  )
+                  ),
               };
             } else {
               console.error(`Unexpected key operation: ${operation}.`);
               return;
             }
           },
-          triggerCharacters: ['.']
+          triggerCharacters: ['.'],
         }
       );
 
-      const update = updateMarkers(
-        monaco,
+      const update = updateMarkers({
+        compilation,
         editor,
-        props.compilation,
-        props.script
-      );
+        frame: props.frame,
+        monaco,
+        script,
+        setActiveHints,
+      });
       update();
       const watchCursor = editor.onDidChangeCursorPosition(update);
       const watchFocus = editor.onDidFocusEditorText(update);
@@ -577,32 +719,101 @@ export const ScriptEditor = (props: {
         watchBlur.dispose();
       };
     }
-  });
+  }, [
+    monaco,
+    editor,
+    script,
+    compilation,
+    props.variableDetails,
+    props.scriptDetails,
+    props.frame,
+  ]);
 
-  if (latestInternalId !== props.internalId) {
+  useEffect(() => {
+    if (editor !== undefined && samples !== undefined) {
+      const unexecutedRanges = extractUnexecutedRanges(samples);
+      const decorations = editor.deltaDecorations(
+        [],
+        [
+          ...unexecutedRanges.map((range) => ({
+            range,
+            options: { inlineClassName: 'unexecuted-sample' },
+          })),
+        ]
+      );
+      return () => {
+        /**
+         * We don't bother diffing the previous decorations and modifying only
+         * the ones which changed. Instead, we remove and replace them all. If
+         * performance became a problem here, we could make this update smarter.
+         */
+        editor.deltaDecorations(decorations, []);
+      };
+    }
+  }, [editor, samples]);
+
+  /**
+   * This is used to manually synchronize scroll position between the
+   * ScriptEditor and EvaluationViewer for a particular editor frame. (This
+   * dramatically improves scrolling performance over normal React renders.)
+   */
+  useEffect(() => {
+    if (props.viewer !== undefined && editor !== undefined) {
+      const editorSubscription = editor.onDidScrollChange((e) => {
+        if (props.viewer !== undefined) {
+          props.viewer.scrollTop = e.scrollTop;
+          if (e.scrollTop > 3) {
+            props.viewer.classList.add('header-scroll-decoration');
+          } else {
+            props.viewer.classList.remove('header-scroll-decoration');
+          }
+        }
+      });
+      const viewerListener: EventListener = (ev: Event): any => {
+        if (editor !== undefined && props.viewer !== undefined) {
+          editor.setScrollTop(props.viewer.scrollTop);
+        }
+      };
+      props.viewer.addEventListener('scroll', viewerListener);
+      return () => {
+        editorSubscription.dispose();
+        props.viewer?.removeEventListener('scroll', viewerListener);
+      };
+    }
+  }, [editor, props.viewer]);
+
+  if (latestInternalId !== internalId) {
     /**
      * Since we re-use the same editor instance for multiple scripts, switching
      * to a longer script causes the editor to highlight the range which was
      * suddenly "added". Here we just deselect it to be less annoying.
      */
     editor && editor.setPosition({ column: 1, lineNumber: 1 });
-    setLatestInternalId(props.internalId);
+    setLatestInternalId(internalId);
     return null;
   }
 
   return (
     <div className="ScriptEditor">
       <h2 className="title">
-        {getScriptTooltipIcon(props.scriptType)}
-        {props.name}
-        {props.scriptType === 'test-setup' && <span>&nbsp;(Setup)</span>}
-        {props.scriptType === 'test-check' && <span>&nbsp;(Check)</span>}
+        {getScriptTooltipIcon(scriptType)}
+        {name}
+        {scriptType === 'test-setup' && <span>&nbsp;(Setup)</span>}
+        {scriptType === 'test-check' && <span>&nbsp;(Check)</span>}
         {props.isP2SH && (
           <span
-            className="p2sh-tag"
-            title="This is a P2SH script. The P2SH boilerplate has been omitted for debugging, but will be included in the template when exported."
+            className="script-tag p2sh-tag"
+            title="This is a P2SH script. The P2SH boilerplate is automatically included during compilation."
           >
             P2SH
+          </span>
+        )}
+        {props.isPushed && scriptType === 'tested' && (
+          <span
+            className="script-tag pushed-tag"
+            title="This is a pushed script. The script is automatically wrapped with a push statement during testing."
+          >
+            Pushed
           </span>
         )}
         <div
@@ -621,8 +832,16 @@ export const ScriptEditor = (props: {
         <MonacoEditor
           editorWillMount={prepMonaco}
           editorDidMount={(editor, monaco) => {
-            editor.onDidScrollChange(e => {
-              props.setScrollOffset(e.scrollTop);
+            editor.onDidBlurEditorText(() => {
+              editor.updateOptions({ renderLineHighlight: 'none' });
+              props.setCursorLine(undefined);
+            });
+            editor.onDidFocusEditorText(() => {
+              editor.updateOptions({ renderLineHighlight: 'line' });
+              props.setCursorLine(editor.getPosition()?.lineNumber);
+            });
+            editor.onDidChangeCursorPosition((e) => {
+              props.setCursorLine(e.position.lineNumber);
             });
             setEditor(editor);
             setMonaco(monaco);
@@ -630,22 +849,28 @@ export const ScriptEditor = (props: {
           options={monacoOptions}
           language={bitauthTemplatingLanguage}
           theme={bitauthDark}
-          value={props.script}
+          /**
+           * Use uncontrolled mode – once the Monaco model is created, we don't
+           * update it from outside of the editor. (We let Monaco handle all
+           * editing.)
+           */
+          value={undefined}
           onChange={(value, event) =>
             props.updateScript({
               script: value,
-              internalId: props.internalId
+              internalId,
             })
           }
         />
       </div>
       <EditScriptDialog
         isOpen={editScriptDialogIsOpen}
-        internalId={props.internalId}
-        id={props.id}
-        name={props.name}
-        scriptType={props.scriptType}
+        internalId={internalId}
+        id={id}
+        name={name}
+        scriptType={scriptType}
         isP2SH={props.isP2SH}
+        isPushed={props.isPushed}
         closeDialog={() => {
           setEditScriptDialogIsOpen(false);
         }}

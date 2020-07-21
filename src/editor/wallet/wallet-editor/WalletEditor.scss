@@ -1,0 +1,43 @@
+.WalletEditor {
+  background-color: var(--editor-background-color);
+
+  &.EditorPane h2 {
+    padding: 8px 2px 8px 14px;
+  }
+  h2 {
+    background: var(--interface-background-color);
+    .header-buttons {
+      flex-grow: 1;
+      text-align: right;
+      line-height: 0;
+      color: var(--toolbar-icon-color);
+      visibility: hidden;
+      .bp3-button {
+        background: none;
+        border: none;
+        box-shadow: none;
+        min-height: inherit;
+        height: 16px;
+        padding: 0;
+        font-size: 12px;
+        &:hover .bp3-icon {
+          color: #fff;
+        }
+        svg {
+          width: 14px;
+          height: 14px;
+        }
+        &:hover {
+          background-color: var(--interface-background-color);
+          box-shadow: none;
+        }
+      }
+    }
+  }
+  &:hover .header-buttons {
+    visibility: visible;
+  }
+
+  .wallet {
+  }
+}

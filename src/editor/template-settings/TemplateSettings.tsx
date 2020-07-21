@@ -7,36 +7,36 @@ import {
   Icon,
   Intent,
   Alert,
-  Checkbox
+  Checkbox,
 } from '@blueprintjs/core';
 import { AppState, IDESupportedVM } from '../../state/types';
 import { connect } from 'react-redux';
 import { IconNames } from '@blueprintjs/icons';
 import { ActionCreators } from '../../state/reducer';
-import { AuthenticationVirtualMachineIdentifier } from 'bitcoin-ts';
+import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
 
 const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
-  BCH_2019_11: (
+  BCH_2020_05: (
     <span className="vm">
-      <code>BCH_2019_05</code>
+      <code>BCH_2020_05</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2019 November Update</span>
+      <span className="version">2020 May Update</span>
       <span className="tag live">live</span>
     </span>
   ),
-  BCH_2020_05: (
+  BCH_2020_11_SPEC: (
     <span className="vm">
-      <code>BCH_2019_11</code>
+      <code>BCH_2020_11_SPEC</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2020 May Proposal</span>
+      <span className="version">2020 November Proposal</span>
       <span className="tag spec">Spec</span>
     </span>
   ),
-  BSV_2018_11: (
+  BSV_2020_02: (
     <span className="vm">
-      <code>BSV_2018_11</code>
+      <code>BSV_2020_02</code>
       <span className="chain">Bitcoin SV</span>
-      <span className="version">2018 November Update</span>
+      <span className="version">2020 Genesis Update</span>
       <span className="tag live">Live</span>
     </span>
   ),
@@ -47,7 +47,7 @@ const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
       <span className="version">2017 August Update</span>
       <span className="tag live">Live</span>
     </span>
-  )
+  ),
 };
 
 interface TemplateSettingsProps {
@@ -72,7 +72,7 @@ const activateLinks = (description: string) => {
   if (matches === null) {
     return description;
   }
-  const links = matches.map(match => (
+  const links = matches.map((match) => (
     <a
       target="_blank"
       rel="noopener noreferrer"
@@ -91,7 +91,7 @@ const activateLinks = (description: string) => {
     .filter((_, i) => i % (captureGroups + 1) === 0)
     .map((slice, i) => [
       <React.Fragment key={slice}>{slice}</React.Fragment>,
-      links[i]
+      links[i],
     ])
     .flat();
 };
@@ -100,7 +100,7 @@ export const TemplateSettings = connect(
   (state: AppState) => ({
     name: state.currentTemplate.name,
     description: state.currentTemplate.description,
-    supportedVirtualMachines: state.currentTemplate.supportedVirtualMachines
+    supportedVirtualMachines: state.currentTemplate.supportedVirtualMachines,
   }),
   {
     updateTemplateName: ActionCreators.updateTemplateName,
@@ -108,11 +108,13 @@ export const TemplateSettings = connect(
     updateTemplateSupportedVM: ActionCreators.updateTemplateSupportedVM,
     resetTemplate: ActionCreators.resetTemplate,
     importExport: ActionCreators.importExport,
-    showWelcomePane: ActionCreators.showWelcomePane
+    showWelcomePane: ActionCreators.showWelcomePane,
   }
 )((props: TemplateSettingsProps & TemplateSettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [fastName, setFastName] = useState(props.name);
+  const [fastDescription, setFastDescription] = useState(props.name);
   return (
     <div className="TemplateSettings EditorPane">
       <div className="EditorPaneContents template-settings">
@@ -121,8 +123,9 @@ export const TemplateSettings = connect(
             maxLength={100}
             placeholder="Template Name"
             selectAllOnFocus={true}
-            value={props.name}
-            onChange={name => props.updateTemplateName(name)}
+            value={fastName}
+            onChange={(name) => setFastName(name)}
+            onConfirm={(name) => props.updateTemplateName(name)}
             disabled={!isEditing}
           />
           {isEditing ? (
@@ -151,8 +154,9 @@ export const TemplateSettings = connect(
               multiline={true}
               placeholder="A brief description of this authentication template..."
               selectAllOnFocus={true}
-              value={props.description}
-              onChange={description =>
+              value={fastDescription}
+              onChange={(description) => setFastDescription(description)}
+              onConfirm={(description) =>
                 props.updateTemplateDescription(description)
               }
             />
@@ -208,7 +212,7 @@ export const TemplateSettings = connect(
                     labelElement={label}
                     value={id}
                     disabled={!isEditing}
-                    onChange={_ => {
+                    onChange={(_) => {
                       props.updateTemplateSupportedVM(vm, !enabled);
                     }}
                   />
@@ -237,7 +241,7 @@ export const TemplateSettings = connect(
           onClick={() => setPromptDelete(true)}
         >
           <Icon icon={IconNames.TRASH} iconSize={10} />
-          Reset Template...
+          Reset to a Built-in Template...
         </Button>
         <Alert
           cancelButtonText="Cancel"
@@ -257,7 +261,10 @@ export const TemplateSettings = connect(
             Are you sure you want to delete this entire project and start with a
             new authentication template?
           </p>
-          <p>This cannot be undone.</p>
+          <p>
+            While this template can be restored from its autosave, consider
+            downloading your work before continuing.
+          </p>
         </Alert>
       </div>
     </div>

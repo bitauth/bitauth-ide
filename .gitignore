@@ -6,7 +6,10 @@
 .pnp.js
 
 # testing
+.nyc_output
 /coverage
+/cypress/screenshots
+/cypress/videos
 
 # production
 /build

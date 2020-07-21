@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "allowJs": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -12,8 +12,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "jsx": "react",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
