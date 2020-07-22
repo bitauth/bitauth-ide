@@ -1,7 +1,5 @@
 /// <reference types="cypress" />
 
-// TODO: update project on resolution of: https://github.com/cypress-io/instrument-cra/issues/132
-
 describe('App', function () {
   beforeEach(function () {
     cy.visit('/');
