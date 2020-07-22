@@ -10,8 +10,7 @@ workflows:
             - run: apt-get install -y libgbm-dev
           executor: cypress/base-12
           yarn: true
-          # https://github.com/facebook/create-react-app/issues/8688#issuecomment-642309787
-          command: CI=true yarn ci:serve-and-test
+          command: yarn ci:serve-and-test
           no-workspace: true
           record: true
           store_artifacts: true
@@ -23,6 +22,6 @@ workflows:
             - store_artifacts:
                 path: coverage
             # print code coverage summary to the terminal
-            - run: npx nyc report
+            - run: ./node_modules/.bin/nyc report
             # send coverage to Codecov
-            - run: npx nyc report --reporter=text-lcov > coverage.lcov && npx codecov
+            - run: ./node_modules/.bin/nyc report --reporter=text-lcov | ./node_modules/.bin/codecov --pipe
