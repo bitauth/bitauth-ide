@@ -583,8 +583,8 @@ export const GuideDialog = ({
           unlocking scripts and script tests. Add a <code>passes</code> and/or{' '}
           <code>fails</code> array of scenario IDs to each script or test to
           indicate which scenarios should cause them to pass or fail evaluation,
-          respectively. See the <code>2-of-2 with Business Continuity</code>{' '}
-          built-in template for a full example.
+          respectively. See the <code>2-of-2 Recoverable Vault</code> built-in
+          template for a full example.
         </p>
         <h2>Getting Started</h2>
         <p>

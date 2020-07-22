@@ -1,6 +1,11 @@
+/**
+ * The first segment of the path to match, e.g. `/import-template/[payload]`
+ * will match `import-template`, `/guide/` or `/guide` will match `guide`.
+ */
 export enum Routes {
-  directImport = '/import-template/',
-  gistImport = '/import-gist/'
+  directImport = 'import-template',
+  gistImport = 'import-gist',
+  guide = 'guide',
 }
 
 const routeRegExp = /\/[^/]+\/?/;
@@ -11,7 +16,7 @@ const routeRegExp = /\/[^/]+\/?/;
 export const getRoute = () => {
   const path = window.location.pathname.match(routeRegExp);
   if (path !== null) {
-    return path[0];
+    return path[0].replace(/\//g, '');
   }
   return undefined;
 };
