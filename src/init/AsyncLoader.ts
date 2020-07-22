@@ -26,6 +26,7 @@ export const AsyncLoader = connect(
     importTemplate: ActionCreators.importTemplate,
     openTemplateSettings: ActionCreators.openTemplateSettings,
     openWelcomePane: ActionCreators.openWelcomePane,
+    openGuide: ActionCreators.openGuide,
   }
 )(
   ({
@@ -36,6 +37,7 @@ export const AsyncLoader = connect(
     importTemplate,
     openTemplateSettings,
     openWelcomePane,
+    openGuide,
   }: {
     crypto: AppState['crypto'];
     authenticationVirtualMachines: AppState['authenticationVirtualMachines'];
@@ -44,6 +46,7 @@ export const AsyncLoader = connect(
     importTemplate: typeof ActionCreators.importTemplate;
     openTemplateSettings: typeof ActionCreators.openTemplateSettings;
     openWelcomePane: typeof ActionCreators.openWelcomePane;
+    openGuide: typeof ActionCreators.openGuide;
   }) => {
     const supportsBigInt = typeof BigInt !== 'undefined';
     if (!supportsBigInt) {
@@ -177,6 +180,8 @@ export const AsyncLoader = connect(
               openWelcomePane();
             });
         }, 0);
+      } else if (route === Routes.guide) {
+        openGuide();
       } else {
         console.log('Cleared unknown route:', route);
       }

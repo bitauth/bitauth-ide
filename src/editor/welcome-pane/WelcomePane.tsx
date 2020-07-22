@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { IconNames } from '@blueprintjs/icons';
 import { ActionCreators } from '../../state/reducer';
 import multi from '../../templates/2-of-3.json';
-import continuity from '../../templates/2-of-2-recoverable.json';
+import recoverable from '../../templates/2-of-2-recoverable.json';
 import { importAuthenticationTemplate } from '../../state/import-export';
 import {
   AuthenticationTemplate,
@@ -30,8 +30,8 @@ const defaultTemplates = {
   multi: assertValidTemplate(
     importAuthenticationTemplate(multi as AuthenticationTemplate)
   ),
-  continuity: assertValidTemplate(
-    importAuthenticationTemplate(continuity as AuthenticationTemplate)
+  recoverable: assertValidTemplate(
+    importAuthenticationTemplate(recoverable as AuthenticationTemplate)
   ),
 };
 
@@ -85,13 +85,13 @@ export const WelcomePane = connect((state: AppState) => ({}), {
         <button
           className="starter-template"
           onClick={() => {
-            props.importTemplate(defaultTemplates.continuity);
+            props.importTemplate(defaultTemplates.recoverable);
             props.openTemplateSettings();
           }}
         >
           <h4>
             <Icon icon={IconNames.TIME} iconSize={templateIconSize} />
-            2-of-2 with Business Continuity &rarr;
+            2-of-2 Recoverable Vault &rarr;
           </h4>
           <p>
             Transactions require either both co-owners to sign, or after a
