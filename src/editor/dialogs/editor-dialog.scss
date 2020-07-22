@@ -85,3 +85,12 @@
     }
   }
 }
+
+/**
+ * The dialog container itself may be outlined when no internal elements are
+ * outlined (adding a thin border around the full window). This is useless and
+ * distracting, so we hide it.
+ */
+.bp3-dialog-container {
+  outline: none;
+}

@@ -7,7 +7,7 @@ import {
   IDETemplateScript,
   IDETemplateTestSetupScript,
   IDEActivatableScript,
-  ScriptType
+  ScriptType,
 } from '../../state/types';
 import { ActionCreators } from '../../state/reducer';
 import { Icon } from '@blueprintjs/core';
@@ -74,7 +74,7 @@ const buildProjectExplorerTree = (
                 type: script.type,
                 ...(script.childInternalIds && {
                   children: script.childInternalIds
-                    .map(childInternalId => ({
+                    .map((childInternalId) => ({
                       activatable: true,
                       active:
                         activeInternalId !== undefined &&
@@ -91,11 +91,11 @@ const buildProjectExplorerTree = (
                       type:
                         state.currentTemplate.scriptsByInternalId[
                           childInternalId
-                        ].type
+                        ].type,
                     }))
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                })
-              }
+                    .sort((a, b) => a.name.localeCompare(b.name)),
+                }),
+              },
             ]
           : script.type === 'isolated'
           ? [
@@ -106,8 +106,8 @@ const buildProjectExplorerTree = (
                 internalId,
                 name: script.name,
                 activatable: isActivatable(script),
-                type: script.type
-              }
+                type: script.type,
+              },
             ]
           : parents,
       []
@@ -168,12 +168,12 @@ export const ProjectExplorer = connect(
     currentEditingMode: state.currentEditingMode,
     currentlyEditingId: state.currentlyEditingInternalId,
     entities: Object.keys(state.currentTemplate.entitiesByInternalId).map(
-      internalId => ({
+      (internalId) => ({
         internalId,
-        name: state.currentTemplate.entitiesByInternalId[internalId].name
+        name: state.currentTemplate.entitiesByInternalId[internalId].name,
       })
     ),
-    scripts: buildProjectExplorerTree(state)
+    scripts: buildProjectExplorerTree(state),
   }),
   {
     openTemplateSettings: ActionCreators.openTemplateSettings,
@@ -182,7 +182,7 @@ export const ProjectExplorer = connect(
     changeTemplate: ActionCreators.importTemplate,
     newEntity: ActionCreators.newEntity,
     newScript: ActionCreators.newScript,
-    importScript: ActionCreators.importScript
+    importScript: ActionCreators.importScript,
   }
 )(
   ({
@@ -197,7 +197,7 @@ export const ProjectExplorer = connect(
     changeTemplate,
     newEntity,
     newScript,
-    importScript
+    importScript,
   }: {
     currentEditingMode: AppState['currentEditingMode'];
     currentlyEditingId: AppState['currentlyEditingInternalId'];
@@ -214,106 +214,128 @@ export const ProjectExplorer = connect(
   }) => {
     return (
       <div className="ProjectExplorer">
-        <h1
-          className={
-            currentEditingMode === 'template-settings'
-              ? 'title-area active'
-              : 'title-area'
-          }
+        <button
+          className={`no-button-style${
+            currentEditingMode === 'template-settings' ? ' active' : ''
+          }`}
           onClick={() => openTemplateSettings()}
         >
-          <span className="title">{templateName}</span>
-          <div className="settings-button">
-            {wrapInterfaceTooltip(
-              <Icon icon={IconNames.COG} iconSize={10} />,
-              'Authentication Template Settings'
+          <h1 className="title-area">
+            <span className="title">{templateName}</span>
+            {currentEditingMode !== 'template-settings' && (
+              <div className="settings-button">
+                {wrapInterfaceTooltip(
+                  <Icon icon={IconNames.COG} iconSize={10} />,
+                  'Authentication Template Settings'
+                )}
+              </div>
             )}
-          </div>
-        </h1>
+          </h1>
+        </button>
         <div className="entities-section">
           <h3>
             Entities
-            <div className="add-button" onClick={() => newEntity()}>
+            <button className="add-button" onClick={() => newEntity()}>
               {wrapInterfaceTooltip(
                 <Icon icon={IconNames.PLUS} iconSize={12} />,
                 'New Entity...'
               )}
-            </div>
+            </button>
           </h3>
           <ul className="entities">
-            {entities.map(entity => (
-              <li
-                key={entity.internalId}
-                className={
+            {entities.map((entity) => (
+              <button
+                className={`no-button-style ${
                   currentEditingMode === 'entity' &&
                   currentlyEditingId === entity.internalId
                     ? 'activatable active'
                     : 'activatable'
-                }
+                }`}
+                key={entity.internalId}
                 onClick={() => activateEntity(entity.internalId)}
               >
-                {entity.name}
-              </li>
+                <li>{entity.name}</li>
+              </button>
             ))}
           </ul>
         </div>
         <div className="script-section">
           <h3>
             Scripts
-            <div className="add-button" onClick={() => newScript()}>
+            <button className="add-button" onClick={() => newScript()}>
               {wrapInterfaceTooltip(
                 <Icon icon={IconNames.PLUS} iconSize={12} />,
                 'New Script...'
               )}
-            </div>
-            <div className="add-button" onClick={() => importScript()}>
+            </button>
+            <button className="add-button" onClick={() => importScript()}>
               {wrapInterfaceTooltip(
                 <Icon icon={IconNames.IMPORT} iconSize={12} />,
                 'Import Script...'
               )}
-            </div>
+            </button>
           </h3>
           <ul className="scripts">
-            {scripts.map(node => (
-              <li
-                key={node.internalId}
-                className={`${node.active ? 'active' : ''} ${
-                  node.activatable ? 'activatable' : ''
-                }`}
-                onClick={() =>
-                  node.activatable ? activateScript(node.internalId) : undefined
-                }
-                title={`Script ID: ${node.id}${
-                  node.activatable
-                    ? ''
-                    : ' – this script must be edited with a child script. Choose or add a new child script to edit this script.'
-                }`}
-              >
-                {getScriptTooltipIcon(node.type)}
-                {node.name}
-                {node.children !== undefined && (
-                  <ul>
-                    {node.children.map(child => (
-                      <li
-                        key={child.internalId}
-                        className={`${child.active ? 'active' : ''} ${
-                          child.activatable ? 'activatable' : ''
-                        }`}
-                        onClick={() =>
-                          child.activatable
-                            ? activateScript(child.internalId)
-                            : undefined
-                        }
-                        title={child.id}
-                      >
-                        {getScriptTooltipIcon(child.type)}
-                        {child.name}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
+            {scripts.map((node) => {
+              const child = (
+                <li title={`Script ID: ${node.id}`}>
+                  {getScriptTooltipIcon(node.type)}
+                  {node.name}
+                  {node.children !== undefined && (
+                    <ul>
+                      {node.children.map((child) => (
+                        <button
+                          className={`no-button-style ${
+                            child.active ? 'active' : ''
+                          } ${child.activatable ? 'activatable' : ''}`}
+                          key={child.internalId}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            return child.activatable
+                              ? activateScript(child.internalId)
+                              : undefined;
+                          }}
+                        >
+                          <li title={`Script ID: ${child.id}`}>
+                            {getScriptTooltipIcon(child.type)}
+                            {child.name}
+                          </li>
+                        </button>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+
+              const parentClassName = `no-button-style ${
+                node.active ? 'active' : ''
+              } ${node.activatable ? 'activatable' : ''}`;
+
+              const handleParentClick = () =>
+                node.activatable
+                  ? activateScript(node.internalId)
+                  : node.children !== undefined
+                  ? activateScript(node.children[0].internalId)
+                  : undefined;
+
+              return node.children !== undefined ? (
+                <div
+                  className={parentClassName}
+                  onClick={handleParentClick}
+                  key={node.internalId}
+                >
+                  {child}
+                </div>
+              ) : (
+                <button
+                  className={parentClassName}
+                  onClick={handleParentClick}
+                  key={node.internalId}
+                >
+                  {child}
+                </button>
+              );
+            })}
           </ul>
         </div>
       </div>

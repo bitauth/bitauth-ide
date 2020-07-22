@@ -5,7 +5,7 @@ import {
   ActiveDialog,
   ScriptType,
   BaseScriptType,
-  CurrentScripts
+  CurrentScripts,
 } from '../../../state/types';
 import {
   Classes,
@@ -14,17 +14,17 @@ import {
   HTMLSelect,
   InputGroup,
   Button,
-  Icon
+  Icon,
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { sanitizeId } from '../../common';
+import { toConventionalId } from '../../common';
 import { createInsecureUuidV4 } from '../../../state/utils';
 
 const scriptTypes: { label: string; value: ScriptType }[] = [
   { label: 'Locking Script', value: 'locking' },
   { label: 'Unlocking Script', value: 'unlocking' },
   { label: 'Isolated Script', value: 'isolated' },
-  { label: 'Script Test', value: 'test-setup' }
+  { label: 'Script Test', value: 'test-setup' },
 ];
 
 const typeDescriptions: { [key in ScriptType]: string } = {
@@ -39,7 +39,7 @@ const typeDescriptions: { [key in ScriptType]: string } = {
   tested:
     'Something is broken: tested scripts should be created by assigning a test-setup script to an isolated script.',
   'test-check':
-    'Something is broken: script tests should use the `test-setup` type in this dialog.'
+    'Something is broken: script tests should use the `test-setup` type in this dialog.',
 };
 
 const hasParent = (scriptType: BaseScriptType) =>
@@ -49,7 +49,7 @@ export const NewScriptDialog = ({
   activeDialog,
   closeDialog,
   currentScripts,
-  createScript
+  createScript,
 }: {
   currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
@@ -61,18 +61,18 @@ export const NewScriptDialog = ({
   const [scriptId, setScriptId] = useState('');
   const [scriptParentId, setScriptParentId] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
-  const usedIds = currentScripts.map(script => script.id);
+  const usedIds = currentScripts.map((script) => script.id);
   const availableParents = currentScripts
     .filter(
-      script =>
+      (script) =>
         script.type === 'isolated' ||
         (scriptType === 'unlocking'
           ? script.type === 'locking'
           : script.type === 'tested')
     )
-    .map(script => ({
+    .map((script) => ({
       label: script.name,
-      value: script.internalId
+      value: script.internalId,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
   return (
@@ -93,7 +93,7 @@ export const NewScriptDialog = ({
           <HTMLSelect
             id="script-type"
             options={scriptTypes}
-            onChange={e => {
+            onChange={(e) => {
               setScriptType(e.currentTarget.value as BaseScriptType);
               setScriptParentId('');
             }}
@@ -102,8 +102,8 @@ export const NewScriptDialog = ({
         <FormGroup
           style={{
             ...(!hasParent(scriptType) && {
-              display: 'none'
-            })
+              display: 'none',
+            }),
           }}
           label={scriptType === 'unlocking' ? 'Unlocks' : 'Tested Script'}
           labelFor="parent-script"
@@ -113,7 +113,7 @@ export const NewScriptDialog = ({
             id="parent-script"
             options={availableParents}
             value={scriptParentId}
-            onChange={e => setScriptParentId(e.currentTarget.value)}
+            onChange={(e) => setScriptParentId(e.currentTarget.value)}
           />
         </FormGroup>
         <FormGroup
@@ -129,7 +129,7 @@ export const NewScriptDialog = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               setScriptName(value);
-              setScriptId(sanitizeId(value));
+              setScriptId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -153,7 +153,7 @@ export const NewScriptDialog = ({
             autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
-              setScriptId(sanitizeId(value));
+              setScriptId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -195,8 +195,8 @@ export const NewScriptDialog = ({
                     parentInternalId:
                       scriptParentId !== ''
                         ? scriptParentId
-                        : availableParents[0].value
-                  })
+                        : availableParents[0].value,
+                  }),
                 });
                 closeDialog();
               }

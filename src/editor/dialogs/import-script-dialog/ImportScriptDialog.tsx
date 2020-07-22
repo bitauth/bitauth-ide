@@ -9,19 +9,19 @@ import {
   FormGroup,
   InputGroup,
   Button,
-  Icon
+  Icon,
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { sanitizeId } from '../../common';
+import { toConventionalId } from '../../common';
 import { createInsecureUuidV4 } from '../../../state/utils';
-import { disassembleBytecodeBCH, hexToBin } from 'bitcoin-ts';
+import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
 
 const disassembleHex = (hex: string) => disassembleBytecodeBCH(hexToBin(hex));
 const tokenizeHex = (hex: string) => {
   const splitAtErrors = disassembleHex(hex).split('[');
   return [
     ...splitAtErrors[0].split(' '),
-    ...(splitAtErrors.length > 1 ? [`[${splitAtErrors[1]}`] : [])
+    ...(splitAtErrors.length > 1 ? [`[${splitAtErrors[1]}`] : []),
   ];
 };
 
@@ -29,7 +29,7 @@ export const ImportScriptDialog = ({
   activeDialog,
   closeDialog,
   currentScripts,
-  createScript
+  createScript,
 }: {
   currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
@@ -40,7 +40,7 @@ export const ImportScriptDialog = ({
   const [scriptName, setScriptName] = useState('');
   const [scriptId, setScriptId] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
-  const usedIds = currentScripts.map(script => script.id);
+  const usedIds = currentScripts.map((script) => script.id);
 
   return (
     <Dialog
@@ -59,7 +59,7 @@ export const ImportScriptDialog = ({
               ) : (
                 <p>
                   <code className="preview">
-                    {tokenizeHex(bytecode).map(token => (
+                    {tokenizeHex(bytecode).map((token) => (
                       <span>
                         <span className="preview-token">{token}</span>{' '}
                       </span>
@@ -96,7 +96,7 @@ export const ImportScriptDialog = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               setScriptName(value);
-              setScriptId(sanitizeId(value));
+              setScriptId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -120,7 +120,7 @@ export const ImportScriptDialog = ({
             autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
-              setScriptId(sanitizeId(value));
+              setScriptId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -152,7 +152,7 @@ export const ImportScriptDialog = ({
                   id: scriptId,
                   internalId: createInsecureUuidV4(),
                   type: 'isolated',
-                  contents: disassembleHex(bytecode).split('[')[0]
+                  contents: disassembleHex(bytecode).split('[')[0],
                 });
                 closeDialog();
               }

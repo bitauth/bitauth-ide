@@ -10,11 +10,11 @@ import {
   Button,
   Icon,
   Intent,
-  Alert
+  Alert,
 } from '@blueprintjs/core';
 import { CurrentScripts, AppState, IDETemplateEntity } from '../../state/types';
 import { ActionCreators } from '../../state/reducer';
-import { sanitizeId, getCurrentScripts } from '../common';
+import { toConventionalId, getCurrentScripts } from '../common';
 import { connect } from 'react-redux';
 import { IconNames } from '@blueprintjs/icons';
 
@@ -37,7 +37,7 @@ export const EntitySettingsEditor = connect(
   (state: AppState, { entityInternalId }: { entityInternalId: string }) => ({
     entityInternalId: entityInternalId,
     entity: state.currentTemplate.entitiesByInternalId[entityInternalId],
-    currentScripts: getCurrentScripts(state)
+    currentScripts: getCurrentScripts(state),
   }),
   {
     updateEntityDescription: ActionCreators.updateEntityDescription,
@@ -45,10 +45,15 @@ export const EntitySettingsEditor = connect(
     updateEntityName: ActionCreators.updateEntityName,
     updateEntityScriptUsage: ActionCreators.updateEntityScriptUsage,
     updateEntityScripts: ActionCreators.updateEntityScripts,
-    deleteEntity: ActionCreators.deleteEntity
+    deleteEntity: ActionCreators.deleteEntity,
   }
 )((props: EntitySettingsProps & EntitySettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
+  const [fastEntityName, setFastEntityName] = useState(props.entity.name);
+  const [fastEntityDescription, setFastEntityDescription] = useState(
+    props.entity.description
+  );
+  const [fastEntityId, setFastEntityId] = useState(props.entity.id);
   return (
     <div className="EntitySettingsEditor EditorPane">
       <h2>Entity Settings</h2>
@@ -56,23 +61,30 @@ export const EntitySettingsEditor = connect(
         <h3 className="name">
           <EditableText
             maxLength={100}
+            minWidth={300}
             placeholder="Entity Name"
             selectAllOnFocus={true}
-            value={props.entity.name}
-            onChange={name =>
-              props.updateEntityName(props.entityInternalId, name)
-            }
+            value={fastEntityName}
+            onChange={(name) => setFastEntityName(name)}
+            onConfirm={(name) => {
+              props.updateEntityName(props.entityInternalId, name);
+              const id = toConventionalId(name);
+              setFastEntityId(id);
+              props.updateEntityId(props.entityInternalId, id);
+            }}
           />
         </h3>
         <div className="description">
           <EditableText
+            key={props.entity.id}
             maxLength={1000}
             minLines={3}
             multiline={true}
             placeholder="A brief description of this entity..."
             selectAllOnFocus={true}
-            value={props.entity.description}
-            onChange={description =>
+            value={fastEntityDescription}
+            onChange={(description) => setFastEntityDescription(description)}
+            onConfirm={(description) =>
               props.updateEntityDescription(props.entityInternalId, description)
             }
           />
@@ -99,11 +111,16 @@ export const EntitySettingsEditor = connect(
         >
           <InputGroup
             id="entity-id"
-            value={props.entity.id}
+            value={fastEntityId}
             autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
-              props.updateEntityId(props.entityInternalId, sanitizeId(value));
+              setFastEntityId(value);
+            }}
+            onBlur={(e) => {
+              const value = toConventionalId(e.target.value);
+              setFastEntityId(value);
+              props.updateEntityId(props.entityInternalId, value);
             }}
           />
         </FormGroup>
@@ -125,7 +142,7 @@ export const EntitySettingsEditor = connect(
           inline={true}
         >
           <RadioGroup
-            onChange={e => {
+            onChange={(e) => {
               props.updateEntityScriptUsage(
                 props.entityInternalId,
                 e.currentTarget.value === 'on'
@@ -149,7 +166,7 @@ export const EntitySettingsEditor = connect(
           style={{ ...(props.entity.usesAllScripts && { display: 'none' }) }}
         >
           <div>
-            {props.currentScripts.map(script => (
+            {props.currentScripts.map((script) => (
               <Checkbox
                 checked={
                   props.entity.scriptInternalIds.indexOf(script.internalId) !==
@@ -158,12 +175,12 @@ export const EntitySettingsEditor = connect(
                 key={script.internalId}
                 label={script.name}
                 value={script.internalId}
-                onChange={_ => {
+                onChange={(_) => {
                   props.updateEntityScripts(props.entityInternalId, {
                     [script.internalId]:
                       props.entity.scriptInternalIds.indexOf(
                         script.internalId
-                      ) === -1
+                      ) === -1,
                   });
                 }}
               />

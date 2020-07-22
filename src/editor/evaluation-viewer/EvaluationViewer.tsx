@@ -3,33 +3,42 @@ import './EvaluationViewer.scss';
 import {
   binToHex,
   parseBytesAsScriptNumber,
-  CompilationResult
-} from 'bitcoin-ts';
-import * as bitcoinTs from 'bitcoin-ts';
+  binToBinString,
+  Range,
+  stringify,
+} from '@bitauth/libauth';
+import * as libauth from '@bitauth/libauth';
 import {
-  Evaluation,
   EvaluationViewerHighlight,
   EvaluationViewerSpacer,
   StackItemIdentifyFunction,
   EvaluationViewerLine,
   IDESupportedProgramState,
-  EvaluationViewerSettings
+  EvaluationViewerSettings,
+  EvaluationViewerComputedState,
+  ScriptEditorFrame,
 } from '../editor-types';
-import { Tooltip, Popover, Button } from '@blueprintjs/core';
-import { unknownValue } from '../../utils';
+import { Tooltip, Popover, Button, HTMLSelect, Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { ActionCreators } from '../../state/reducer';
+import { ScenarioDetails } from '../../state/types';
+import {
+  vmErrorAssistanceBCH,
+  compilationErrorAssistance,
+  renderSimpleMarkdown,
+} from '../script-editor/error-assistance';
+import { abbreviateStackItem } from '../common';
 
-(window as any).b = bitcoinTs;
+(window as any).libauth = libauth;
 
 // cspell:ignore cbitcoin cwindow
 console.log(
   `%cWelcome to Bitauth IDE!
   
-%cThe %cbitcoin-ts%c library is available at %cb%c (%cwindow.b%c).
+%cThe %cbitcoin-ts%c library is available at%c libauth%c (%cwindow.libauth%c).
 You can click a line in the evaluation viewer to inspect the program state at that point in the evaluation.
 
-%cTip: to quickly stringify an object which %cJSON.stringify%c doesn't support, try %cb.stringify%c.`,
+%cTip: to quickly stringify an object which %cJSON.stringify%c doesn't support, try%c libauth.stringify%c.`,
   'font-weight: bold;',
   '',
   'color: #2a5b8b; font-weight: bold;',
@@ -45,18 +54,6 @@ You can click a line in the evaluation viewer to inspect the program state at th
   'color: #888; font-style: italic;'
 );
 
-enum Errors {
-  none,
-  /**
-   * the current like has an error.
-   */
-  current,
-  /**
-   * A previous line already displayed an error.
-   */
-  past
-}
-
 const stackItem = (
   itemIndex: number,
   content: string,
@@ -66,177 +63,697 @@ const stackItem = (
     key={`${itemIndex}:${content}`}
     content={content}
     portalClassName="stack-popover"
+    interactionKind="hover"
   >
-    <Tooltip content={content} portalClassName="stack-tooltip">
-      {element}
-    </Tooltip>
+    {element}
   </Popover>
 );
-
-const abbreviationPrefixAndSuffixLength = 12;
-const abbreviateStackItem = (hex: string) =>
-  hex.length <= abbreviationPrefixAndSuffixLength * 2
-    ? hex
-    : `${hex.substring(
-        0,
-        abbreviationPrefixAndSuffixLength
-      )}\u2026${hex.substring(
-        hex.length - abbreviationPrefixAndSuffixLength,
-        hex.length
-      )}`;
 
 const getStackItemDisplaySettings = (
   item: Uint8Array,
   settings: EvaluationViewerSettings,
   lookup?: StackItemIdentifyFunction
 ) => {
-  const name = lookup ? lookup(item) : false;
+  const name =
+    lookup !== undefined && settings.identifyStackItems ? lookup(item) : false;
   const hex = `0x${binToHex(item)}`;
   if (name !== false) {
     return {
       hex,
       type: 'named' as const,
-      label: name
+      label: name,
     };
   }
   const number = parseBytesAsScriptNumber(item);
-  if (typeof number === 'bigint' && settings.parseScriptNumbers) {
-    return {
-      hex,
-      type: 'number' as const,
-      label: `${number}`
-    };
+  if (typeof number === 'bigint') {
+    if (settings.scriptNumbersDisplayFormat === 'integer') {
+      return {
+        hex,
+        type: 'number' as const,
+        label: `${number}`,
+      };
+    }
+    if (settings.scriptNumbersDisplayFormat === 'binary') {
+      return {
+        hex,
+        type: 'binary' as const,
+        label: `0b${binToBinString(item)}`,
+      };
+    }
   }
   return {
     hex,
     type: 'hex' as const,
-    label: settings.abbreviateLongStackItems ? abbreviateStackItem(hex) : hex
+    label: settings.abbreviateLongStackItems ? abbreviateStackItem(hex) : hex,
   };
 };
 
-const EvaluationLine = ({
-  line,
-  lineIndex,
+const hasVmHelp = (
+  error?: string
+): error is keyof typeof vmErrorAssistanceBCH =>
+  error !== undefined &&
+  (vmErrorAssistanceBCH as { [key: string]: any })[error] !== undefined;
+
+/**
+ * Renders some common virtual machine errors with friendly help information.
+ */
+const VmErrorLine = ({ state }: { state: IDESupportedProgramState }) =>
+  hasVmHelp(state.error) ? (
+    <span className="stack-item error error-with-help">
+      <Popover
+        content={vmErrorAssistanceBCH[state.error]?.(state)}
+        portalClassName="help-popover"
+        interactionKind="hover"
+      >
+        {state.error}
+      </Popover>
+    </span>
+  ) : (
+    <span className="stack-item error">{state.error}</span>
+  );
+
+/**
+ * Renders some common compilation errors with friendly help information.
+ */
+const CompilationErrorLine = ({
   error,
-  settings,
-  lookup
+  frame,
+  range,
 }: {
-  lineIndex: number;
-  line: EvaluationViewerLine<IDESupportedProgramState>;
-  error: Errors;
-  settings: EvaluationViewerSettings;
-  lookup?: StackItemIdentifyFunction;
-}) => (
-  <div
-    className={
-      line.highlight === EvaluationViewerHighlight.success
-        ? 'state highlight success'
-        : line.highlight === EvaluationViewerHighlight.dirtyStack
-        ? 'state highlight dirty-stack'
-        : line.highlight === EvaluationViewerHighlight.fail
-        ? 'state highlight fail'
-        : 'state'
-    }
-    onClick={() => {
-      console.log(`ProgramState after line #${lineIndex}:`);
-      console.dir(line.state);
-    }}
-  >
-    {line.spacers &&
-      line.spacers.map((type, index) => (
-        <span
-          key={index}
-          className={`spacer ${
-            type === EvaluationViewerSpacer.evaluation
-              ? 'evaluation'
-              : type === EvaluationViewerSpacer.executedConditional
-              ? 'conditional-executed'
-              : 'conditional-skipped'
-          }`}
+  error: string;
+  frame: ScriptEditorFrame<IDESupportedProgramState>;
+  range: Range;
+}) => {
+  const firstMatch = compilationErrorAssistance.find((item) =>
+    item.regex.test(error)
+  );
+  return (
+    <li
+      key={`${error}${range.startLineNumber}${range.endLineNumber}${range.startColumn}${range.endColumn}`}
+    >
+      {firstMatch === undefined ? (
+        <span className="error-message">{error}</span>
+      ) : (
+        <Popover
+          content={
+            <div className="help-popover-scroll">
+              {firstMatch
+                .generateHints(error, frame)
+                .map(renderSimpleMarkdown)
+                .map((content) => (
+                  <div className="assistance-section">{content}</div>
+                ))}
+            </div>
+          }
+          portalClassName="help-popover"
+          interactionKind="hover"
+          className="assistance-popover-target"
         >
-          &nbsp;
-        </span>
-      ))}
-    {error === Errors.current ? (
-      <span title={line.state.error} className="stack-item error">
-        {line.state.error}
-      </span>
-    ) : error === Errors.past ? (
-      <span className="stack-item past-error" />
-    ) : error === Errors.none ? (
-      line.spacers &&
-      line.spacers.indexOf(EvaluationViewerSpacer.skippedConditional) !== -1 ? (
+          <span className="error-message">{error}</span>
+        </Popover>
+      )}
+      <span className="line-and-column">{`[${range.startLineNumber},${range.startColumn}]`}</span>
+    </li>
+  );
+};
+
+const EvaluationLine = ({
+  hasError,
+  hasActiveCursor,
+  line,
+  lineNumber,
+  lookup,
+  settings,
+}: {
+  hasError: boolean;
+  hasActiveCursor: boolean;
+  line: EvaluationViewerLine<IDESupportedProgramState>;
+  lineNumber: number;
+  lookup?: StackItemIdentifyFunction;
+  settings: EvaluationViewerSettings;
+}) => {
+  const firstSkippedSpacer =
+    line.spacers === undefined
+      ? undefined
+      : line.spacers.findIndex(
+          (spacer) => spacer === EvaluationViewerSpacer.skippedConditional
+        );
+  const sliceSpacersAtIndex =
+    firstSkippedSpacer === undefined || firstSkippedSpacer === -1
+      ? undefined
+      : firstSkippedSpacer + 1;
+
+  /**
+   * Individual and grouped stack items (when enabled, stacks larger than 6
+   * items group remaining items into a single "grouped" ellipsis item)
+   */
+  const stackItemsAndGroups = [
+    (
+      (settings.showAlternateStack
+        ? line.state?.alternateStack
+        : line.state?.stack) ?? []
+    )
+      .map((item, index, stack) =>
+        settings.groupStackItemsDeeperThan === undefined
+          ? item
+          : index > stack.length - (settings.groupStackItemsDeeperThan + 1)
+          ? item
+          : index === stack.length - (settings.groupStackItemsDeeperThan + 1)
+          ? stack.slice(
+              0,
+              stack.length - (settings.groupStackItemsDeeperThan + 1)
+            )
+          : undefined
+      )
+      .filter((item): item is Uint8Array | Uint8Array[] => item !== undefined),
+  ]
+    .map((stack) => (settings.reverseStack ? stack.reverse() : stack))
+    .flat();
+
+  return (
+    <div
+      className={`state${hasActiveCursor ? ' active-cursor' : ''}${
+        line.highlight === undefined
+          ? ''
+          : ` highlight${
+              line.highlight === EvaluationViewerHighlight.success
+                ? ' success'
+                : ''
+            }`
+      }`}
+      onClick={() => {
+        console.log(`ProgramState after line #${lineNumber}:`);
+        console.dir(line.state);
+      }}
+    >
+      {line.spacers &&
+        line.spacers.slice(0, sliceSpacersAtIndex).map((type, index) => (
+          <span
+            key={index}
+            className={`spacer ${
+              type === EvaluationViewerSpacer.evaluation
+                ? 'spacer-evaluation'
+                : type === EvaluationViewerSpacer.executedConditional
+                ? 'spacer-conditional-executed'
+                : 'spacer-conditional-skipped'
+            }`}
+          >
+            &nbsp;
+          </span>
+        ))}
+      {hasError ? (
+        <VmErrorLine
+          state={line.state as IDESupportedProgramState}
+        ></VmErrorLine>
+      ) : line.spacers &&
+        line.spacers.indexOf(EvaluationViewerSpacer.skippedConditional) !==
+          -1 ? (
         <span className="unchanged" />
       ) : (
-        [
-          (settings.showAlternateStack
-            ? line.state.alternateStack
-            : line.state.stack
-          )
-            .map((item, index, stack) =>
-              !settings.groupDeepStackItems
-                ? item
-                : index > stack.length - 6
-                ? item
-                : index === stack.length - 6
-                ? stack.slice(0, stack.length - 6)
-                : undefined
-            )
-            .filter(
-              (item): item is Uint8Array | Uint8Array[] => item !== undefined
-            )
-        ]
-          .map(stack => (settings.reverseStack ? stack.reverse() : stack))
-          .flat()
-          .map((item, itemIndex) => {
-            if (Array.isArray(item)) {
-              const labels = item
-                .map(innerItem =>
-                  getStackItemDisplaySettings(innerItem, settings, lookup)
-                )
-                .map(item => item.label)
-                .join(' ');
-              return stackItem(
-                itemIndex,
-                labels,
-                <span className="stack-item group">&hellip;</span>
-              );
-            }
-            const { hex, label, type } = getStackItemDisplaySettings(
-              item,
-              settings,
-              lookup
-            );
+        stackItemsAndGroups.map((item, itemIndex) => {
+          if (Array.isArray(item)) {
+            const labels = item
+              .map((innerItem) =>
+                getStackItemDisplaySettings(innerItem, settings, lookup)
+              )
+              .map((item) => item.label)
+              .join(' ');
             return stackItem(
               itemIndex,
-              hex,
-              <span className={`stack-item ${type}`}>{label}</span>
+              labels,
+              <span className="stack-item group">&hellip;</span>
             );
-          })
-      )
-    ) : (
-      unknownValue(error)
-    )}
+          }
+          const { hex, label, type } = getStackItemDisplaySettings(
+            item,
+            settings,
+            lookup
+          );
+          return stackItem(
+            itemIndex,
+            hex,
+            <span className={`stack-item ${type}`}>{label}</span>
+          );
+        })
+      )}
+    </div>
+  );
+};
+
+const emptyEvaluation = [] as EvaluationViewerLine[];
+const emptyLookup = {
+  lookup: () => false as const,
+};
+
+/**
+ * Scenario IDs may not begin with a number, so these values cannot overlap with
+ * real scenario IDs.
+ */
+enum ScenarioSwitcherSpecialValues {
+  defaultScenario = '0',
+  editScenarios = '1',
+}
+
+const ScenarioSwitcher = ({
+  scenarioDetails,
+  switchScenario,
+  importExport,
+}: {
+  scenarioDetails: ScenarioDetails;
+  importExport: typeof ActionCreators.importExport;
+  switchScenario: typeof ActionCreators.switchScenario;
+}) => (
+  <Tooltip
+    content="Change the scenario used in the below evaluation"
+    portalClassName="control-tooltip"
+    position="bottom-right"
+  >
+    <HTMLSelect
+      className="scenario-switcher"
+      iconProps={{ iconSize: 12 }}
+      options={[
+        ...(scenarioDetails.selectedScenario === undefined
+          ? [
+              {
+                value: ScenarioSwitcherSpecialValues.defaultScenario,
+                label: 'Default Scenario',
+              },
+            ]
+          : scenarioDetails.availableScenarios.map((available) => ({
+              value: available.id,
+              label: available.name,
+            }))),
+        {
+          value: ScenarioSwitcherSpecialValues.editScenarios,
+          label: 'Edit Scenarios...',
+        },
+      ]}
+      onChange={(e) => {
+        if (
+          e.currentTarget.value ===
+          ScenarioSwitcherSpecialValues.defaultScenario
+        ) {
+          /**
+           * If the default scenario is show, there are no
+           * other scenarios to switch to/from, so we can
+           * just ignore this selection.
+           */
+          return;
+        }
+        if (
+          e.currentTarget.value === ScenarioSwitcherSpecialValues.editScenarios
+        ) {
+          const flag = '_editScenariosWIPHasBeenExplained';
+          const explanation = `Bitauth IDE does not yet have a simplified interface for editing scenarios, but scenarios can still be edited directly in the template. Add or make changes to the "scenarios" property in the template JSON, then import your changes to finish. See the guide for information about scenarios.`;
+          console.log(explanation);
+          importExport();
+          if ((window as any)[flag] === undefined) {
+            (window as any)[flag] = true;
+            setTimeout(() => {
+              window.alert(explanation);
+            }, 1000);
+          }
+          return;
+        }
+        const scenarioId = e.currentTarget.value;
+        const nextScenario = scenarioDetails.availableScenarios.find(
+          (available) => available.id === scenarioId
+        );
+        const internalId = nextScenario?.internalId;
+        if (internalId !== undefined) {
+          switchScenario(internalId);
+        }
+      }}
+      value={
+        scenarioDetails.selectedScenario === undefined
+          ? 0
+          : scenarioDetails.selectedScenario.id
+      }
+    />
+  </Tooltip>
+);
+
+export const ViewerControls = ({
+  changeEvaluationViewerSettings,
+  evaluationViewerSettings,
+  importExport,
+  scenarioDetails,
+  switchScenario,
+}: {
+  changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  evaluationViewerSettings: EvaluationViewerSettings;
+  importExport: typeof ActionCreators.importExport;
+  scenarioDetails: ScenarioDetails;
+  switchScenario: typeof ActionCreators.switchScenario;
+}) => (
+  <div className="controls">
+    <div className="viewing-stack">
+      {evaluationViewerSettings.showAlternateStack ? (
+        <Tooltip
+          content="Currently showing the alternate stack. Click to switch to the stack."
+          portalClassName="control-tooltip"
+          position="bottom-left"
+        >
+          <Button
+            className="alt-stack"
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                showAlternateStack: false,
+              });
+            }}
+          >
+            Alternate Stack
+          </Button>
+        </Tooltip>
+      ) : (
+        <Tooltip
+          content="Currently showing the stack. Click to switch the alternate stack."
+          portalClassName="control-tooltip"
+          position="bottom-left"
+        >
+          <Button
+            className="stack"
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                showAlternateStack: true,
+              });
+            }}
+          >
+            Stack
+          </Button>
+        </Tooltip>
+      )}
+    </div>
+    <div className="toggles">
+      <ScenarioSwitcher
+        importExport={importExport}
+        scenarioDetails={scenarioDetails}
+        switchScenario={switchScenario}
+      ></ScenarioSwitcher>
+      {typeof scenarioDetails.generatedScenario === 'string' ? (
+        <Popover
+          content={scenarioDetails.generatedScenario}
+          portalClassName="control-popover"
+          interactionKind="hover"
+          position="bottom-right"
+        >
+          <Icon
+            className="shrink scenario-detail-icon scenario-generation-error"
+            icon={IconNames.ERROR}
+          ></Icon>
+        </Popover>
+      ) : (
+        /**
+         * Scenario generation was successful
+         */
+        <Popover
+          content={
+            <div>
+              <p>
+                This scenario is expected to{' '}
+                {scenarioDetails.selectedScenario?.expectedToPass
+                  ? 'pass'
+                  : 'fail'}
+                . The scenario{' '}
+                {typeof scenarioDetails.selectedScenario?.verifyResult ===
+                'string'
+                  ? `failed with the error: ${scenarioDetails.selectedScenario.verifyResult}`
+                  : 'passed.'}
+              </p>
+              <details>
+                <summary>Scenario</summary>
+                <button
+                  className="generated-scenario-log"
+                  onClick={() =>
+                    console.log(
+                      'Generated Scenario:',
+                      scenarioDetails.generatedScenario
+                    )
+                  }
+                >
+                  Log Scenario to Developer Console
+                </button>
+                <code className="generated-scenario">
+                  <pre>{stringify(scenarioDetails.generatedScenario)}</pre>
+                </code>
+              </details>
+            </div>
+          }
+          portalClassName="control-popover"
+          interactionKind="hover"
+          position="bottom-right"
+        >
+          {(scenarioDetails.selectedScenario?.verifyResult === true &&
+            scenarioDetails.selectedScenario.expectedToPass === true) ||
+          (typeof scenarioDetails.selectedScenario?.verifyResult === 'string' &&
+            scenarioDetails.selectedScenario.expectedToPass === false) ? (
+            <Icon
+              className="shrink scenario-detail-icon"
+              icon={IconNames.TICK}
+            ></Icon>
+          ) : (
+            <Icon
+              className="shrink scenario-detail-icon scenario-detail-icon-error"
+              icon={IconNames.CROSS}
+            ></Icon>
+          )}
+        </Popover>
+      )}
+
+      {evaluationViewerSettings.scriptNumbersDisplayFormat === 'integer' ? (
+        <Tooltip
+          content="Showing Script Numbers in integer format"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                scriptNumbersDisplayFormat: 'hex',
+              });
+            }}
+          >
+            <span className="number-format">123</span>
+          </Button>
+        </Tooltip>
+      ) : evaluationViewerSettings.scriptNumbersDisplayFormat === 'hex' ? (
+        <Tooltip
+          content="Showing Script Numbers in hex format"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                scriptNumbersDisplayFormat: 'binary',
+              });
+            }}
+          >
+            <span className="number-format">0x</span>
+          </Button>
+        </Tooltip>
+      ) : (
+        <Tooltip
+          content="Showing Script Numbers in binary format"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                scriptNumbersDisplayFormat: 'integer',
+              });
+            }}
+          >
+            <span className="number-format">0b</span>
+          </Button>
+        </Tooltip>
+      )}
+
+      {evaluationViewerSettings.abbreviateLongStackItems ? (
+        <Tooltip
+          content="Show full contents of long stack items"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.MAXIMIZE}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                abbreviateLongStackItems: false,
+              });
+            }}
+          />
+        </Tooltip>
+      ) : (
+        <Tooltip
+          content="Abbreviate long stack items (e.g. '0x1233...7890')"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.MINIMIZE}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                abbreviateLongStackItems: true,
+              });
+            }}
+          />
+        </Tooltip>
+      )}
+      {evaluationViewerSettings.identifyStackItems ? (
+        <Tooltip
+          content="Disable identification of bytecode from variables, scripts, and UTF8 literals"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.PIN}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                identifyStackItems: false,
+              });
+            }}
+          />
+        </Tooltip>
+      ) : (
+        <Tooltip
+          content="Identify bytecode from variables, scripts, and UTF8 literals"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.UNPIN}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                identifyStackItems: true,
+              });
+            }}
+          />
+        </Tooltip>
+      )}
+      {evaluationViewerSettings.groupStackItemsDeeperThan === 6 ? (
+        <Tooltip
+          content="Ungroup stack items deeper than 6"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.UNGROUP_OBJECTS}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                groupStackItemsDeeperThan: undefined,
+              });
+            }}
+          />
+        </Tooltip>
+      ) : evaluationViewerSettings.groupStackItemsDeeperThan === 3 ? (
+        <Tooltip
+          content="Group stack items deeper than 6"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.GROUP_OBJECTS}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                groupStackItemsDeeperThan: 6,
+              });
+            }}
+          />
+        </Tooltip>
+      ) : (
+        <Tooltip
+          content="Group stack items deeper than 3"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.GROUP_OBJECTS}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                groupStackItemsDeeperThan: 3,
+              });
+            }}
+          />
+        </Tooltip>
+      )}
+      {evaluationViewerSettings.reverseStack ? (
+        <Tooltip
+          content="Order stack items normally"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.UNDO}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                reverseStack: false,
+              });
+            }}
+          />
+        </Tooltip>
+      ) : (
+        <Tooltip
+          content="Reverse the order of stack items"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            className="shrink"
+            icon={IconNames.REDO}
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                reverseStack: true,
+              });
+            }}
+          />
+        </Tooltip>
+      )}
+    </div>
   </div>
 );
 
-const emptyEvaluation = [] as Evaluation;
-const emptyLookup = {
-  lookup: () => false as false
-};
-
 export const EvaluationViewer = (props: {
-  compilation: CompilationResult;
-  evaluation?: Evaluation;
-  evaluationTrace: string[];
-  evaluationSource: string[];
-  id: string;
-  lookup?: StackItemIdentifyFunction;
-  scrollOffset: number;
-  showControls: boolean;
-  evaluationViewerSettings: EvaluationViewerSettings;
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  importExport: typeof ActionCreators.importExport;
+  switchScenario: typeof ActionCreators.switchScenario;
+  cursorLine: number | undefined;
+  computedState: EvaluationViewerComputedState;
+  evaluationViewerSettings: EvaluationViewerSettings;
+  viewerRef: (viewer: HTMLDivElement | null) => void;
+  showControls: boolean;
+  scenarioDetails: ScenarioDetails;
 }) => {
+  const {
+    evaluationSource,
+    evaluationTrace,
+    frame,
+    lookup,
+  } = props.computedState;
+  const { compilation, evaluationLines } = frame;
   const [cachedEvaluation, setCachedEvaluation] = useState(emptyEvaluation);
   const [cachedEvaluationSource, setCachedEvaluationSource] = useState('');
   const [cachedEvaluationTrace, setCachedEvaluationTrace] = useState(['']);
@@ -244,282 +761,152 @@ export const EvaluationViewer = (props: {
     lookup: StackItemIdentifyFunction | undefined;
   }>(emptyLookup);
 
-  if (props.evaluationTrace.join() !== cachedEvaluationTrace.join()) {
+  if (evaluationTrace.join() !== cachedEvaluationTrace.join()) {
     setCachedEvaluation(emptyEvaluation);
     setCachedLookup(emptyLookup);
-    setCachedEvaluationTrace(props.evaluationTrace);
+    setCachedEvaluationTrace(evaluationTrace);
     return null;
   }
   const hasError =
-    typeof props.evaluation === 'undefined' || props.evaluation.length === 0;
-  const cacheIsUpdated =
-    cachedEvaluationSource === props.evaluationSource.join();
+    typeof evaluationLines === 'undefined' || evaluationLines.length === 0;
+  const cacheIsUpdated = cachedEvaluationSource === evaluationSource.join();
   if (!hasError && !cacheIsUpdated) {
-    setCachedEvaluationSource(props.evaluationSource.join());
-    setCachedEvaluation(props.evaluation as Evaluation);
-    setCachedLookup({ lookup: props.lookup });
+    setCachedEvaluationSource(evaluationSource.join());
+    setCachedEvaluation(evaluationLines as EvaluationViewerLine[]);
+    setCachedLookup({ lookup });
     return null;
   }
 
   const cacheIsAvailable = cachedEvaluation.length !== 0;
   const showCached = hasError && cacheIsAvailable;
-  const evaluation = showCached ? cachedEvaluation : props.evaluation;
-  const lookup = showCached ? cachedLookup.lookup : props.lookup;
+  const evaluation = showCached ? cachedEvaluation : evaluationLines;
+  const activeLookup = showCached ? cachedLookup.lookup : lookup;
 
   return (
-    <div className="EvaluationViewer">
+    <div className="EvaluationViewer" ref={props.viewerRef}>
       <div className={`content${showCached ? ' cached' : ''}`}>
         {evaluation && evaluation.length > 0 ? (
           <div>
-            <div
-              className={`header-bar ${
-                props.scrollOffset !== 0 ? 'scroll-decoration' : ''
-              }`}
-            >
+            <div className="header-bar">
+              {props.showControls ? undefined : (
+                <div className="header-bar-content-fade"></div>
+              )}
               <div className="header-bar-content">
                 {props.showControls ? (
-                  <div className="controls">
-                    <div className="viewing-stack">
-                      {props.evaluationViewerSettings.showAlternateStack ? (
-                        <Tooltip
-                          content="Currently showing the alternate stack. Click to switch to the stack."
-                          portalClassName="control-tooltip"
-                          position="right"
-                        >
-                          <Button
-                            className="alt-stack"
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                showAlternateStack: false
-                              });
-                            }}
-                          >
-                            Alternate Stack
-                          </Button>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip
-                          content="Currently showing the stack. Click to switch the alternate stack."
-                          portalClassName="control-tooltip"
-                          position="right"
-                        >
-                          <Button
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                showAlternateStack: true
-                              });
-                            }}
-                          >
-                            Stack
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </div>
-                    <div className="toggles">
-                      {props.evaluationViewerSettings.parseScriptNumbers ? (
-                        <Tooltip
-                          content="Show Script Numbers in hex format"
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            icon={IconNames.CODE}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                parseScriptNumbers: false
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip
-                          content="Show Script Numbers in numerical format"
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            icon={IconNames.NUMERICAL}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                parseScriptNumbers: true
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      )}
-
-                      {props.evaluationViewerSettings
-                        .abbreviateLongStackItems ? (
-                        <Tooltip
-                          content="Show full contents of long stack items"
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            className="shrink"
-                            icon={IconNames.MAXIMIZE}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                abbreviateLongStackItems: false
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip
-                          content="Abbreviate long stack items (e.g. '0x1233...7890')"
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            className="shrink"
-                            icon={IconNames.MINIMIZE}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                abbreviateLongStackItems: true
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      )}
-                      {props.evaluationViewerSettings.groupDeepStackItems ? (
-                        <Tooltip
-                          content="Ungroup stack items deeper than 6."
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            className="shrink"
-                            icon={IconNames.UNGROUP_OBJECTS}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                groupDeepStackItems: false
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip
-                          content="Group stack items deeper than 6."
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            className="shrink"
-                            icon={IconNames.GROUP_OBJECTS}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                groupDeepStackItems: true
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      )}
-                      {props.evaluationViewerSettings.reverseStack ? (
-                        <Tooltip
-                          content="Order stack items normally."
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            className="shrink"
-                            icon={IconNames.UNDO}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                reverseStack: false
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip
-                          content="Reverse the order of stack items."
-                          portalClassName="control-tooltip"
-                          position="left"
-                        >
-                          <Button
-                            className="shrink"
-                            icon={IconNames.REDO}
-                            onClick={() => {
-                              props.changeEvaluationViewerSettings({
-                                ...props.evaluationViewerSettings,
-                                reverseStack: true
-                              });
-                            }}
-                          />
-                        </Tooltip>
-                      )}
-                    </div>
-                  </div>
+                  <ViewerControls
+                    changeEvaluationViewerSettings={
+                      props.changeEvaluationViewerSettings
+                    }
+                    evaluationViewerSettings={props.evaluationViewerSettings}
+                    importExport={props.importExport}
+                    scenarioDetails={props.scenarioDetails}
+                    switchScenario={props.switchScenario}
+                  />
                 ) : (
                   <EvaluationLine
+                    hasError={false}
+                    hasActiveCursor={false}
                     line={evaluation[0]}
-                    lineIndex={0}
-                    error={Errors.none}
-                    lookup={lookup}
+                    lineNumber={0}
+                    lookup={activeLookup}
                     settings={props.evaluationViewerSettings}
                   />
                 )}
               </div>
             </div>
 
-            <div
-              className="evaluation"
-              style={{ marginTop: -props.scrollOffset }}
-            >
+            <div className="evaluation">
               {evaluation.slice(1).map((line, lineIndex, lines) => (
                 <EvaluationLine
+                  hasError={line.state?.error !== undefined}
+                  hasActiveCursor={props.cursorLine === lineIndex + 1}
                   key={lineIndex}
-                  lineIndex={lineIndex + 1}
                   line={line}
-                  error={
-                    line.state && line.state.error
-                      ? lines[lineIndex - 1] &&
-                        lines[lineIndex - 1].state &&
-                        typeof lines[lineIndex - 1].state.error === 'string'
-                        ? Errors.past
-                        : Errors.current
-                      : Errors.none
-                  }
+                  lineNumber={lineIndex + 1}
+                  lookup={activeLookup}
                   settings={props.evaluationViewerSettings}
-                  lookup={lookup}
                 />
               ))}
             </div>
           </div>
-        ) : props.compilation.success === false ? (
+        ) : typeof props.scenarioDetails.generatedScenario === 'string' &&
+          (frame.scriptType === 'isolated' ||
+            frame.scriptType === 'unlocking' ||
+            frame.scriptType === 'test-setup') ? (
           <div className="compilation-error-without-cache">
             <div className="header-bar">
               <div className="header-bar-content">
-                There{' '}
-                {props.compilation.errors.length === 1
-                  ? 'is an error'
-                  : `are ${props.compilation.errors.length} errors`}{' '}
-                preventing compilation:
+                <div className="controls">
+                  The selected scenario cannot be generated:
+                  <div className="toggles">
+                    <ScenarioSwitcher
+                      importExport={props.importExport}
+                      scenarioDetails={props.scenarioDetails}
+                      switchScenario={props.switchScenario}
+                    ></ScenarioSwitcher>
+                  </div>
+                </div>
               </div>
             </div>
             <ul className="list">
-              {props.compilation.errors.map(({ error, range }) => (
-                <li
-                  key={`${error}${range.startLineNumber}${range.endLineNumber}${range.startColumn}${range.endColumn}`}
-                >
-                  <span className="error-message">{error}</span>
-                  <span className="line-and-column">{`[${range.startLineNumber},${range.startColumn}]`}</span>
-                </li>
-              ))}
+              {CompilationErrorLine({
+                error: props.scenarioDetails.generatedScenario,
+                range: {
+                  endColumn: 0,
+                  endLineNumber: 0,
+                  startColumn: 0,
+                  startLineNumber: 0,
+                },
+                frame,
+              })}
+            </ul>
+          </div>
+        ) : compilation?.success === false ? (
+          <div className="compilation-error-without-cache">
+            <div className="header-bar">
+              <div className="header-bar-content">
+                <div className="controls">
+                  There{' '}
+                  {compilation.errors.length === 1
+                    ? 'is an error'
+                    : `are ${compilation.errors.length} errors`}{' '}
+                  preventing compilation:
+                  <div className="toggles">
+                    {(frame.scriptType === 'isolated' ||
+                      frame.scriptType === 'unlocking' ||
+                      frame.scriptType === 'test-setup') && (
+                      <ScenarioSwitcher
+                        importExport={props.importExport}
+                        scenarioDetails={props.scenarioDetails}
+                        switchScenario={props.switchScenario}
+                      ></ScenarioSwitcher>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul className="list">
+              {compilation.errors.map(({ error, range }) =>
+                CompilationErrorLine({ error, range, frame })
+              )}
             </ul>
           </div>
         ) : (
-          <div className="header-bar"></div>
+          <div className="header-bar">
+            {props.showControls && (
+              <div className="header-bar-content">
+                <div className="controls">
+                  <div className="toggles">
+                    <ScenarioSwitcher
+                      importExport={props.importExport}
+                      scenarioDetails={props.scenarioDetails}
+                      switchScenario={props.switchScenario}
+                    ></ScenarioSwitcher>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

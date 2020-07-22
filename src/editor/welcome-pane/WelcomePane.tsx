@@ -4,12 +4,13 @@ import { AppState, IDETemplate } from '../../state/types';
 import { connect } from 'react-redux';
 import { IconNames } from '@blueprintjs/icons';
 import { ActionCreators } from '../../state/reducer';
-import single from '../../templates/single-sig.json';
-import multi from '../../templates/2-of-3-template.json';
-import continuity from '../../templates/2-of-2-continuity.json';
-import zcf from '../../templates/zcf.json';
+import multi from '../../templates/2-of-3.json';
+import continuity from '../../templates/2-of-2-recoverable.json';
 import { importAuthenticationTemplate } from '../../state/import-export';
-import { AuthenticationTemplate } from 'bitcoin-ts';
+import {
+  AuthenticationTemplate,
+  authenticationTemplateP2pkh,
+} from '@bitauth/libauth';
 import { Icon } from '@blueprintjs/core';
 import { createInsecureUuidV4 } from '../../state/utils';
 
@@ -24,7 +25,7 @@ const assertValidTemplate = (result: IDETemplate | string) => {
 
 const defaultTemplates = {
   single: assertValidTemplate(
-    importAuthenticationTemplate(single as AuthenticationTemplate)
+    importAuthenticationTemplate(authenticationTemplateP2pkh)
   ),
   multi: assertValidTemplate(
     importAuthenticationTemplate(multi as AuthenticationTemplate)
@@ -32,9 +33,6 @@ const defaultTemplates = {
   continuity: assertValidTemplate(
     importAuthenticationTemplate(continuity as AuthenticationTemplate)
   ),
-  zcf: assertValidTemplate(
-    importAuthenticationTemplate(zcf as AuthenticationTemplate)
-  )
 };
 
 interface WelcomePaneDispatch {
@@ -47,16 +45,13 @@ interface WelcomePaneDispatch {
 
 const templateIconSize = 12;
 
-export const WelcomePane = connect(
-  (state: AppState) => ({}),
-  {
-    importExport: ActionCreators.importExport,
-    importTemplate: ActionCreators.importTemplate,
-    openTemplateSettings: ActionCreators.openTemplateSettings,
-    resetTemplate: ActionCreators.resetTemplate,
-    createScript: ActionCreators.createScript
-  }
-)((props: WelcomePaneDispatch) => (
+export const WelcomePane = connect((state: AppState) => ({}), {
+  importExport: ActionCreators.importExport,
+  importTemplate: ActionCreators.importTemplate,
+  openTemplateSettings: ActionCreators.openTemplateSettings,
+  resetTemplate: ActionCreators.resetTemplate,
+  createScript: ActionCreators.createScript,
+})((props: WelcomePaneDispatch) => (
   <div className="WelcomePane EditorPane">
     <div className="EditorPaneContents">
       <div className="welcome-box">
@@ -144,7 +139,23 @@ export const WelcomePane = connect(
               id: 'scratch_pad',
               internalId: createInsecureUuidV4(),
               type: 'isolated',
-              contents: "<'hello'> <'🌎'>\nOP_CAT\nOP_HASH160"
+              contents: `/**
+* This simple template makes it easy to experiment 
+* with most opcodes.
+* 
+* Note, this script is evaluated as a locking script.
+* To work with keys and signatures, add an unlocking
+* script and key variables, or try starting from
+* another template.
+*/
+
+<'hello'> <'🌎'>
+OP_CAT
+OP_HASH160
+<0xfec6d89ec9eb8665b1fd48c9e7ff2aa2aaf2a200>
+OP_EQUAL
+<2>
+OP_ADD`,
             });
           }}
         >

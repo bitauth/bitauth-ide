@@ -24,6 +24,7 @@ body {
   --editor-background-color: #1d2023;
   --stack-vis-background-color: #181b1e;
   --scrolled-under-shadow: #111a 0 6px 6px -6px inset;
+  --toolbar-icon-color: #fff9;
 }
 
 * {
@@ -34,4 +35,15 @@ body {
     background: #666;
     border-radius: 20px;
   }
+}
+
+/**
+ * A visible outline color for all browsers.
+ */
+:focus,
+::-moz-focus-inner,
+:-moz-focusring,
+:active {
+  border-color: #8addff !important;
+  outline-color: #8addff !important;
 }

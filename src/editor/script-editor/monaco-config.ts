@@ -7,37 +7,34 @@ export const bitauthTemplatingLanguage = 'bitauth-templating-language';
 export const bitauthDark = 'bitauth-dark';
 
 export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
-  /**
-   * TODO: This is a hack to get things working – we should manually call layout
-   *  only when the Mosaic tile is being resized.
-   */
-  automaticLayout: true,
+  automaticLayout: false,
   cursorBlinking: 'smooth',
   dragAndDrop: true,
   fontFamily: "'Fira Mono', monospace",
   scrollBeyondLastLine: false,
   contextmenu: false,
   minimap: {
-    enabled: false
+    enabled: false,
   },
   folding: false,
   wordWrap: 'off', // TODO: identify lines which wrap and match the wrapping in the stack viewer (so we can set this back to `on`)
   wrappingIndent: 'same',
   scrollbar: {
-    verticalScrollbarSize: 3
-  }
+    verticalScrollbarSize: 3,
+  },
 };
 
-const vibrantYellow = 'FFD700';
+const vibrantYellow = 'ffd700';
 const subtleGray = '666677';
-const salmon = 'D68D72';
-const lightBlue = '8ADDFF';
-const blue = '3C9DDA';
-const fuchsia = 'D081C4';
+const salmon = 'd68d72';
+const lightBlue = '8addff';
+const blue = '3c9dda';
+const fuchsia = 'd081c4';
 const oak = 'd9daa2';
-const red = 'FF0000';
-const lightOlive = 'B5CEA8';
-const darkOlive = '5BB498';
+const red = 'ff0000';
+const mistBlue = 'a8bcce';
+const lightOlive = 'b5cea8';
+const darkOlive = '5bb498';
 
 export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
   base: 'vs-dark',
@@ -55,13 +52,13 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
     { token: 'identifier', foreground: lightBlue },
     { token: 'literal.bigint', foreground: lightOlive },
     { token: 'literal.hex', foreground: darkOlive },
-    { token: 'invalid', foreground: red }
+    { token: 'literal.binary', foreground: mistBlue },
+    { token: 'invalid', foreground: red },
   ],
   colors: {
-    // "editorCursor.foreground": "#586677",
-    // "editor.lineHighlightBackground": "#f9fcff",
-    'editor.background': '#1D2023'
-  }
+    'editor.background': '#1D2023',
+    'editor.lineHighlightBorder': '#24282a',
+  },
 };
 
 export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
@@ -74,12 +71,15 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     { open: "'", close: "'", notIn: ['string', 'comment'] },
     { open: '/**', close: ' */', notIn: ['string'] },
     { open: 'OP_IF', close: ' OP_ENDIF', notIn: ['string', 'comment'] },
-    { open: 'OP_NOTIF', close: ' OP_ENDIF', notIn: ['string', 'comment'] }
+    { open: 'OP_NOTIF', close: ' OP_ENDIF', notIn: ['string', 'comment'] },
   ],
-  brackets: [['<', '>'], ['$(', ')']],
+  brackets: [
+    ['<', '>'],
+    ['$(', ')'],
+  ],
   comments: {
     lineComment: '//',
-    blockComment: ['/*', '*/']
+    blockComment: ['/*', '*/'],
   },
   onEnterRules: [
     {
@@ -88,16 +88,16 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
       afterText: /^\s*\*\/$/,
       action: {
         indentAction: monacoLanguages.IndentAction.IndentOutdent,
-        appendText: ' * '
-      }
+        appendText: ' * ',
+      },
     },
     {
       // e.g. /** ...|
       beforeText: /^\s*\/\*\*(?!\/)([^*]|\*(?!\/))*$/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
-        appendText: ' * '
-      }
+        appendText: ' * ',
+      },
     },
     {
       // e.g.  * ...|
@@ -105,20 +105,26 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
       oneLineAboveText: /^(\s*(\/\*\*|\*)).*/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
-        appendText: '* '
-      }
+        appendText: '* ',
+      },
     },
     {
       // e.g.  */|
       beforeText: /^(\t|[ ])*[ ]\*\/\s*$/,
-      action: { indentAction: monacoLanguages.IndentAction.None, removeText: 1 }
+      action: {
+        indentAction: monacoLanguages.IndentAction.None,
+        removeText: 1,
+      },
     },
     {
       // e.g.  *-----*/|
       beforeText: /^(\t|[ ])*[ ]\*[^/]*\*\/\s*$/,
-      action: { indentAction: monacoLanguages.IndentAction.None, removeText: 1 }
-    }
-  ]
+      action: {
+        indentAction: monacoLanguages.IndentAction.None,
+        removeText: 1,
+      },
+    },
+  ],
 });
 
 export const bitauthTemplatingLanguageMonarchLanguage = {
@@ -126,7 +132,7 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
   tokenPostfix: '.bitauth',
   brackets: [
     { open: '$(', close: ')', token: 'delimiter.evaluation' },
-    { open: '<', close: '>', token: 'delimiter.push' }
+    { open: '<', close: '>', token: 'delimiter.push' },
   ],
   flowControlOpcodes: languageBCH.flowControlOpcodes,
   signatureCheckingOpcodes: languageBCH.signatureCheckingOpcodes,
@@ -136,14 +142,16 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
   disabledOpcodes: [
     ...languageBCH.disabledOpcodes,
     ...languageBCH.unknownOpcodes,
-    ...languageBCH.nopOpcodes
+    ...languageBCH.nopOpcodes,
   ],
   otherOpcodes: languageBCH.otherOpcodes,
-  bigint: /\d+(_+\d+)*/,
-  hex: /[[0-9a-fA-F]+(_+[0-9a-fA-F]+)*/,
+  bigint: /-?\d+(_+\d+)*/,
+  binary: /[01]+(?:[01_]*[01]+)*/,
+  hex: /[0-9a-fA-F]_*(?:_*[0-9a-fA-F]_*[0-9a-fA-F]_*)*[0-9a-fA-F]/,
   tokenizer: {
     root: [
-      [/0[xX](@hex)/, 'literal.hex'], // HexLiteral
+      [/0b(@binary)/, 'literal.binary'], // BinaryLiteral
+      [/0x(@hex)/, 'literal.hex'], // HexLiteral
       [/(@bigint)/, 'literal.bigint'], // BigIntLiteral
       [
         /[a-zA-Z_][.a-zA-Z0-9_-]+/,
@@ -156,28 +164,34 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
             '@pushNumberOpcodes': 'opcode.push-number',
             '@disabledOpcodes': 'opcode.disabled',
             '@otherOpcodes': 'opcode.other',
-            '@default': 'identifier'
-          }
-        }
+            '@default': 'identifier',
+          },
+        },
       ],
       { include: '@whitespace' },
       [/[<>)]|\$\(/, '@brackets'],
       [/"/, 'string', '@string_double'], // UTF8Literal
-      [/'/, 'string', '@string_single'] // UTF8Literal
+      [/'/, 'string', '@string_single'], // UTF8Literal
     ],
     whitespace: [
       [/[ \t\r\n]+/, ''],
       [/\/\*/, 'comment', '@comment'],
-      [/\/\/.*$/, 'comment']
+      [/\/\/.*$/, 'comment'],
     ],
     comment: [
       [/[^/*]+/, 'comment'],
       [/\*\//, 'comment', '@pop'],
-      [/[/*]/, 'comment']
+      [/[/*]/, 'comment'],
     ],
-    string_double: [[/[^"$]+/, 'string'], [/"/, 'string', '@pop']],
-    string_single: [[/[^'$]+/, 'string'], [/'/, 'string', '@pop']]
-  }
+    string_double: [
+      [/[^"$]+/, 'string'],
+      [/"/, 'string', '@pop'],
+    ],
+    string_single: [
+      [/[^'$]+/, 'string'],
+      [/'/, 'string', '@pop'],
+    ],
+  },
 } as Monaco.languages.IMonarchLanguage;
 
 export const registerBitauthTemplatingLanguage = (monaco: typeof Monaco) => {
@@ -196,9 +210,9 @@ export const registerBitauthTemplatingLanguage = (monaco: typeof Monaco) => {
     schemas: [
       {
         uri: bitauthAuthenticationTemplateSchema,
-        schema: schemaJson
-      }
-    ]
+        schema: schemaJson,
+      },
+    ],
   });
 };
 

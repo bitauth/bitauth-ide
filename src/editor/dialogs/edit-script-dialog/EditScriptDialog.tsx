@@ -11,10 +11,10 @@ import {
   Icon,
   Switch,
   Intent,
-  Alert
+  Alert,
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
-import { sanitizeId } from '../../common';
+import { toConventionalId } from '../../common';
 
 export const EditScriptDialog = ({
   scriptType,
@@ -22,17 +22,19 @@ export const EditScriptDialog = ({
   internalId,
   id,
   isP2SH,
+  isPushed,
   isOpen,
   closeDialog,
   editScript,
   deleteScript,
-  currentScripts
+  currentScripts,
 }: {
   scriptType: ScriptType;
   name: string;
   internalId: string;
   id: string;
   isP2SH?: boolean;
+  isPushed?: boolean;
   currentScripts: CurrentScripts;
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
@@ -42,12 +44,13 @@ export const EditScriptDialog = ({
   const [scriptName, setScriptName] = useState(name);
   const [scriptId, setScriptId] = useState(id);
   const [scriptIsP2SH, setScriptIsP2SH] = useState(isP2SH);
+  const [scriptIsPushed, setScriptIsPushed] = useState(isPushed);
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
   const isTest = scriptType === 'test-setup' || scriptType === 'test-check';
   const usedIds = currentScripts
-    .map(script => script.id)
-    .filter(scriptId => scriptId !== id);
+    .map((script) => script.id)
+    .filter((scriptId) => scriptId !== id);
   return (
     <Dialog
       className="editor-dialog EditScriptDialog"
@@ -80,7 +83,7 @@ export const EditScriptDialog = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               setScriptName(value);
-              setScriptId(sanitizeId(value));
+              setScriptId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -105,23 +108,58 @@ export const EditScriptDialog = ({
               autoComplete="off"
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
-                setScriptId(sanitizeId(value));
+                setScriptId(value);
+              }}
+              onBlur={(e) => {
+                const value = e.target.value;
+                setScriptId(toConventionalId(value));
               }}
             />
           </FormGroup>
         )}
         {scriptType === 'locking' && (
           <FormGroup
-            helperText={<span>P2SH</span>}
+            helperText={
+              <span>
+                If enabled, this script will be nested in the standard P2SH
+                template.
+              </span>
+            }
             label="Script Mode"
             labelFor="script-p2sh"
             inline={true}
           >
             <Switch
               checked={scriptIsP2SH}
+              id="script-p2sh"
               label="Enable P2SH"
               onChange={() => {
                 setScriptIsP2SH(!scriptIsP2SH);
+              }}
+            />
+          </FormGroup>
+        )}
+        {scriptType === 'tested' && (
+          <FormGroup
+            helperText={
+              <span>
+                If enabled, this script will be wrapped in a push statement for
+                testing. This is useful for scripts which serve as "bytecode
+                templates" – e.g. formatted messages or signature preimages.
+                These scripts are typically not evaluated as bytecode but appear
+                within push statements elsewhere in the template.
+              </span>
+            }
+            label="Pushed Script"
+            labelFor="pushed-script"
+            inline={true}
+          >
+            <Switch
+              checked={scriptIsPushed}
+              id="pushed-script"
+              label="Test as Pushed Script"
+              onChange={() => {
+                setScriptIsPushed(!scriptIsPushed);
               }}
             />
           </FormGroup>
@@ -173,7 +211,8 @@ export const EditScriptDialog = ({
               scriptName === '' ||
               (scriptName === name &&
                 scriptId === id &&
-                scriptIsP2SH === isP2SH) ||
+                scriptIsP2SH === isP2SH &&
+                scriptIsPushed === isPushed) ||
               (!isTest && scriptId === '')
             }
             onClick={() => {
@@ -184,7 +223,8 @@ export const EditScriptDialog = ({
                   internalId,
                   name: scriptName,
                   id: scriptId,
-                  isP2SH: scriptIsP2SH
+                  isP2SH: scriptIsP2SH,
+                  isPushed: scriptIsPushed,
                 });
                 closeDialog();
               }

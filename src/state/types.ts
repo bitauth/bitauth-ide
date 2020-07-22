@@ -1,14 +1,20 @@
 import {
   AuthenticationProgramBCH,
   AuthenticationProgramStateBCH,
-  AuthenticationTemplate,
   AuthenticationTemplateVariable,
   AuthenticationVirtualMachine,
   AuthenticationVirtualMachineIdentifier,
   Sha256,
-  Secp256k1
-} from 'bitcoin-ts';
+  Secp256k1,
+  AuthenticationTemplate,
+  AuthenticationTemplateScriptUnlocking,
+  AuthenticationTemplateScenario,
+  Ripemd160,
+  Sha512,
+  Scenario,
+} from '@bitauth/libauth';
 import { EvaluationViewerSettings } from '../editor/editor-types';
+import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 export enum IDEMode {
   /**
@@ -20,7 +26,7 @@ export enum IDEMode {
    * A live-testing mode - manually create transactions to test the current
    * template on the network.
    */
-  wallet = 'wallet'
+  wallet = 'wallet',
 }
 
 export interface IDETemplateEntity {
@@ -37,8 +43,28 @@ export interface IDETemplateEntity {
   variableInternalIds: string[];
 }
 
-export type IDEVariable = Required<AuthenticationTemplateVariable> & {
+/**
+ * `IDEVariable`s are equivalent to `AuthenticationTemplateVariable`s except in
+ * that they include their own `id` and their assigned `internalId`, and both
+ * `name` and `description` are required.
+ */
+export type IDEVariable = AuthenticationTemplateVariable & {
+  description: string;
   id: string;
+  internalId: string;
+  name: string;
+};
+
+/**
+ * `IDETemplateScenario`s are equivalent to `AuthenticationTemplateScenario`s
+ * except in that they include their own `id` and their assigned `internalId`,
+ * and both `name` and `description` are required.
+ */
+export type IDETemplateScenario = AuthenticationTemplateScenario & {
+  description: string;
+  id: string;
+  internalId: string;
+  name: string;
 };
 
 export type VariableDetails = {
@@ -50,6 +76,39 @@ export type VariableDetails = {
 
 export type ScriptDetails = {
   [id: string]: IDETemplateScript;
+};
+
+export type ScenarioDetails = {
+  /**
+   * If the currently active script has no scenarios (and is therefore
+   * using the default scenario), `undefined`.
+   */
+  selectedScenario:
+    | undefined
+    | {
+        name: string;
+        id: string;
+        expectedToPass: boolean;
+        /**
+         * If verification succeeds, `true`. If verification fails, a string
+         * indicating the error. (If there was a compilation error, `undefined`.)
+         */
+        verifyResult: string | true | undefined;
+      };
+  /**
+   * The generated scenario or scenario generation error for this evaluation.
+   */
+  generatedScenario: Scenario | string;
+  /**
+   * A listing of all available scenarios, including the currently active one.
+   * If `currentScenario` is undefined, this should be an empty list (since
+   * `currentScenario` must be one of the available scenarios if any exist).
+   */
+  availableScenarios: {
+    id: string;
+    internalId: string;
+    name: string;
+  }[];
 };
 
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';
@@ -76,24 +135,50 @@ export interface IDETemplateScriptBase {
    */
   id: string;
   internalId: string;
+  /**
+   * The Monaco Editor model used to edit this script.
+   */
+  monacoModel?: monacoEditor.editor.ITextModel;
 }
 
-export interface IDETemplateUnlockingScript extends IDETemplateScriptBase {
+export interface TestedByScenarios {
+  /**
+   * The list of scenario internal IDs which make this script pass evaluation.
+   *
+   * If empty, the `passes` property can be excluded from the exported template.
+   */
+  passesInternalIds: NonNullable<
+    AuthenticationTemplateScriptUnlocking['passes']
+  >;
+  /**
+   * The list of scenario internal IDs which make this script fail evaluation.
+   *
+   * If empty, the `fails` property can be excluded from the exported template.
+   */
+  failsInternalIds: NonNullable<AuthenticationTemplateScriptUnlocking['fails']>;
+}
+
+export interface IDETemplateUnlockingScript
+  extends IDETemplateScriptBase,
+    TestedByScenarios {
   type: 'unlocking';
   parentInternalId: string;
+  timeLockType: AuthenticationTemplateScriptUnlocking['timeLockType'];
+  ageLock: AuthenticationTemplateScriptUnlocking['ageLock'];
+  estimate: AuthenticationTemplateScriptUnlocking['estimate'];
 }
+
 export interface IDETemplateLockingScript extends IDETemplateScriptBase {
   type: 'locking';
   /**
-   * Indicates if this locking script and all of its children are `P2SH`. In the
-   * IDE, we skip wrapping P2SH scripts in the P2SH prefix (`OP_HASH160 <$(<`)
-   * and postfix (`> OP_HASH160)> OP_EQUAL`) since they should always behave in
-   * the same way.
+   * Indicates if this locking script and all of its children are `P2SH`.
    *
    * During editing, we only visualize and evaluate the unwrapped version of the
    * P2SH unlocking and locking scripts (A.K.A. "spend script" and "redeem
-   * script"). When testing or exporting the template, we then re-wrap the
-   * trimmed scripts to use the complete versions.
+   * script") since evaluation of the P2SH "template"
+   * (`OP_HASH160 <$(<result> OP_HASH160)> OP_EQUAL`) will always happen in the
+   * same way. When an exported template is compiled, the P2SH infrastructure
+   * will be added to the final result.
    */
   isP2SH: boolean;
   childInternalIds: string[];
@@ -116,10 +201,17 @@ export interface IDETemplateIsolatedScript extends IDETemplateScriptBase {
  */
 export interface IDETemplateTestedScript extends IDETemplateScriptBase {
   type: 'tested';
+  /**
+   * The internal ID of each of this tested script's
+   * `IDETemplateTestSetupScript`s.
+   */
   childInternalIds: string[];
+  pushed: boolean;
 }
 
-export interface IDETemplateTestSetupScript extends IDETemplateScriptBase {
+export interface IDETemplateTestSetupScript
+  extends IDETemplateScriptBase,
+    TestedByScenarios {
   type: 'test-setup';
   testCheckInternalId: string;
   parentInternalId: string;
@@ -156,24 +248,31 @@ export type IDETemplateScript =
 
 export type DisableId = true;
 
-export type IDESupportedVM = Exclude<
+export type IDESupportedVM =
+  | 'BCH_2020_11_SPEC'
+  | 'BCH_2020_05'
+  | 'BSV_2020_02'
+  | 'BTC_2017_08';
+export type IDEUnsupportedVM = Exclude<
   AuthenticationVirtualMachineIdentifier,
-  'BCH_2019_05'
+  IDESupportedVM
 >;
 
 export type IDESupportedVmStore = { [key in IDESupportedVM]: any };
 
+/**
+ * TODO: support other VMs
+ */
 export interface IDELoadedVMs extends IDESupportedVmStore {
+  BCH_2020_11_SPEC: AuthenticationVirtualMachine<
+    AuthenticationProgramBCH,
+    AuthenticationProgramStateBCH
+  >;
   BCH_2020_05: AuthenticationVirtualMachine<
     AuthenticationProgramBCH,
     AuthenticationProgramStateBCH
   >;
-  // TODO: fix these if necessary
-  BCH_2019_11: AuthenticationVirtualMachine<
-    AuthenticationProgramBCH,
-    AuthenticationProgramStateBCH
-  >;
-  BSV_2018_11: AuthenticationVirtualMachine<
+  BSV_2020_02: AuthenticationVirtualMachine<
     AuthenticationProgramBCH,
     AuthenticationProgramStateBCH
   >;
@@ -184,7 +283,9 @@ export interface IDELoadedVMs extends IDESupportedVmStore {
 }
 
 export interface IDELoadedCrypto {
+  ripemd160: Ripemd160;
   sha256: Sha256;
+  sha512: Sha512;
   secp256k1: Secp256k1;
 }
 
@@ -221,7 +322,7 @@ export enum ActiveDialog {
   /**
    * A dialog with guides and help content.
    */
-  guide
+  guide,
 }
 
 export interface IDETemplate {
@@ -229,15 +330,52 @@ export interface IDETemplate {
   description: string;
   supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
   entitiesByInternalId: { [internalId: string]: IDETemplateEntity };
-  /**
-   * In AppState, scripts are stored in a tree structure, rather than the flat
-   * list used by `AuthenticationTemplate`.
-   */
+  scenariosByInternalId: { [internalId: string]: IDETemplateScenario };
   scriptsByInternalId: {
     [internalId: string]: IDETemplateScript;
   };
   variablesByInternalId: {
     [internalId: string]: IDEVariable;
+  };
+}
+
+export enum WalletTreeClass {
+  wallet = 'wallet',
+  address = 'address',
+  utxo = 'utxo',
+}
+
+export interface IDEWallet {
+  name: string;
+  template: AuthenticationTemplate;
+  walletData: any; // TODO: more specific type
+  addresses: string[];
+  isExpanded: boolean;
+  isSelected: boolean;
+}
+
+export interface IDEAddress {
+  label: string;
+  lockingBytecode: Uint8Array;
+  addressData: any; // TODO: more specific type
+  utxos: string[];
+  history: { transactionHash: string; balanceChangeSatoshis: number }[];
+  isExpanded: boolean;
+}
+export interface IDEUTXOs {
+  satoshis: number;
+  confirmedAt: Date | undefined;
+}
+
+export interface IDEWallets {
+  walletsByInternalId: {
+    [internalId: string]: IDEWallet;
+  };
+  addressesByInternalId: {
+    [internalId: string]: IDEAddress;
+  };
+  utxosByChainPath: {
+    [internalId: string]: IDEUTXOs;
   };
 }
 
@@ -257,22 +395,56 @@ export interface AppState {
     | 'entity'
     | 'template-settings'
     | 'importing';
-  savedTemplates: { template: AuthenticationTemplate; savedDate: Date }[];
   /**
    * The state of the Bitauth template currently open in the IDE. This is stored
    * in a significantly different structure than `AuthenticationTemplate`, so it
    * must be serialized and deserialized when copying in and out of the IDE.
    */
   currentTemplate: IDETemplate;
+  wallets: IDEWallets;
+  /**
+   * The internal ID of the wallet currently being viewed in the wallet history
+   * explorer.
+   */
+  currentWalletInternalId: string | undefined;
+  /**
+   * The internal ID of the scenario currently being tested against in the
+   * editor.
+   */
+  currentScenarioInternalId: string | undefined;
+  /**
+   * The internal ID of the users most recently selected scenario for testing.
+   * Each time a different script is activated, we try to switch back to this
+   * scenario (until the user actively chooses a different scenario to test).
+   *
+   * A more advanced algorithm could use a de-duplicated array of internal IDs
+   * for this property: each script activation, we try to activate the most
+   * recently chosen scenario (starting from the most recent and working
+   * backwards). We don't bother using this stack based approach here because it
+   * adds more complexity, is unlikely to be much more helpful in practice, and
+   * is hard for users to understand intuitively.
+   */
+  lastSelectedScenarioInternalId: string | undefined;
   currentVmId: keyof IDELoadedVMs;
   evaluationViewerSettings: EvaluationViewerSettings;
   authenticationVirtualMachines: IDELoadedVMs | null;
   crypto: IDELoadedCrypto | null;
   activeDialog: ActiveDialog;
   /**
-   * Date from the moment this instance of the app was initialized.
+   * Date from the moment this template was loaded. Set to `undefined` if no
+   * template has been loaded yet.
    */
-  appLoadTime: Date;
+  templateLoadTime: Date | undefined;
+  /**
+   * If set, contains the stringified contents of the invalid template being
+   * imported.
+   *
+   * This occurs if the user navigates to a sharing link or Gist import which
+   * does not validate, usually because it was created with an outdated version
+   * of Bitauth IDE. If a pending import exists, the ImportExportDialog should
+   * display the pending import rather than the default empty template.
+   */
+  pendingTemplateImport: string | undefined;
 }
 
 export type CurrentScripts = {

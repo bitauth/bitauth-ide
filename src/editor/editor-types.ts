@@ -1,18 +1,17 @@
 import {
-  StackState,
-  ExecutionStackState,
-  ErrorState,
-  MinimumProgramState,
   AuthenticationProgramCommon,
   CompilationResult,
-  AlternateStackState
-} from 'bitcoin-ts';
+  EvaluationSample,
+  AuthenticationProgramStateCommon,
+} from '@bitauth/libauth';
 import {
   IDETemplateScript,
   ScriptType,
   VariableDetails,
-  ScriptDetails
+  ScriptDetails,
+  ScenarioDetails,
 } from '../state/types';
+import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 export enum ProjectEditorMode {
   /**
@@ -51,7 +50,12 @@ export enum ProjectEditorMode {
   /**
    * The view visible while the IDE is importing a template from a remote URL.
    */
-  importing = 'importing'
+  importing = 'importing',
+
+  /**
+   * Project editor mode returned when the IDE is in wallet mode.
+   */
+  wallet = 'wallet',
 }
 
 export enum ScriptEditorPane {
@@ -66,7 +70,7 @@ export enum ScriptEditorPane {
   /**
    * Only present for the `test` ScriptEditor type.
    */
-  two = 'ScriptEditorPane2'
+  two = 'ScriptEditorPane2',
 }
 
 export enum ScriptEvaluationViewerPane {
@@ -82,7 +86,7 @@ export enum ScriptEvaluationViewerPane {
   /**
    * Only present for the `test` ScriptEvaluationViewer type.
    */
-  two = 'ScriptEvaluationViewerPane2'
+  two = 'ScriptEvaluationViewerPane2',
 }
 
 /**
@@ -91,16 +95,8 @@ export enum ScriptEvaluationViewerPane {
  */
 export type StackItemIdentifyFunction = (value: Uint8Array) => string | false;
 
-export type Evaluation<
-  ProgramState extends IDESupportedProgramState = IDESupportedProgramState
-> = EvaluationViewerLine<ProgramState>[];
-
 export interface IDESupportedProgramState
-  extends MinimumProgramState,
-    StackState,
-    AlternateStackState,
-    ExecutionStackState,
-    ErrorState<string> {}
+  extends AuthenticationProgramStateCommon<number, string> {}
 
 export interface IDESupportedAuthenticationProgram
   extends AuthenticationProgramCommon {}
@@ -125,7 +121,7 @@ export enum EvaluationViewerSpacer {
    * where the last instruction was skipped, i.e. the top element of
    * `executionStack` is `false`.
    */
-  skippedConditional = 'skippedConditional'
+  skippedConditional = 'skippedConditional',
 }
 
 /**
@@ -140,17 +136,12 @@ export enum EvaluationViewerHighlight {
    * Highlight applied to the final line of a failed evaluation.
    */
   fail = 'fail',
-  /**
-   * Highlight applied to the final line of an evaluation which may be valid,
-   * but violates the "clean stack" requirement.
-   */
-  dirtyStack = 'dirtyStack'
 }
 
 export interface EvaluationViewerLine<
-  ProgramState extends IDESupportedProgramState
+  ProgramState extends IDESupportedProgramState = IDESupportedProgramState
 > {
-  state: ProgramState;
+  state?: ProgramState;
   spacers?: EvaluationViewerSpacer[];
   highlight?: EvaluationViewerHighlight;
 }
@@ -164,16 +155,34 @@ export interface ProjectExplorerTreeNode {
 export interface ScriptEditorFrame<
   ProgramState extends IDESupportedProgramState
 > {
-  name: string;
-  id: string;
-  internalId: string;
+  monacoModel?: monacoEditor.editor.ITextModel;
+  /**
+   * `samples` is undefined if there are compilation errors.
+   */
+  samples: EvaluationSample<ProgramState, number>[] | undefined;
+  scriptName: string;
+  scriptId: string;
+  scriptInternalId: string;
   script: string;
   scriptType: ScriptType;
-  compilation: CompilationResult<ProgramState>;
+  /**
+   * `compilation` is undefined if there are scenario generation errors.
+   */
+  compilation: CompilationResult<ProgramState> | undefined;
   /**
    * `evaluation` is undefined if there are compilation errors.
    */
-  evaluation?: Evaluation<ProgramState>;
+  evaluationLines: EvaluationViewerLine<ProgramState>[] | undefined;
+}
+
+/**
+ * The computed state required by the EvaluationViewer.
+ */
+export interface EvaluationViewerComputedState {
+  frame: ScriptEditorFrame<IDESupportedProgramState>;
+  evaluationTrace: string[];
+  evaluationSource: string[];
+  lookup?: StackItemIdentifyFunction;
 }
 
 export type ComputedEditorState<
@@ -184,10 +193,15 @@ export type ComputedEditorState<
   | EditorStateEntityMode
   | EditorStateScriptMode<ProgramState>
   | EditorStateLoadingMode
-  | EditorStateImportingMode;
+  | EditorStateImportingMode
+  | EditorStateWalletMode;
 
 interface EditorStateEntityMode {
   editorMode: ProjectEditorMode.entityEditor;
+}
+
+interface EditorStateWalletMode {
+  editorMode: ProjectEditorMode.wallet;
 }
 
 interface EditorStateWelcomeMode {
@@ -225,6 +239,7 @@ export interface EditorStateScriptMode<
    */
   scriptEditorEvaluationSource: string[];
   isP2sh: boolean;
+  isPushed: boolean;
   /**
    * Set to `undefined` if no compilations were successful (so the previous
    * StackItemIdentifyFunction can continue to be used.)
@@ -232,6 +247,7 @@ export interface EditorStateScriptMode<
   identifyStackItems: StackItemIdentifyFunction | undefined;
   variableDetails: VariableDetails;
   scriptDetails: ScriptDetails;
+  scenarioDetails: ScenarioDetails;
 }
 
 /**
@@ -242,7 +258,7 @@ export interface EvaluationViewerSettings {
    * If `true`, the EvaluationViewer should aggressively attempt to replace
    * valid Script Numbers on the stack with their numerical representation.
    */
-  parseScriptNumbers: boolean;
+  scriptNumbersDisplayFormat: 'hex' | 'integer' | 'binary';
   /**
    * If `true`, the EvaluationViewer should show the AlternativeStack rather
    * than the normal stack.
@@ -255,16 +271,24 @@ export interface EvaluationViewerSettings {
   abbreviateLongStackItems: boolean;
 
   /**
-   * If `true` stack items deeper than 6 will be grouped into a single `...`
-   * item to prevent cluttering the view. (6 is a good choice because most
-   * operations can only operate on the first 6 items.)
+   * Items deeper than this value will be grouped into a single `...`
+   * item to prevent cluttering the view. 3 is the default value, as most
+   * operations use a maximum of 3 items. (Nearly all other operations only
+   * operate on a maximum of 6 items.) If `undefined`, grouping is disabled.
    */
-  groupDeepStackItems: boolean;
+  groupStackItemsDeeperThan: undefined | 3 | 6;
 
   /**
-   * If true, reverse the direction of stack items so that new items are pushed
-   * from the left. This ensures that the most active part of the stack is
-   * displayed first.
+   * If `true`, reverse the direction of stack items so that new items are
+   * pushed from the left. This ensures that the most active part of the stack
+   * is displayed first.
    */
   reverseStack: boolean;
+
+  /**
+   * If `true`, the viewer will attempt to replace known stack item values with
+   * the source variable or script name which produced them (making it easier to
+   * follow the origin of specific byte sequences).
+   */
+  identifyStackItems: boolean;
 }

@@ -4,30 +4,58 @@ import {
   CurrentScripts,
   CurrentEntities,
   CurrentVariables,
-  IDEVariable
+  IDEVariable,
 } from '../state/types';
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../utils';
-import { Tooltip, Position } from '@blueprintjs/core';
-import { compileScriptText } from 'bitcoin-ts';
+import { Tooltip } from '@blueprintjs/core';
+import { BuiltInVariables } from '@bitauth/libauth';
 
 /**
+ * Disallow use of built-in IDs (if found, prefix them with an underscore)
+ */
+const disallowBuiltInIdentifiers = (id: string) =>
+  [
+    BuiltInVariables.currentBlockHeight,
+    BuiltInVariables.currentBlockTime,
+    BuiltInVariables.signingSerialization,
+  ].includes(id as any)
+    ? `_${id}`
+    : id;
+
+/**
+ * Convert a name or title into a conventional ID, e.g. `Some Name` -> `some_name`.
+ *
  * RegExp(`[a-zA-Z_][.a-zA-Z0-9_-]*`)
  */
-export const sanitizeId = (input: string) =>
-  input
-    .toLowerCase()
-    .trim()
-    .replace(/\s/g, '_')
-    .replace(/^[^a-zA-Z_]/g, '')
-    .replace(/[^.a-zA-Z0-9_-]/g, '');
+export const toConventionalId = (input: string) =>
+  disallowBuiltInIdentifiers(
+    input
+      .toLowerCase()
+      .trim()
+      .replace(/\s/g, '_')
+      .replace(/^[^a-zA-Z_]/g, '')
+      .replace(/[^.a-zA-Z0-9_-]/g, '')
+  );
+
+const abbreviationPrefixAndSuffixLength = 12;
+export const abbreviateStackItem = (hex: string) =>
+  hex.length <= abbreviationPrefixAndSuffixLength * 2
+    ? hex
+    : `${hex.substring(
+        0,
+        abbreviationPrefixAndSuffixLength
+      )}\u2026${hex.substring(
+        hex.length - abbreviationPrefixAndSuffixLength,
+        hex.length
+      )}`;
 
 export const getCurrentScripts = (state: AppState) =>
   Object.entries(state.currentTemplate.scriptsByInternalId)
     .reduce<CurrentScripts>(
       (prev, [internalId, obj]) => [
         ...prev,
-        { internalId, id: obj.id, name: obj.name, type: obj.type }
+        { internalId, id: obj.id, name: obj.name, type: obj.type },
       ],
       []
     )
@@ -39,7 +67,7 @@ export const getCurrentEntities = (state: AppState) =>
   >(
     (prev, [internalId, entity]) => [
       ...prev,
-      { internalId, name: entity.name, id: entity.id }
+      { internalId, name: entity.name, id: entity.id },
     ],
     []
   );
@@ -50,7 +78,7 @@ export const getCurrentVariables = (state: AppState) =>
   >(
     (prev, [internalId, variable]) => [
       ...prev,
-      { internalId, name: variable.name, id: variable.id }
+      { internalId, name: variable.name, id: variable.id },
     ],
     []
   );
@@ -63,7 +91,7 @@ export const wrapInterfaceTooltip = (
     content={tooltipValue}
     portalClassName="interface-tooltip"
     targetClassName="interface-tooltip-target"
-    position={Position.RIGHT}
+    position="bottom-left"
     boundary="window"
   >
     {content}
@@ -72,7 +100,7 @@ export const wrapInterfaceTooltip = (
 
 export const variableIcon = (type: IDEVariable['type']) => {
   switch (type) {
-    case 'HDKey':
+    case 'HdKey':
       return IconNames.DIAGRAM_TREE;
     case 'Key':
       return IconNames.KEY;
@@ -84,6 +112,3 @@ export const variableIcon = (type: IDEVariable['type']) => {
       return unknownValue(type);
   }
 };
-
-export const compileScriptMock = (script: string) =>
-  compileScriptText(script, {}, { scripts: {} });

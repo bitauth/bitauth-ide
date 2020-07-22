@@ -2,7 +2,17 @@
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
   "version": "0.1",
   "language": "en",
-  "words": ["Bitauth", "Autosave", "pako", "overscroll", "ungroup", "hellip"],
+  "words": [
+    "Bitauth",
+    "Autosave",
+    "pako",
+    "preimages",
+    "overscroll",
+    "ungroup",
+    "hellip",
+    "IDEUTXOs",
+    "utxo"
+  ],
   "flagWords": [],
   "ignorePaths": ["package.json", "yarn.lock", "tsconfig.json"]
 }

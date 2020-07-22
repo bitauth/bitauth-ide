@@ -11,7 +11,7 @@ import {
   Alert,
   Intent,
   HTMLSelect,
-  Popover
+  Popover,
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import { ActiveDialog, AppState } from '../../../state/types';
@@ -19,24 +19,25 @@ import MonacoEditor from 'react-monaco-editor';
 import {
   monacoOptions,
   bitauthDark,
-  prepMonaco
+  prepMonaco,
 } from '../../script-editor/monaco-config';
 import { connect } from 'react-redux';
 import {
   stringify,
   utf8ToBin,
   binToBase64,
-  AuthenticationTemplate
-} from 'bitcoin-ts';
+  AuthenticationTemplate,
+} from '@bitauth/libauth';
 import {
-  extractTemplate,
-  importAuthenticationTemplate
+  exportAuthenticationTemplate,
+  importAuthenticationTemplate,
 } from '../../../state/import-export';
 import { emptyTemplate } from '../../../state/defaults';
 import {
   localStorageBackupPrefix,
   backupWarningLimit,
-  ideURI
+  ideURI,
+  localStorageCorruptedBackupPrefix,
 } from '../../constants';
 import { deflate } from 'pako';
 
@@ -78,14 +79,14 @@ type BackupOption = { label: string; value: number };
 
 export const ImportExportDialog = connect(
   (state: AppState) => {
-    const template = extractTemplate(state.currentTemplate);
+    const template = exportAuthenticationTemplate(state.currentTemplate);
     const templateAsString = stringify(template);
     const emptyTemplateAsString = stringify(emptyTemplate);
     const backups = Object.entries(localStorage)
       .filter(([key, _]) => key.indexOf(localStorageBackupPrefix) === 0)
       .map(([key, value]) => {
+        const date = new Date(key.replace(localStorageBackupPrefix, ''));
         try {
-          const date = new Date(key.replace(localStorageBackupPrefix, ''));
           const template = JSON.parse(value);
           const attemptedParse = importAuthenticationTemplate(template);
           if (typeof attemptedParse === 'string') {
@@ -93,8 +94,14 @@ export const ImportExportDialog = connect(
           }
           return { date, template };
         } catch (e) {
+          const newKey = key.replace(
+            localStorageBackupPrefix,
+            localStorageCorruptedBackupPrefix
+          );
+          localStorage.setItem(newKey, value);
+          localStorage.removeItem(key);
           console.error(
-            `There seems to be a corrupted '${localStorageBackupPrefix}' value in local storage. If you need this backup, try manually editing it to ensure it is a valid Bitauth Authentication Template. Parse error:`,
+            `There seems to be a corrupted backup value in local storage: '${newKey}'. If you need this backup, try manually editing it to ensure it is a valid Bitauth Authentication Template. Parse error:`,
             e
           );
           return undefined;
@@ -109,18 +116,21 @@ export const ImportExportDialog = connect(
     }
     const restoreOptions: BackupOption[] = backups.map((backup, i) => ({
       label: `${backup.date.toLocaleString()} – ${backup.template.name}`,
-      value: i
+      value: i,
     }));
     return {
       name: template.name || 'unnamed',
-      authenticationTemplate: templateAsString,
+      authenticationTemplate:
+        state.pendingTemplateImport === undefined
+          ? templateAsString
+          : state.pendingTemplateImport,
       isEmptyTemplate: templateAsString === emptyTemplateAsString,
       backups,
-      restoreOptions
+      restoreOptions,
     };
   },
   {
-    importTemplate: ActionCreators.importTemplate
+    importTemplate: ActionCreators.importTemplate,
   }
 )((props: ImportExportDialogProps & ImportExportDialogDispatch) => {
   const [errorMessage, setErrorMessage] = useState('');
@@ -130,7 +140,10 @@ export const ImportExportDialog = connect(
   const [sharingLink, setSharingLink] = useState('');
   const [restoringFromBackup, setRestoringFromBackup] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState(0);
-  const [hasErrors, setHasErrors] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
+  const [showNextProblem, setShowNextProblem] = useState(
+    undefined as { run: () => void } | undefined
+  );
   const [promptForImportOfTemplate, setPromptForImportOfTemplate] = useState<
     AppState['currentTemplate'] | undefined
   >(undefined);
@@ -209,7 +222,7 @@ export const ImportExportDialog = connect(
               className="action import-input"
               text={fileName !== '' ? fileName : 'Load from file...'}
               inputProps={{ accept: 'application/json' }}
-              onInputChange={e => {
+              onInputChange={(e) => {
                 const input = e.target as HTMLInputElement;
                 if (!input.files) {
                   return;
@@ -237,17 +250,29 @@ export const ImportExportDialog = connect(
           <MonacoEditor
             editorWillMount={prepMonaco}
             editorDidMount={(editor, monaco) => {
+              setShowNextProblem({
+                run: () => {
+                  editor.getAction('editor.action.marker.next').run();
+                },
+              });
               const model = editor.getModel();
               if (!model) {
                 return;
               }
-              model.onDidChangeContent(e => {
-                const checkMarkers = () => {
-                  const markers = monaco.editor.getModelMarkers({});
-                  setHasErrors(markers.length !== 0);
-                };
+              const checkMarkers = () => {
+                const markers = monaco.editor.getModelMarkers({});
+                setErrorCount(markers.length);
+              };
+              /**
+               * Fast and slow initial checks:
+               */
+              setTimeout(checkMarkers, 1000);
+              setTimeout(checkMarkers, 10000);
+              model.onDidChangeContent((e) => {
+                /**
+                 * Fast and slow ongoing checks:
+                 */
                 setTimeout(checkMarkers, 1000);
-                // just in case the update is really slow:
                 setTimeout(checkMarkers, 10000);
               });
             }}
@@ -255,7 +280,7 @@ export const ImportExportDialog = connect(
             language="json"
             theme={bitauthDark}
             value={template}
-            onChange={value => {
+            onChange={(value) => {
               updateTemplate(value);
               setErrorMessage('');
             }}
@@ -265,19 +290,34 @@ export const ImportExportDialog = connect(
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
           <div className="error">
-            {errorMessage === '' ? (
+            {showNextProblem !== undefined && errorCount !== 0 ? (
+              <>
+                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                {errorCount === 1
+                  ? `There is an unresolved issue.`
+                  : `There are ${errorCount} unresolved issues.`}
+                <span
+                  className="show-next-issue-button"
+                  onClick={() => {
+                    showNextProblem.run();
+                  }}
+                >
+                  (show)
+                </span>
+              </>
+            ) : errorMessage === '' ? (
               <span />
             ) : (
-              <span>
+              <>
                 <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
                 <code>{errorMessage}</code>
-              </span>
+              </>
             )}
           </div>
           <Button
             disabled={template === props.authenticationTemplate}
             className={
-              hasErrors ||
+              errorCount !== 0 ||
               errorMessage !== '' ||
               template === props.authenticationTemplate
                 ? 'bp3-disabled'
@@ -332,7 +372,7 @@ export const ImportExportDialog = connect(
           className="bp3-fill"
           options={props.restoreOptions}
           value={selectedBackup}
-          onChange={e => {
+          onChange={(e) => {
             setSelectedBackup(Number(e.currentTarget.value));
           }}
         />
@@ -359,7 +399,7 @@ export const ImportExportDialog = connect(
                 className="sharing-link"
                 value={sharingLink}
                 readOnly
-                onFocus={e => {
+                onFocus={(e) => {
                   e.target.select();
                   document.execCommand('copy');
                 }}
@@ -406,7 +446,10 @@ export const ImportExportDialog = connect(
           Are you sure you want to overwrite the current project by importing
           this authentication template?
         </p>
-        <p>This cannot be undone.</p>
+        <p>
+          While this template can be restored from its autosave, consider
+          downloading your work before continuing.
+        </p>
       </Alert>
     </Dialog>
   );

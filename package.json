@@ -3,34 +3,47 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@bitauth/react-scripts-bitauth-ide": "^3.2.0",
-    "@blueprintjs/core": "^3.10.0",
-    "@blueprintjs/select": "^3.6.0",
-    "@types/jest": "24.0.22",
-    "@types/node": "12.12.6",
+    "@bitauth/libauth": "^1.16.0",
+    "@bitauth/react-scripts-bitauth-ide": "3.4.1-759696dd",
+    "@bitjson/instrument-cra": "^1.1.1-patched",
+    "@blueprintjs/core": "^3.28.1",
+    "@blueprintjs/select": "^3.13.2",
+    "@cypress/code-coverage": "^3.8.1",
+    "@percy/cypress": "^2.3.1",
+    "@types/jest": "^25.2.1",
+    "@types/node": "12",
     "@types/pako": "^1.0.1",
-    "@types/react": "16.9.11",
-    "@types/react-dom": "16.9.4",
-    "@types/react-redux": "^7.1.2",
-    "@types/webpack-env": "^1.14.1",
-    "bitcoin-ts": "^1.11.1",
-    "cz-conventional-changelog": "^3.0.2",
-    "immer-reducer": "^0.7.8",
-    "logrocket": "^1.0.3",
-    "node-sass": "^4.11.0",
-    "pako": "^1.0.10",
-    "react": "^16.11.0",
-    "react-dom": "^16.11.0",
-    "react-mosaic-component": "^3.2.0",
-    "react-redux": "^7.1.3",
-    "redux": "^4.0.1",
+    "@types/react": "16.9.34",
+    "@types/react-dom": "16.9.6",
+    "@types/react-redux": "^7.1.7",
+    "@types/webpack-env": "^1.15.1",
+    "cypress": "^4.10.0",
+    "cz-conventional-changelog": "^3.1.0",
+    "eslint-plugin-cypress": "^2.10.3",
+    "immer-reducer": "^0.7.10",
+    "istanbul-lib-coverage": "^3.0.0",
+    "logrocket": "^1.0.7",
+    "node-sass": "^4.13.1",
+    "nyc": "^15.0.1",
+    "pako": "^1.0.11",
+    "react": "^0.0.0-experimental-33c3af284",
+    "react-dom": "^0.0.0-experimental-33c3af284",
+    "react-mosaic-component": "^4.0.0",
+    "react-redux": "^7.2.0",
+    "redux": "^4.0.5",
     "redux-devtools-extension": "^2.13.7",
-    "typescript": "3.6"
+    "start-server-and-test": "^1.11.2",
+    "typescript": "3.8.3"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "HOST=localhost PORT=3000 react-scripts -r @bitjson/instrument-cra start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test:unit": "react-scripts test",
+    "test:e2e": "cypress run",
+    "cypress": "cypress open",
+    "test": "node -e \"console.log('\\nPlease run \\`yarn test:unit\\` and \\`yarn test:e2e\\` separately. For E2E tests, \\`yarn start\\` must also be running.\\n')\"",
+    "ci:serve-and-test": "start-server-and-test start http-get://localhost:3000 ci:e2e",
+    "ci:e2e": "yarn percy exec yarn test:e2e --record",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -57,5 +70,19 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
-  }
+  },
+  "nyc": {
+    "all": true,
+    "exclude": "src/serviceWorker.js"
+  },
+  "percy": {
+    "version": 1,
+    "snapshot": {
+      "widths": [
+        1280,
+        1920
+      ]
+    }
+  },
+  "cypressWebpackConfigPath": "./node_modules/@bitauth/react-scripts-bitauth-ide/config/webpack.config.js"
 }

@@ -4,9 +4,11 @@ import { AppState } from '../state/types';
 import {
   instantiateSecp256k1,
   instantiateSha256,
-  instantiateVirtualMachineBCH
-} from 'bitcoin-ts';
-import { base64ToBin, binToUtf8 } from 'bitcoin-ts';
+  instantiateVirtualMachineBCH,
+  instantiateRipemd160,
+  instantiateSha512,
+} from '@bitauth/libauth';
+import { base64ToBin, binToUtf8 } from '@bitauth/libauth';
 import { inflate } from 'pako';
 import { importAuthenticationTemplate } from '../state/import-export';
 import { getRoute, Routes } from './routing';
@@ -16,26 +18,29 @@ const clearRoute = () => window.history.pushState(null, 'Bitauth IDE', '/');
 export const AsyncLoader = connect(
   ({ crypto, authenticationVirtualMachines }: AppState) => ({
     crypto,
-    authenticationVirtualMachines
+    authenticationVirtualMachines,
   }),
   {
     loadVMsAndCrypto: ActionCreators.loadVMsAndCrypto,
+    attemptInvalidImport: ActionCreators.attemptInvalidImport,
     importTemplate: ActionCreators.importTemplate,
     openTemplateSettings: ActionCreators.openTemplateSettings,
-    openWelcomePane: ActionCreators.openWelcomePane
+    openWelcomePane: ActionCreators.openWelcomePane,
   }
 )(
   ({
     crypto,
     authenticationVirtualMachines,
     loadVMsAndCrypto,
+    attemptInvalidImport,
     importTemplate,
     openTemplateSettings,
-    openWelcomePane
+    openWelcomePane,
   }: {
     crypto: AppState['crypto'];
     authenticationVirtualMachines: AppState['authenticationVirtualMachines'];
     loadVMsAndCrypto: typeof ActionCreators.loadVMsAndCrypto;
+    attemptInvalidImport: typeof ActionCreators.attemptInvalidImport;
     importTemplate: typeof ActionCreators.importTemplate;
     openTemplateSettings: typeof ActionCreators.openTemplateSettings;
     openWelcomePane: typeof ActionCreators.openWelcomePane;
@@ -48,26 +53,32 @@ export const AsyncLoader = connect(
     if (crypto === null || authenticationVirtualMachines === null) {
       setTimeout(() => {
         Promise.all([
-          instantiateVirtualMachineBCH(),
+          instantiateRipemd160(),
           instantiateSecp256k1(),
-          instantiateSha256()
-        ]).then(([BCH_2019_05, secp256k1, sha256]) => {
+          instantiateSha256(),
+          instantiateSha512(),
+          instantiateVirtualMachineBCH(),
+        ]).then(([ripemd160, secp256k1, sha256, sha512, BCH_2019_05]) => {
           loadVMsAndCrypto({
             vms: {
               BCH_2020_05: BCH_2019_05,
               // TODO: add other VMs
-              BCH_2019_11: BCH_2019_05,
+              BCH_2020_11_SPEC: BCH_2019_05,
               BTC_2017_08: BCH_2019_05,
-              BSV_2018_11: BCH_2019_05
+              BSV_2020_02: BCH_2019_05,
             },
             crypto: {
+              ripemd160,
+              secp256k1,
               sha256,
-              secp256k1
-            }
+              sha512,
+            },
           });
         });
       }, 0);
     }
+
+    const howToResolve = `The invalid template will now be shown in the import dialog: you can manually edit the JSON to correct any validation errors, then import the template. If you have trouble, let us know in the community chat, we're happy to help!`;
 
     const route = getRoute();
     if (route) {
@@ -80,11 +91,14 @@ export const AsyncLoader = connect(
           const uncompressed = binToUtf8(
             inflate(base64ToBin(base64UrlToBase64(payload)))
           );
-          const importedTemplate = importAuthenticationTemplate(
-            JSON.parse(uncompressed)
-          );
+          const parsed = JSON.parse(uncompressed);
+          const importedTemplate = importAuthenticationTemplate(parsed);
           if (typeof importedTemplate === 'string') {
-            throw new Error(`Failed to import template: ${importedTemplate}`);
+            const error = `This link may have been created manually or with an outdated version of Bitauth IDE: the link is valid, but the authentication template it encodes is not.\n\n${howToResolve}`;
+            window.alert(error);
+            console.error(error);
+            attemptInvalidImport(uncompressed);
+            return null;
           }
           setTimeout(() => {
             importTemplate(importedTemplate);
@@ -105,10 +119,10 @@ export const AsyncLoader = connect(
         const gistApiUrl = `https://api.github.com/gists/${payload}`;
         setTimeout(async () => {
           fetch(gistApiUrl)
-            .then(results => {
+            .then((results) => {
               return results.json();
             })
-            .then(data => {
+            .then((data) => {
               try {
                 if (typeof data.files !== 'object' || data.files === null) {
                   throw new Error(
@@ -138,13 +152,14 @@ export const AsyncLoader = connect(
                 console.log(
                   `Importing '${filename}' from ${gistUrl} as an authentication template.`
                 );
-                const template = importAuthenticationTemplate(
-                  JSON.parse(content)
-                );
+                const parsed = JSON.parse(content);
+                const template = importAuthenticationTemplate(parsed);
                 if (typeof template === 'string') {
-                  throw new Error(
-                    `Invalid authentication template: ${template}`
-                  );
+                  const error = `There is a problem with the imported GitHub Gist: this authentication template has validation errors. It may have been created manually or with an outdated version of Bitauth IDE.\n\n${howToResolve}`;
+                  window.alert(error);
+                  console.error(error);
+                  attemptInvalidImport(content);
+                  return null;
                 }
                 importTemplate(template);
                 openTemplateSettings();
@@ -155,7 +170,7 @@ export const AsyncLoader = connect(
                 openWelcomePane();
               }
             })
-            .catch(e => {
+            .catch((e) => {
               const error = `There was a problem fetching the Gist (${gistApiUrl}) from GitHub. Please check the link and try again. ${e}`;
               window.alert(error);
               console.error(error);

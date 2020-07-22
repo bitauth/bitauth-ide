@@ -4,7 +4,6 @@
   $headerHeight: 14;
   $headerPadding: 8;
   $headerVertical: $headerHeight + ($headerPadding * 2) + 4;
-  $iconColor: #fff9;
 
   h2 {
     font-weight: normal;
@@ -17,32 +16,55 @@
     height: #{$headerHeight}px;
     box-sizing: initial;
 
+    /**
+     * Hover over the editor, which is shifted upward to compensate for adding top-margin using Monaco view zones. 
+     */
+    z-index: 1;
+    position: relative;
+
     .icon {
-      color: $iconColor;
+      color: var(--toolbar-icon-color);
       vertical-align: middle;
       margin-right: 10px;
     }
+
+    .icon,
+    .bp3-icon {
+      &:focus {
+        outline: none;
+        color: #fff;
+      }
+    }
+
     .script-buttons {
       flex-grow: 1;
       text-align: right;
       line-height: 0;
-      color: $iconColor;
-      visibility: hidden;
+      color: var(--toolbar-icon-color);
+      .bp3-icon:hover {
+        cursor: pointer;
+        color: #fff;
+      }
     }
   }
 
-  &:hover .script-buttons {
-    visibility: visible;
-  }
-
-  .p2sh-tag {
+  .script-tag {
     font-size: 0.7em;
-    text-transform: uppercase;
     background-color: #2e7105;
     border-radius: 3px;
     display: inline-block;
     padding: 0.1em 0.5em;
     margin-left: 1em;
+  }
+
+  .p2sh-tag {
+    text-transform: uppercase;
+    background-color: #2e7105;
+  }
+
+  .pushed-tag {
+    // text-transform: uppercase;
+    background-color: #c5872b;
   }
 
   .editor {
@@ -55,6 +77,19 @@
     }
     .monaco-icon-label::before {
       margin-right: 4px;
+    }
+
+    .unexecuted-sample {
+      opacity: 0.3;
+      filter: grayscale(1);
+    }
+
+    /**
+     * Hide the status-bar/actions from the hover tooltip. (Hides the "Peek
+     * Problem" and "No quick fixes available" when hovering over an error.)
+     */
+    .monaco-editor-hover .hover-row.status-bar {
+      display: none;
     }
   }
 }

@@ -3,14 +3,14 @@ import { Mosaic } from 'react-mosaic-component';
 import { ProjectExplorer } from './project-explorer/ProjectExplorer';
 import { ScriptEditor } from './script-editor/ScriptEditor';
 import { EvaluationViewer } from './evaluation-viewer/EvaluationViewer';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { connect } from 'react-redux';
 import { unknownValue } from '../utils';
 import {
   AppState,
   ActiveDialog,
   CurrentScripts,
-  CurrentEntities
+  CurrentEntities,
 } from '../state/types';
 import {
   ProjectEditorMode,
@@ -19,7 +19,7 @@ import {
   EditorStateScriptMode,
   ScriptEditorPane,
   ScriptEvaluationViewerPane,
-  EvaluationViewerSettings
+  EvaluationViewerSettings,
 } from './editor-types';
 import { ActionCreators } from '../state/reducer';
 import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
@@ -32,6 +32,9 @@ import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportD
 import { ImportScriptDialog } from './dialogs/import-script-dialog/ImportScriptDialog';
 import { WelcomePane } from './welcome-pane/WelcomePane';
 import { computeEditorState } from './editor-state';
+import { WalletEditor } from './wallet/wallet-editor/WalletEditor';
+import { TransactionEditor } from './wallet/transaction-editor/TransactionEditor';
+import { WalletHistoryExplorer } from './wallet/wallet-history-explorer/WalletHistoryExplorer';
 
 enum Pane {
   projectExplorer = 'projectExplorerPane',
@@ -40,17 +43,23 @@ enum Pane {
   entityVariableEditor = 'entityVariableEditorPane',
   loading = 'loading',
   importing = 'importing',
-  welcome = 'welcome'
+  welcome = 'welcome',
+  walletEditor = 'walletEditor',
+  walletHistoryExplorer = 'walletHistoryExplorer',
+  transactionEditor = 'transactionEditor',
 }
 
 interface EditorDispatch {
   updateScript: typeof ActionCreators.updateScript;
   closeDialog: typeof ActionCreators.closeDialog;
+  assignScriptModel: typeof ActionCreators.assignScriptModel;
   createScript: typeof ActionCreators.createScript;
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
   createEntity: typeof ActionCreators.createEntity;
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  importExport: typeof ActionCreators.importExport;
+  switchScenario: typeof ActionCreators.switchScenario;
 }
 
 interface EditorProps<ProgramState extends IDESupportedProgramState>
@@ -70,106 +79,145 @@ export const Editor = connect(
     currentScripts: getCurrentScripts(state),
     currentEntities: getCurrentEntities(state),
     activeDialog: state.activeDialog,
-    evaluationViewerSettings: state.evaluationViewerSettings
+    evaluationViewerSettings: state.evaluationViewerSettings,
   }),
   {
     closeDialog: ActionCreators.closeDialog,
+    assignScriptModel: ActionCreators.assignScriptModel,
     updateScript: ActionCreators.updateScript,
     createScript: ActionCreators.createScript,
     editScript: ActionCreators.editScript,
     deleteScript: ActionCreators.deleteScript,
     createEntity: ActionCreators.createEntity,
     changeEvaluationViewerSettings:
-      ActionCreators.changeEvaluationViewerSettings
+      ActionCreators.changeEvaluationViewerSettings,
+    importExport: ActionCreators.importExport,
+    switchScenario: ActionCreators.switchScenario,
   }
 )((props: EditorProps<IDESupportedProgramState>) => {
   const [projectExplorerWidth, setProjectExplorerWidth] = useState(21);
   const [scriptEditorWidths, setScriptEditorWidths] = useState(40);
   const [settingsWidth, setSettingsWidth] = useState(50);
   const [frames2SplitHeight, setFrames2SplitHeight] = useState(30);
-  const [frames3TopSplitHeight, setFrames3TopSplitHeight] = useState(20);
-  const [frames3BottomSplitHeight, setFrames3BottomSplitHeight] = useState(70);
-  const [scrollOffsetFrame1, setScrollOffsetFrame1] = useState(0);
-  const [scrollOffsetFrame2, setScrollOffsetFrame2] = useState(0);
-  const [scrollOffsetFrame3, setScrollOffsetFrame3] = useState(0);
-  const scrollOffset = [
-    scrollOffsetFrame1,
-    scrollOffsetFrame2,
-    scrollOffsetFrame3
+  const [frames3TopSplitHeight, setFrames3TopSplitHeight] = useState(15);
+  const [frames3BottomSplitHeight, setFrames3BottomSplitHeight] = useState(50);
+  const [cursorLineFrame1, setCursorLineFrame1] = useState(
+    undefined as number | undefined
+  );
+  const [cursorLineFrame2, setCursorLineFrame2] = useState(
+    undefined as number | undefined
+  );
+  const [cursorLineFrame3, setCursorLineFrame3] = useState(
+    undefined as number | undefined
+  );
+  const [walletEditorWidth, setWalletEditorWidth] = useState(45);
+  const [walletHistoryHeight, setWalletHistoryHeight] = useState(60);
+  const cursorLine = [cursorLineFrame1, cursorLineFrame2, cursorLineFrame3];
+  const setCursorLine = [
+    setCursorLineFrame1,
+    setCursorLineFrame2,
+    setCursorLineFrame3,
   ];
-  const setScrollOffset = [
-    setScrollOffsetFrame1,
-    setScrollOffsetFrame2,
-    setScrollOffsetFrame3
+  const [viewerElementFrame1, setViewerElementFrame1] = useState<
+    HTMLDivElement | undefined
+  >(undefined);
+  const [viewerElementFrame2, setViewerElementFrame2] = useState<
+    HTMLDivElement | undefined
+  >(undefined);
+  const [viewerElementFrame3, setViewerElementFrame3] = useState<
+    HTMLDivElement | undefined
+  >(undefined);
+  const viewerRefCallbackFrame1 = useCallback((node) => {
+    if (node !== null) {
+      setViewerElementFrame1(node);
+    }
+  }, []);
+  const viewerRefCallbackFrame2 = useCallback((node) => {
+    if (node !== null) {
+      setViewerElementFrame2(node);
+    }
+  }, []);
+  const viewerRefCallbackFrame3 = useCallback((node) => {
+    if (node !== null) {
+      setViewerElementFrame3(node);
+    }
+  }, []);
+  const viewerElements = [
+    viewerElementFrame1,
+    viewerElementFrame2,
+    viewerElementFrame3,
   ];
+  const viewerRefCallbacks = [
+    viewerRefCallbackFrame1,
+    viewerRefCallbackFrame2,
+    viewerRefCallbackFrame3,
+  ];
+
+  const renderScriptEditor = (
+    computed: EditorStateScriptMode<IDESupportedProgramState>,
+    indexFromTop: 0 | 1 | 2
+  ) => (
+    <ScriptEditor
+      currentScripts={props.currentScripts}
+      deleteScript={props.deleteScript}
+      editScript={props.editScript}
+      assignScriptModel={props.assignScriptModel}
+      frame={computed.scriptEditorFrames[indexFromTop]}
+      isP2SH={computed.isP2sh}
+      isPushed={computed.isPushed}
+      scriptDetails={computed.scriptDetails}
+      setCursorLine={setCursorLine[indexFromTop]}
+      viewer={viewerElements[indexFromTop]}
+      updateScript={props.updateScript}
+      variableDetails={computed.variableDetails}
+    />
+  );
+
+  const renderEvaluationViewer = (
+    computed: EditorStateScriptMode<IDESupportedProgramState>,
+    indexFromTop: 0 | 1 | 2
+  ) => (
+    <EvaluationViewer
+      computedState={{
+        evaluationSource: computed.scriptEditorEvaluationSource,
+        evaluationTrace: computed.scriptEditorEvaluationTrace,
+        frame: computed.scriptEditorFrames[indexFromTop],
+        lookup: computed.identifyStackItems,
+      }}
+      changeEvaluationViewerSettings={props.changeEvaluationViewerSettings}
+      cursorLine={cursorLine[indexFromTop]}
+      evaluationViewerSettings={props.evaluationViewerSettings}
+      importExport={props.importExport}
+      scenarioDetails={computed.scenarioDetails}
+      showControls={indexFromTop === 0}
+      switchScenario={props.switchScenario}
+      viewerRef={viewerRefCallbacks[indexFromTop]}
+    />
+  );
+
   return (
     <div className="Editor">
       <Mosaic<Pane | ScriptEditorPane | ScriptEvaluationViewerPane>
         className="mosaic-blueprint-theme bp3-dark"
-        renderTile={id => {
-          let type: 'evaluation' | 'editor' = 'evaluation';
+        renderTile={(id) => {
+          const computed = props.computed as EditorStateScriptMode<
+            IDESupportedProgramState
+          >;
           switch (id) {
             case Pane.projectExplorer:
               return <ProjectExplorer />;
             case ScriptEditorPane.zero:
+              return renderScriptEditor(computed, 0);
             case ScriptEditorPane.one:
+              return renderScriptEditor(computed, 1);
             case ScriptEditorPane.two:
-              type = 'editor';
-            case ScriptEvaluationViewerPane.zero: // eslint-disable-line no-fallthrough
+              return renderScriptEditor(computed, 2);
+            case ScriptEvaluationViewerPane.zero:
+              return renderEvaluationViewer(computed, 0);
             case ScriptEvaluationViewerPane.one:
+              return renderEvaluationViewer(computed, 1);
             case ScriptEvaluationViewerPane.two:
-              const computed = props.computed as EditorStateScriptMode<
-                IDESupportedProgramState
-              >;
-              let i = 0;
-              switch (id) {
-                case ScriptEditorPane.zero:
-                case ScriptEvaluationViewerPane.zero:
-                  break;
-                case ScriptEditorPane.one:
-                case ScriptEvaluationViewerPane.one:
-                  i = 1;
-                  break;
-                case ScriptEditorPane.two:
-                case ScriptEvaluationViewerPane.two:
-                  i = 2;
-                  break;
-                default:
-                  unknownValue(id);
-              }
-              return type === 'editor' ? (
-                <ScriptEditor
-                  internalId={computed.scriptEditorFrames[i].internalId}
-                  id={computed.scriptEditorFrames[i].id}
-                  name={computed.scriptEditorFrames[i].name}
-                  script={computed.scriptEditorFrames[i].script}
-                  scriptType={computed.scriptEditorFrames[i].scriptType}
-                  compilation={computed.scriptEditorFrames[i].compilation}
-                  variableDetails={computed.variableDetails}
-                  scriptDetails={computed.scriptDetails}
-                  isP2SH={computed.isP2sh}
-                  updateScript={props.updateScript}
-                  currentScripts={props.currentScripts}
-                  setScrollOffset={setScrollOffset[i]}
-                  editScript={props.editScript}
-                  deleteScript={props.deleteScript}
-                />
-              ) : (
-                <EvaluationViewer
-                  showControls={i === 0}
-                  compilation={computed.scriptEditorFrames[i].compilation}
-                  evaluation={computed.scriptEditorFrames[i].evaluation}
-                  evaluationTrace={computed.scriptEditorEvaluationTrace}
-                  evaluationSource={computed.scriptEditorEvaluationSource}
-                  id={computed.scriptEditorFrames[i].id}
-                  lookup={computed.identifyStackItems}
-                  scrollOffset={scrollOffset[i]}
-                  evaluationViewerSettings={props.evaluationViewerSettings}
-                  changeEvaluationViewerSettings={
-                    props.changeEvaluationViewerSettings
-                  }
-                />
-              );
+              return renderEvaluationViewer(computed, 2);
 
             case Pane.entityVariableEditor:
               return props.currentlyEditingInternalId ? (
@@ -195,6 +243,12 @@ export const Editor = connect(
               return <div className="loading" />;
             case Pane.importing:
               return <div className="loading" />;
+            case Pane.walletEditor:
+              return <WalletEditor />;
+            case Pane.walletHistoryExplorer:
+              return <WalletHistoryExplorer />;
+            case Pane.transactionEditor:
+              return <TransactionEditor />;
             default:
               unknownValue(id);
               return (
@@ -209,6 +263,18 @@ export const Editor = connect(
             ? Pane.loading
             : props.computed.editorMode === ProjectEditorMode.importing
             ? Pane.importing
+            : props.computed.editorMode === ProjectEditorMode.wallet
+            ? {
+                direction: 'row',
+                first: Pane.walletEditor,
+                splitPercentage: walletEditorWidth,
+                second: {
+                  direction: 'column',
+                  first: Pane.walletHistoryExplorer,
+                  second: Pane.transactionEditor,
+                  splitPercentage: walletHistoryHeight,
+                },
+              }
             : {
                 direction: 'row',
                 first: Pane.projectExplorer,
@@ -222,7 +288,7 @@ export const Editor = connect(
                         direction: 'row',
                         first: Pane.entitySettingsEditor,
                         second: Pane.entityVariableEditor,
-                        splitPercentage: settingsWidth
+                        splitPercentage: settingsWidth,
                       }
                     : props.computed.editorMode ===
                       ProjectEditorMode.isolatedScriptEditor
@@ -230,7 +296,7 @@ export const Editor = connect(
                         direction: 'row',
                         first: ScriptEditorPane.zero,
                         second: ScriptEvaluationViewerPane.zero,
-                        splitPercentage: scriptEditorWidths
+                        splitPercentage: scriptEditorWidths,
                       }
                     : props.computed.editorMode ===
                       ProjectEditorMode.scriptPairEditor
@@ -240,15 +306,15 @@ export const Editor = connect(
                           direction: 'column',
                           first: ScriptEditorPane.zero,
                           second: ScriptEditorPane.one,
-                          splitPercentage: frames2SplitHeight
+                          splitPercentage: frames2SplitHeight,
                         },
                         second: {
                           direction: 'column',
                           first: ScriptEvaluationViewerPane.zero,
                           second: ScriptEvaluationViewerPane.one,
-                          splitPercentage: frames2SplitHeight
+                          splitPercentage: frames2SplitHeight,
                         },
-                        splitPercentage: scriptEditorWidths
+                        splitPercentage: scriptEditorWidths,
                       }
                     : props.computed.editorMode ===
                       ProjectEditorMode.testedScriptEditor
@@ -261,9 +327,9 @@ export const Editor = connect(
                             direction: 'column',
                             first: ScriptEditorPane.one,
                             second: ScriptEditorPane.two,
-                            splitPercentage: frames3BottomSplitHeight
+                            splitPercentage: frames3BottomSplitHeight,
                           },
-                          splitPercentage: frames3TopSplitHeight
+                          splitPercentage: frames3TopSplitHeight,
                         },
                         second: {
                           direction: 'column',
@@ -272,30 +338,40 @@ export const Editor = connect(
                             direction: 'column',
                             first: ScriptEvaluationViewerPane.one,
                             second: ScriptEvaluationViewerPane.two,
-                            splitPercentage: frames3BottomSplitHeight
+                            splitPercentage: frames3BottomSplitHeight,
                           },
-                          splitPercentage: frames3TopSplitHeight
+                          splitPercentage: frames3TopSplitHeight,
                         },
-                        splitPercentage: scriptEditorWidths
+                        splitPercentage: scriptEditorWidths,
                       }
                     : unknownValue(props.computed.editorMode),
-                splitPercentage: projectExplorerWidth
+                splitPercentage: projectExplorerWidth,
               }
         }
-        onChange={node => {
+        onChange={(node) => {
           if (node && typeof node === 'object') {
-            if (projectExplorerWidth !== node.splitPercentage) {
+            if (
+              node.first === Pane.walletEditor &&
+              walletEditorWidth !== node.splitPercentage
+            ) {
+              setWalletEditorWidth(node.splitPercentage as number);
+            } else if (
+              node.first === Pane.projectExplorer &&
+              projectExplorerWidth !== node.splitPercentage
+            ) {
               setProjectExplorerWidth(node.splitPercentage as number);
             }
             if (typeof node.second === 'object') {
               if (
-                props.computed.editorMode ===
-                  ProjectEditorMode.templateSettingsEditor ||
-                props.computed.editorMode === ProjectEditorMode.entityEditor
+                node.second.first === Pane.entitySettingsEditor &&
+                settingsWidth !== node.second.splitPercentage
               ) {
-                if (settingsWidth !== node.second.splitPercentage) {
-                  setSettingsWidth(node.second.splitPercentage as number);
-                }
+                setSettingsWidth(node.second.splitPercentage as number);
+              } else if (
+                node.second.first === Pane.walletHistoryExplorer &&
+                walletHistoryHeight !== node.second.splitPercentage
+              ) {
+                setWalletHistoryHeight(node.second.splitPercentage as number);
               } else {
                 if (scriptEditorWidths !== node.second.splitPercentage) {
                   setScriptEditorWidths(node.second.splitPercentage as number);

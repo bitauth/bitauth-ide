@@ -5,7 +5,7 @@ import { ActionCreators } from '../../../state/reducer';
 import {
   IDETemplateEntity,
   CurrentVariables,
-  IDEVariable
+  IDEVariable,
 } from '../../../state/types';
 import {
   Classes,
@@ -17,27 +17,25 @@ import {
   Intent,
   Alert,
   EditableText,
-  HTMLSelect
+  HTMLSelect,
 } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import {
-  sanitizeId,
+  toConventionalId,
   variableIcon,
   wrapInterfaceTooltip,
-  compileScriptMock
 } from '../../common';
 import { unknownValue } from '../../../utils';
-import { binToHex } from 'bitcoin-ts';
 
 const variableTypes: {
   label: string;
   value: IDEVariable['type'];
   disabled?: boolean;
 }[] = [
-  { label: 'HD Key (Not Yet Available)', value: 'HDKey', disabled: true },
+  { label: 'HD Key', value: 'HdKey' },
   { label: 'Key', value: 'Key' },
   { label: 'Address Data', value: 'AddressData' },
-  { label: 'Wallet Data', value: 'WalletData' }
+  { label: 'Wallet Data', value: 'WalletData' },
 ];
 
 const variableTypeDescriptions: {
@@ -55,8 +53,8 @@ const variableTypeDescriptions: {
       </p>
     </span>
   ),
-  HDKey:
-    'The HD Key (Hierarchical-Deterministic Key) type automatically manages key generation and mapping in a standard way. For greater control, use a Key. (NOTE: HDKey is not yet supported by Bitauth IDE.)',
+  HdKey:
+    'The HD Key (Hierarchical-Deterministic Key) type automatically manages key generation and mapping in a standard way. For greater control, use a Key.',
   Key: (
     <span>
       <p>
@@ -81,18 +79,8 @@ const variableTypeDescriptions: {
         data, use <code>AddressData</code>.
       </p>
     </span>
-  )
+  ),
 };
-
-/**
- * The key must be 32 bytes (64 hex characters), and it must be less than or equal to:
- * `0xFFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFE BAAE DCE6 AF48 A03B BFD2 5E8C D036 4140`
- *  TODO: update
- */
-const isValidEnoughPrivateKey = (key: string) => true;
-
-const onesKey =
-  '0x1111111111111111111111111111111111111111111111111111111111111111';
 
 export const EditVariableDialog = ({
   entity,
@@ -102,7 +90,7 @@ export const EditVariableDialog = ({
   isOpen,
   closeDialog,
   upsertVariable,
-  deleteVariable
+  deleteVariable,
 }: {
   entity: IDETemplateEntity;
   currentVariables: CurrentVariables;
@@ -113,34 +101,24 @@ export const EditVariableDialog = ({
   upsertVariable: typeof ActionCreators.upsertVariable;
   deleteVariable: typeof ActionCreators.deleteVariable;
 }) => {
-  const [variableName, setVariableName] = useState(
-    (variable && variable.name) || ''
-  );
+  const [variableName, setVariableName] = useState(variable?.name ?? '');
+  const [nameWasModified, setNameWasModified] = useState(false);
   const [variableDescription, setVariableDescription] = useState(
-    (variable && variable.description) || ''
+    variable?.description ?? ''
   );
-  const [variableId, setVariableId] = useState((variable && variable.id) || '');
-  const [variableType, setVariableType] = useState(
-    (variable && variable.type) || 'Key'
-  );
-  const [variableMock, setVariableMock] = useState(
-    (variable && variable.mock) || onesKey
-  );
-  const [variableMockHex, setVariableMockHex] = useState('');
-  const [variableMockError, setVariableMockError] = useState('');
+  const [variableId, setVariableId] = useState(variable?.id ?? '');
+  const [variableType, setVariableType] = useState(variable?.type ?? 'Key');
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
   return (
     <Dialog
       className="bp3-dark editor-dialog EditVariableDialog"
       onOpening={() => {
-        setVariableName((variable && variable.name) || '');
-        setVariableDescription((variable && variable.description) || '');
-        setVariableId((variable && variable.id) || '');
-        setVariableType((variable && variable.type) || 'AddressData');
-        setVariableMock((variable && variable.mock) || onesKey);
-        setVariableMockHex('');
-        setVariableMockError('');
+        setVariableName(variable?.name ?? '');
+        setNameWasModified(false);
+        setVariableDescription(variable?.description ?? '');
+        setVariableId(variable?.id ?? '');
+        setVariableType(variable?.type ?? 'AddressData');
         setNonUniqueId('');
       }}
       onClose={() => {
@@ -161,22 +139,22 @@ export const EditVariableDialog = ({
             id="variable-type"
             options={variableTypes}
             value={variableType}
-            onChange={e => {
+            onChange={(e) => {
               const type = e.currentTarget.value as IDEVariable['type'];
               setVariableType(type);
               switch (type) {
-                case 'HDKey':
-                  if (variableName === '')
+                case 'HdKey':
+                  if (!nameWasModified)
                     setVariableName(`${entity.name}'s HD Key`);
                   setVariableId(`${entity.id}_hdkey`);
                   break;
                 case 'Key':
-                  if (variableName === '')
-                    setVariableName(`${entity.name}'s Key`);
+                  if (!nameWasModified) setVariableName(`${entity.name}'s Key`);
                   setVariableId(`${entity.id}_key`);
                   break;
                 case 'AddressData':
                 case 'WalletData':
+                  if (!nameWasModified) setVariableName('');
                   setVariableId('');
                   break;
                 default:
@@ -196,10 +174,11 @@ export const EditVariableDialog = ({
             placeholder="Variable Name"
             selectAllOnFocus={true}
             value={variableName}
-            onChange={name => {
+            onChange={(name) => {
+              setNameWasModified(true);
               setVariableName(name);
               if (variableInternalId === undefined) {
-                setVariableId(sanitizeId(name));
+                setVariableId(toConventionalId(name));
               }
             }}
           />
@@ -212,7 +191,7 @@ export const EditVariableDialog = ({
             placeholder="A brief description of this variable..."
             selectAllOnFocus={true}
             value={variableDescription}
-            onChange={description => setVariableDescription(description)}
+            onChange={(description) => setVariableDescription(description)}
           />
         </div>
         <div className="divider" />
@@ -236,75 +215,11 @@ export const EditVariableDialog = ({
             autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
-              setVariableId(sanitizeId(value));
+              setVariableId(value);
             }}
-          />
-        </FormGroup>
-        <FormGroup
-          helperText={
-            <span>
-              {variableMockError !== '' ? (
-                <p>{variableMockError}</p>
-              ) : (
-                variableMockHex !== '' && (
-                  <p>
-                    Result: <code className="result">0x{variableMockHex}</code>
-                  </p>
-                )
-              )}
-              {variableType === 'Key' ? (
-                <p>
-                  A valid, testing private key encoded in BTL. (E.g. as a
-                  HexLiteral, this will be
-                  <code>0x[64 characters]</code>. Test values must fall within
-                  the allowed range for Secp256k1.)
-                </p>
-              ) : variableType === 'WalletData' ||
-                variableType === 'AddressData' ? (
-                <p>
-                  A testing value for this{' '}
-                  {variableType === 'AddressData' ? 'Address' : 'Wallet'} Data,
-                  encoded in BTL. E.g. a bigint literal like <code>123</code>, a
-                  hex literal like <code>0xc0de</code>, a UTF8 string like{' '}
-                  <code>'test'</code>, or even a push like{' '}
-                  <code>&lt;"abc"&gt;</code>.
-                </p>
-              ) : (
-                ''
-              )}
-              <p>
-                This is used during development in Bitauth IDE, and is exported
-                as part of the authentication template.
-              </p>
-            </span>
-          }
-          label="IDE Value"
-          labelFor="variable-value"
-          inline={true}
-        >
-          <InputGroup
-            id="variable-value"
-            value={variableMock}
-            autoComplete="off"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            onBlur={(e) => {
               const value = e.target.value;
-              setVariableMock(value);
-              const compiled = compileScriptMock(value);
-              if (compiled.success) {
-                setVariableMockError('');
-                setVariableMockHex(binToHex(compiled.bytecode));
-              } else {
-                setVariableMockError(
-                  `Compilation error${
-                    compiled.errors.length > 1 ? 's' : ''
-                  }: ${compiled.errors
-                    .map(
-                      ({ error, range }) =>
-                        `${error} [${range.startLineNumber}, ${range.startColumn}]`
-                    )
-                    .join(', ')}`
-                );
-              }
+              setVariableId(toConventionalId(value));
             }}
           />
         </FormGroup>
@@ -354,14 +269,7 @@ export const EditVariableDialog = ({
             )}
           </div>
           <Button
-            disabled={
-              variableId === '' ||
-              variableMock === '' ||
-              variableMockError !== '' ||
-              (variableType === 'Key' &&
-                !isValidEnoughPrivateKey(variableMock)) ||
-              variableType === 'HDKey'
-            }
+            disabled={variableId === ''}
             onClick={() => {
               /**
                * TODO: we should really be tracking all "usedIds" together rather than
@@ -370,8 +278,8 @@ export const EditVariableDialog = ({
                * the compiler assumes you meant the variable if a conflict arises.)
                */
               const usedIds = currentVariables
-                .map(v => v.id)
-                .filter(id => variable === undefined || variable.id !== id);
+                .map((v) => v.id)
+                .filter((id) => variable === undefined || variable.id !== id);
               if (usedIds.indexOf(variableId) !== -1) {
                 setNonUniqueId(variableId);
               } else {
@@ -382,7 +290,6 @@ export const EditVariableDialog = ({
                   description: variableDescription,
                   id: variableId,
                   type: variableType,
-                  mock: variableMock
                 });
                 closeDialog();
               }
