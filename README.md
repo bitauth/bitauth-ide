@@ -1,6 +1,7 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/bitauth/bitauth-ide/master.svg)](https://circleci.com/gh/bitauth/bitauth-ide)
 [![Codecov](https://img.shields.io/codecov/c/github/bitauth/bitauth-ide/master.svg)](https://codecov.io/gh/bitauth/bitauth-ide)
 [![Cypress](https://img.shields.io/endpoint?url=https://dashboard.cypress.io/badge/simple/nsu3gr/master&style=flat&logo=cypress)](https://dashboard.cypress.io/projects/nsu3gr/runs)
+[![Percy](https://percy.io/static/images/percy-badge.svg)](https://percy.io/8bced43b/bitauth-ide)
 [![GitHub stars](https://img.shields.io/github/stars/bitauth/bitauth-ide.svg?style=social&logo=github&label=Stars)](https://github.com/bitauth/bitauth-ide)
 
 # bitauth-ide
