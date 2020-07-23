@@ -5,10 +5,10 @@
   "dependencies": {
     "@bitauth/libauth": "^1.16.0",
     "@bitauth/react-scripts-bitauth-ide": "3.4.1-759696dd",
-    "@bitjson/instrument-cra": "^1.1.1-patched",
     "@blueprintjs/core": "^3.28.1",
     "@blueprintjs/select": "^3.13.2",
     "@cypress/code-coverage": "^3.8.1",
+    "@cypress/instrument-cra": "^1.3.1",
     "@percy/cypress": "^2.3.1",
     "@types/jest": "^25.2.1",
     "@types/node": "12",
@@ -37,7 +37,7 @@
     "typescript": "3.8.3"
   },
   "scripts": {
-    "start": "HOST=localhost PORT=3000 react-scripts -r @bitjson/instrument-cra start",
+    "start": "HOST=localhost PORT=3000 react-scripts -r @cypress/instrument-cra start",
     "build": "react-scripts build",
     "test:unit": "react-scripts test",
     "test:e2e": "cypress run",
@@ -80,9 +80,9 @@
     "version": 1,
     "snapshot": {
       "widths": [
-        1280,
         1920
-      ]
+      ],
+      "percy-css": ".monaco-editor .minimap .percy-canvas-image { display: none; }"
     }
   },
   "cypressWebpackConfigPath": "./node_modules/@bitauth/react-scripts-bitauth-ide/config/webpack.config.js"

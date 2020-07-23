@@ -10,6 +10,7 @@ export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
   automaticLayout: false,
   cursorBlinking: 'smooth',
   dragAndDrop: true,
+  fontSize: 12,
   fontFamily: "'Fira Mono', monospace",
   scrollBeyondLastLine: false,
   contextmenu: false,

@@ -1954,15 +1954,6 @@
   optionalDependencies:
     fsevents "^2.1.3"
 
-"@bitjson/instrument-cra@^1.1.1-patched":
-  version "1.1.1-patched"
-  resolved "https://registry.yarnpkg.com/@bitjson/instrument-cra/-/instrument-cra-1.1.1-patched.tgz#b2b75e3275dc6df3eee990b97c10554ec7168ba8"
-  integrity sha512-65s51yo5+eyxqVcUPAOXui6shRN3Q9dZXc6/dm0Xr5URh7UYfvT7mu/eWf0G5YveVLy5HOQUTvjZEnQ06MScfg==
-  dependencies:
-    babel-plugin-istanbul "6.0.0"
-    debug "4.1.1"
-    find-yarn-workspace-root "^1.2.1"
-
 "@blueprintjs/core@^3.28.1":
   version "3.28.1"
   resolved "https://registry.yarnpkg.com/@blueprintjs/core/-/core-3.28.1.tgz#cb4056c9637b09d8b8c46bd4efe7363cdb796b8d"
@@ -2079,6 +2070,15 @@
     istanbul-lib-coverage "3.0.0"
     js-yaml "3.14.0"
     nyc "15.1.0"
+
+"@cypress/instrument-cra@^1.3.1":
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/@cypress/instrument-cra/-/instrument-cra-1.3.1.tgz#5bcb4e9086de08c4e95b20571ea8de4a6e1f4be7"
+  integrity sha512-tHJM2ZhNIyTFsUI1UJ5oMRND4Sa2fJ0U+PXaZ7gN1P6z2RL7nVBKNMhT3O+msHvl73qALfjZRRGWwWK3P3RLZw==
+  dependencies:
+    babel-plugin-istanbul "6.0.0"
+    debug "4.1.1"
+    find-yarn-workspace-root "^2.0.0"
 
 "@cypress/listr-verbose-renderer@0.4.1":
   version "0.4.1"
@@ -7131,13 +7131,12 @@ find-up@^3.0.0:
   dependencies:
     locate-path "^3.0.0"
 
-find-yarn-workspace-root@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/find-yarn-workspace-root/-/find-yarn-workspace-root-1.2.1.tgz#40eb8e6e7c2502ddfaa2577c176f221422f860db"
-  integrity sha512-dVtfb0WuQG+8Ag2uWkbG79hOUzEsRrhBzgfn86g2sJPkzmcpGdghbNTfUKGTxymFrY/tLIodDzLoW9nOJ4FY8Q==
+find-yarn-workspace-root@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/find-yarn-workspace-root/-/find-yarn-workspace-root-2.0.0.tgz#f47fb8d239c900eb78179aa81b66673eac88f7bd"
+  integrity sha512-1IMnbjt4KzsQfnhnzNd8wUEgXZ44IzZaZmnLYx7D5FZlaHt2gW20Cri8Q+E/t5tIj4+epTBub+2Zxu/vNILzqQ==
   dependencies:
-    fs-extra "^4.0.3"
-    micromatch "^3.1.4"
+    micromatch "^4.0.2"
 
 findup-sync@^3.0.0:
   version "3.0.0"
@@ -7319,7 +7318,7 @@ fs-extra@9.0.0:
     jsonfile "^6.0.1"
     universalify "^1.0.0"
 
-fs-extra@^4.0.2, fs-extra@^4.0.3:
+fs-extra@^4.0.2:
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-4.0.3.tgz#0d852122e5bc5beb453fb028e9c0c9bf36340c94"
   integrity sha512-q6rbdDd1o2mAnQreO7YADIxf/Whx4AHBiRf6d+/cVT8h44ss+lHgxf1FemcqDnQt9X3ct4McHr+JMGlYSsK7Cg==
