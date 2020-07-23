@@ -44,7 +44,7 @@
     "cypress": "cypress open",
     "test": "node -e \"console.log('\\nPlease run \\`yarn test:unit\\` and \\`yarn test:e2e\\` separately. For E2E tests, \\`yarn start\\` must also be running.\\n')\"",
     "ci:serve-and-test": "start-server-and-test start http-get://localhost:3000 ci:e2e",
-    "ci:e2e": "yarn percy exec -t 350 yarn test:e2e --record",
+    "ci:e2e": "yarn percy exec yarn test:e2e --record",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -80,9 +80,9 @@
     "version": 1,
     "snapshot": {
       "widths": [
-        1280,
         1920
-      ]
+      ],
+      "percy-css": ".monaco-editor .minimap .percy-canvas-image { display: none; }"
     }
   },
   "cypressWebpackConfigPath": "./node_modules/@bitauth/react-scripts-bitauth-ide/config/webpack.config.js"
