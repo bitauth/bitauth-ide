@@ -79,6 +79,7 @@
   "percy": {
     "version": 1,
     "snapshot": {
+      "min-height": 1080,
       "widths": [
         1920
       ],
