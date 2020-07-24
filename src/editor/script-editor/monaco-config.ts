@@ -11,6 +11,7 @@ export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
   cursorBlinking: 'smooth',
   dragAndDrop: true,
   fontSize: 12,
+  lineHeight: 18,
   fontFamily: "'Fira Mono', monospace",
   scrollBeyondLastLine: false,
   contextmenu: false,
