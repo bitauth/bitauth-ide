@@ -783,7 +783,10 @@ export const EvaluationViewer = (props: {
   const activeLookup = showCached ? cachedLookup.lookup : lookup;
 
   return (
-    <div className="EvaluationViewer" ref={props.viewerRef}>
+    <div
+      className={`EvaluationViewer EvaluationViewer-${frame.scriptType}`}
+      ref={props.viewerRef}
+    >
       <div className={`content${showCached ? ' cached' : ''}`}>
         {evaluation && evaluation.length > 0 ? (
           <div>
