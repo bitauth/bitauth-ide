@@ -85,7 +85,7 @@ export const AsyncLoader = connect(
 
     const route = getRoute();
     if (route) {
-      const payload = window.location.pathname.slice(route.length);
+      const payload = window.location.pathname.slice(route.length + 2);
       if (route === Routes.directImport) {
         const base64UrlToBase64 = (base64: string) =>
           base64.replace(/-/g, '+').replace(/_/g, '/');

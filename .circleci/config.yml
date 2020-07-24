@@ -16,7 +16,7 @@ workflows:
           no-workspace: true
           record: true
           parallel: true
-          parallelism: 4
+          parallelism: 2
           store_artifacts: true
           post-steps:
             - run: yarn test:unit

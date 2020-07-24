@@ -158,10 +158,10 @@ export const Editor = connect(
     indexFromTop: 0 | 1 | 2
   ) => (
     <ScriptEditor
+      assignScriptModel={props.assignScriptModel}
       currentScripts={props.currentScripts}
       deleteScript={props.deleteScript}
       editScript={props.editScript}
-      assignScriptModel={props.assignScriptModel}
       frame={computed.scriptEditorFrames[indexFromTop]}
       isP2SH={computed.isP2sh}
       isPushed={computed.isPushed}

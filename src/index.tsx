@@ -22,6 +22,14 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
+/**
+ * If running inside Cypress, make the Redux store available on the window
+ * object.
+ */
+if ((window as any).Cypress) {
+  (window as any).store = store;
+}
+
 const render = (app: typeof App) =>
   root.render(
     <Provider store={store}>

@@ -794,7 +794,7 @@ export const ScriptEditor = (props: {
   }
 
   return (
-    <div className="ScriptEditor">
+    <div className={`ScriptEditor ScriptEditor-${scriptType}`}>
       <h2 className="title">
         {getScriptTooltipIcon(scriptType)}
         {name}

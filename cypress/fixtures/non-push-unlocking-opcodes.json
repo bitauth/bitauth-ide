@@ -1,0 +1,25 @@
+{
+  "$schema": "https://bitauth.com/schemas/authentication-template-v0.schema.json",
+  "description": "show errors for non-push unlocking opcodes\n",
+  "name": "Non-Push Unlocking Opcodes",
+  "entities": {
+    "test": {
+      "description": "",
+      "name": "Test"
+    }
+  },
+  "scripts": {
+    "unlock": {
+      "name": "Unlock",
+      "script": "<1>\nOP_DUP\n",
+      "unlocks": "lock"
+    },
+    "lock": {
+      "lockingType": "standard",
+      "name": "Lock",
+      "script": "OP_ADD\n"
+    }
+  },
+  "supported": ["BCH_2019_11", "BCH_2020_05"],
+  "version": 0
+}
