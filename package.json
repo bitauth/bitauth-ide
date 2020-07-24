@@ -74,7 +74,7 @@
   },
   "nyc": {
     "all": true,
-    "exclude": "src/serviceWorker.js"
+    "exclude": "src/serviceWorker.ts"
   },
   "percy": {
     "version": 1,
