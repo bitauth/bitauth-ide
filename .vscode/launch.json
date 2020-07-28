@@ -24,6 +24,19 @@
       "internalConsoleOptions": "neverOpen",
       "env": { "CI": "true" },
       "disableOptimisticBPs": true
+    },
+    // To use: run `yarn cypress`, in a separate terminal. In the Cypress
+    // UI, start a test. In VS Code, run "Attach to Cypress", then restart the
+    // test to begin debugging.
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Attach to Cypress (yarn cypress)",
+      "port": 9222,
+      "urlFilter": "http://localhost*",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "skipFiles": ["cypress_runner.js"]
     }
   ]
 }

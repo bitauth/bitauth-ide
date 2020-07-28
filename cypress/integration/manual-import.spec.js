@@ -1,13 +1,9 @@
 /// <reference types="cypress" />
 
-describe('Import', function () {
-  beforeEach(function () {
-    cy.visit('/').then(() => {
-      localStorage.setItem('BITAUTH_IDE_GUIDE_POPOVER_DISMISSED', 1);
-    });
-  });
-
-  it('allows template imports and displays pre-evaluation VM errors', () => {
+describe('Manual Import', function () {
+  it('allows manual template imports, displays pre-evaluation VM errors', () => {
+    cy.visit('/');
+    cy.startBitauthIDE();
     cy.get('.WelcomePane').should('contain', 'Choose a template to begin');
     cy.contains('Import or Restore Template').click();
     cy.contains('Import/Export Authentication Template');
@@ -18,7 +14,7 @@ describe('Import', function () {
     cy.fixture('non-push-unlocking-opcodes').then((json) => {
       cy.get('.import-export-editor .monaco-editor textarea')
         .type('{del}'.repeat(250))
-        .type(JSON.stringify(json).replace(/{/g, '{{}'));
+        .type(JSON.stringify(json), { parseSpecialCharSequences: false });
     });
     cy.contains('Import Template').click();
     cy.get('.ProjectExplorer').contains('li', 'Unlock').click();
@@ -31,6 +27,7 @@ describe('Import', function () {
       .contains('OP_ADD')
       .should('have.css', 'color', 'rgb(60, 157, 218)');
     cy.get('.ScriptEditor-locking .editor-top-margin-view-zone');
+    cy.contains('Unlocking bytecode may contain only push operations.');
     cy.percySnapshot('Non-Push Unlocking Opcodes');
   });
 });
