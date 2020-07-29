@@ -39,7 +39,7 @@
   "scripts": {
     "start": "HOST=localhost PORT=3000 react-scripts -r @cypress/instrument-cra start",
     "build": "react-scripts build",
-    "test:unit": "react-scripts test",
+    "test:unit": "react-scripts test --coverage --coverageDirectory=.nyc_output",
     "test:e2e": "cypress run",
     "cypress": "CYPRESS_REMOTE_DEBUGGING_PORT=9222 DEBUG=cypress:server:protocol cypress open",
     "test": "node -e \"console.log('\\nPlease run \\`yarn test:unit\\` and \\`yarn test:e2e\\` separately. For E2E tests, \\`yarn start\\` must also be running.\\n')\"",
