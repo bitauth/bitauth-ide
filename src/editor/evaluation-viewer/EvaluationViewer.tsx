@@ -323,10 +323,14 @@ const ScenarioSwitcher = ({
   importExport: typeof ActionCreators.importExport;
   switchScenario: typeof ActionCreators.switchScenario;
 }) => (
-  <Tooltip
-    content="Change the scenario used in the below evaluation"
-    portalClassName="control-tooltip"
-    position="bottom-right"
+  <Popover
+    content={
+      scenarioDetails.selectedScenario === undefined
+        ? 'Change the scenario used in the below evaluation'
+        : scenarioDetails.selectedScenario.description
+    }
+    portalClassName="control-popover"
+    interactionKind="hover"
   >
     <HTMLSelect
       className="scenario-switcher"
@@ -390,7 +394,7 @@ const ScenarioSwitcher = ({
           : scenarioDetails.selectedScenario.id
       }
     />
-  </Tooltip>
+  </Popover>
 );
 
 export const ViewerControls = ({
@@ -472,15 +476,18 @@ export const ViewerControls = ({
           content={
             <div>
               <p>
-                This scenario is expected to{' '}
-                {scenarioDetails.selectedScenario?.expectedToPass
-                  ? 'pass'
-                  : 'fail'}
-                . The scenario{' '}
-                {typeof scenarioDetails.selectedScenario?.verifyResult ===
-                'string'
-                  ? `failed with the error: ${scenarioDetails.selectedScenario.verifyResult}`
-                  : 'passed.'}
+                {scenarioDetails.selectedScenario === undefined
+                  ? 'This is the default scenario. To test for success or failure, add a scenario to this script.'
+                  : `This scenario is expected to ${
+                      scenarioDetails.selectedScenario.expectedToPass
+                        ? 'pass'
+                        : 'fail'
+                    }. The scenario ${
+                      typeof scenarioDetails.selectedScenario?.verifyResult ===
+                      'string'
+                        ? `failed with the error: ${scenarioDetails.selectedScenario.verifyResult}`
+                        : 'passed.'
+                    }`}
               </p>
               <details>
                 <summary>Scenario</summary>
@@ -505,7 +512,8 @@ export const ViewerControls = ({
           interactionKind="hover"
           position="bottom-right"
         >
-          {(scenarioDetails.selectedScenario?.verifyResult === true &&
+          {scenarioDetails.selectedScenario === undefined ||
+          (scenarioDetails.selectedScenario?.verifyResult === true &&
             scenarioDetails.selectedScenario.expectedToPass === true) ||
           (typeof scenarioDetails.selectedScenario?.verifyResult === 'string' &&
             scenarioDetails.selectedScenario.expectedToPass === false) ? (

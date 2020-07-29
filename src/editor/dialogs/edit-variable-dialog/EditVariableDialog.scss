@@ -16,4 +16,14 @@
     overflow-wrap: break-word;
     display: block;
   }
+  .guide-link {
+    color: #106ba3;
+    background: none;
+    border: none;
+    text-decoration: none;
+    appearance: none;
+    font-weight: bold;
+    padding: 0;
+    cursor: pointer;
+  }
 }

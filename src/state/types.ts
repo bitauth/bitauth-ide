@@ -86,9 +86,10 @@ export type ScenarioDetails = {
   selectedScenario:
     | undefined
     | {
-        name: string;
-        id: string;
+        description: string;
         expectedToPass: boolean;
+        id: string;
+        name: string;
         /**
          * If verification succeeds, `true`. If verification fails, a string
          * indicating the error. (If there was a compilation error, `undefined`.)
@@ -456,6 +457,12 @@ export type CurrentScripts = {
 
 export type CurrentEntities = {
   name: string;
+  id: string;
+  internalId: string;
+}[];
+
+export type CurrentScenarios = {
+  name?: string;
   id: string;
   internalId: string;
 }[];

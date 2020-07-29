@@ -50,18 +50,19 @@ export const NewScriptDialog = ({
   closeDialog,
   currentScripts,
   createScript,
+  usedIds,
 }: {
   currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
   closeDialog: typeof ActionCreators.closeDialog;
   createScript: typeof ActionCreators.createScript;
+  usedIds: string[];
 }) => {
   const [scriptType, setScriptType] = useState<BaseScriptType>('locking');
   const [scriptName, setScriptName] = useState('');
   const [scriptId, setScriptId] = useState('');
   const [scriptParentId, setScriptParentId] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
-  const usedIds = currentScripts.map((script) => script.id);
   const availableParents = currentScripts
     .filter(
       (script) =>
@@ -166,7 +167,7 @@ export const NewScriptDialog = ({
             ) : (
               <span>
                 <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
-                The Script ID <code>{nonUniqueId}</code> is already in use.
+                The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
           </div>

@@ -5,6 +5,7 @@ import {
   CurrentEntities,
   CurrentVariables,
   IDEVariable,
+  CurrentScenarios,
 } from '../state/types';
 import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../utils';
@@ -82,6 +83,25 @@ export const getCurrentVariables = (state: AppState) =>
     ],
     []
   );
+
+export const getCurrentScenarios = (state: AppState) =>
+  Object.entries(state.currentTemplate.scenariosByInternalId).reduce<
+    CurrentScenarios
+  >(
+    (prev, [internalId, scenario]) => [
+      ...prev,
+      { internalId, name: scenario.name, id: scenario.id },
+    ],
+    []
+  );
+
+export const getUsedIds = (state: AppState) => {
+  const entities = getCurrentEntities(state).map((entity) => entity.id);
+  const scenarios = getCurrentScenarios(state).map((scenario) => scenario.id);
+  const scripts = getCurrentScripts(state).map((script) => script.id);
+  const variables = getCurrentVariables(state).map((variable) => variable.id);
+  return [...entities, ...scenarios, ...scripts, ...variables];
+};
 
 export const wrapInterfaceTooltip = (
   content?: JSX.Element,

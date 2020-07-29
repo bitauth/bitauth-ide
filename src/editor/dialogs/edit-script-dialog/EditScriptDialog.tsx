@@ -1,7 +1,7 @@
 import '../editor-dialog.scss';
 import React, { useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import { ScriptType, CurrentScripts } from '../../../state/types';
+import { ScriptType } from '../../../state/types';
 import {
   Classes,
   Dialog,
@@ -27,7 +27,7 @@ export const EditScriptDialog = ({
   closeDialog,
   editScript,
   deleteScript,
-  currentScripts,
+  usedIds,
 }: {
   scriptType: ScriptType;
   name: string;
@@ -35,7 +35,7 @@ export const EditScriptDialog = ({
   id: string;
   isP2SH?: boolean;
   isPushed?: boolean;
-  currentScripts: CurrentScripts;
+  usedIds: string[];
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
   isOpen: boolean;
@@ -48,9 +48,6 @@ export const EditScriptDialog = ({
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
   const isTest = scriptType === 'test-setup' || scriptType === 'test-check';
-  const usedIds = currentScripts
-    .map((script) => script.id)
-    .filter((scriptId) => scriptId !== id);
   return (
     <Dialog
       className="editor-dialog EditScriptDialog"
@@ -202,7 +199,7 @@ export const EditScriptDialog = ({
             ) : (
               <span>
                 <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
-                The Script ID <code>{nonUniqueId}</code> is already in use.
+                The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
           </div>
