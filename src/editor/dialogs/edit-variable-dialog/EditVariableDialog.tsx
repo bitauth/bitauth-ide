@@ -89,6 +89,7 @@ export const EditVariableDialog = ({
   variable,
   isOpen,
   closeDialog,
+  openGuide,
   upsertVariable,
   deleteVariable,
 }: {
@@ -98,6 +99,7 @@ export const EditVariableDialog = ({
   variable?: IDEVariable;
   isOpen: boolean;
   closeDialog: () => any;
+  openGuide: typeof ActionCreators.openGuide;
   upsertVariable: typeof ActionCreators.upsertVariable;
   deleteVariable: typeof ActionCreators.deleteVariable;
 }) => {
@@ -223,6 +225,22 @@ export const EditVariableDialog = ({
             }}
           />
         </FormGroup>
+        <FormGroup
+          helperText={
+            <span>
+              This dialog can be used to modify the variable's type, name,
+              description, and ID. To set a specific value for testing, add the
+              value to a scenario. See "Developing Scenarios" in the{' '}
+              <button className="guide-link" onClick={() => openGuide()}>
+                guide
+              </button>{' '}
+              for details.
+            </span>
+          }
+          label="Value"
+          labelFor="variable-value"
+          inline={true}
+        ></FormGroup>
         {variableInternalId && variable !== undefined && (
           <div>
             <Button

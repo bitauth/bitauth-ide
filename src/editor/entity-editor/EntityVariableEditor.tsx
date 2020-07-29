@@ -5,14 +5,14 @@ import {
   AppState,
   IDETemplateEntity,
   CurrentVariables,
-  IDEVariable
+  IDEVariable,
 } from '../../state/types';
 import { Card, Elevation, Icon } from '@blueprintjs/core';
 import { EditVariableDialog } from '../dialogs/edit-variable-dialog/EditVariableDialog';
 import {
   variableIcon,
   wrapInterfaceTooltip,
-  getCurrentVariables
+  getCurrentVariables,
 } from '../common';
 import { ActionCreators } from '../../state/reducer';
 
@@ -24,8 +24,9 @@ interface EntityVariablesProps {
 }
 
 interface EntityVariablesDispatch {
-  upsertVariable: typeof ActionCreators.upsertVariable;
   deleteVariable: typeof ActionCreators.deleteVariable;
+  openGuide: typeof ActionCreators.openGuide;
+  upsertVariable: typeof ActionCreators.upsertVariable;
 }
 
 export const EntityVariableEditor = connect(
@@ -33,11 +34,12 @@ export const EntityVariableEditor = connect(
     entityInternalId: entityInternalId,
     entity: state.currentTemplate.entitiesByInternalId[entityInternalId],
     variablesByInternalId: state.currentTemplate.variablesByInternalId,
-    currentVariables: getCurrentVariables(state)
+    currentVariables: getCurrentVariables(state),
   }),
   {
+    deleteVariable: ActionCreators.deleteVariable,
     upsertVariable: ActionCreators.upsertVariable,
-    deleteVariable: ActionCreators.deleteVariable
+    openGuide: ActionCreators.openGuide,
   }
 )((props: EntityVariablesProps & EntityVariablesDispatch) => {
   const [editingVariable, setEditingVariable] = useState(false);
@@ -52,7 +54,7 @@ export const EntityVariableEditor = connect(
       <h2>Entity Variables</h2>
       <div className="entity-variables">
         {props.entity.variableInternalIds
-          .map(internalId => {
+          .map((internalId) => {
             const variable = props.variablesByInternalId[internalId];
             const name = variable.name;
             return { internalId, variable, name };
@@ -97,18 +99,19 @@ export const EntityVariableEditor = connect(
         </div>
       </div>
       <EditVariableDialog
-        isOpen={editingVariable}
         closeDialog={() => {
           setEditingVariable(false);
           setCurrentVariableInternalId(undefined);
           setCurrentVariable(undefined);
         }}
+        currentVariables={props.currentVariables}
+        deleteVariable={props.deleteVariable}
         entity={props.entity}
+        isOpen={editingVariable}
+        openGuide={props.openGuide}
+        upsertVariable={props.upsertVariable}
         variable={currentVariable}
         variableInternalId={currentVariableInternalId}
-        currentVariables={props.currentVariables}
-        upsertVariable={props.upsertVariable}
-        deleteVariable={props.deleteVariable}
       />
     </div>
   );

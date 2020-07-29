@@ -613,11 +613,9 @@ export const GuideDialog = ({
           </a>
           , or{' '}
           <a
-            className="link"
             href="https://t.me/bitauth_ide"
             target="_blank"
             rel="noopener noreferrer"
-            tabIndex={2}
           >
             join the community chat
           </a>
