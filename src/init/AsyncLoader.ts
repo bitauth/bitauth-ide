@@ -53,7 +53,19 @@ export const AsyncLoader = connect(
       return null;
     }
 
-    if (crypto === null || authenticationVirtualMachines === null) {
+    /**
+     * If running inside Cypress, avoid automatically re-instantiating WASM
+     * instances unless `window.allowAutomaticLoadingOfVmsAndCrypto` is `true`.
+     * (WASM instances are re-used between most tests.)
+     */
+    const automaticallyLoadWasm =
+      (window as any).Cypress === undefined ||
+      (window as any).allowAutomaticLoadingOfVmsAndCrypto === true;
+
+    if (
+      automaticallyLoadWasm &&
+      (crypto === null || authenticationVirtualMachines === null)
+    ) {
       setTimeout(() => {
         Promise.all([
           instantiateRipemd160(),

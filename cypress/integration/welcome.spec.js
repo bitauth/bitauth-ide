@@ -2,9 +2,9 @@
 
 describe('Welcome', function () {
   beforeEach(function () {
-    cy.visit('/').then(() => {
-      localStorage.setItem('BITAUTH_IDE_GUIDE_POPOVER_DISMISSED', 1);
-    });
+    cy.visit('/');
+    cy.hideGuidePopover();
+    cy.loadVmsAndCrypto();
   });
 
   it('loads the single signature template', function () {
