@@ -3,8 +3,7 @@
 describe('Welcome', function () {
   beforeEach(function () {
     cy.visit('/');
-    cy.hideGuidePopover();
-    cy.loadVmsAndCrypto();
+    cy.startBitauthIDE();
   });
 
   it('loads the single signature template', function () {

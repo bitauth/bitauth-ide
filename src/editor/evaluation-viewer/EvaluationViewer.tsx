@@ -323,10 +323,14 @@ const ScenarioSwitcher = ({
   importExport: typeof ActionCreators.importExport;
   switchScenario: typeof ActionCreators.switchScenario;
 }) => (
-  <Tooltip
-    content="Change the scenario used in the below evaluation"
-    portalClassName="control-tooltip"
-    position="bottom-right"
+  <Popover
+    content={
+      scenarioDetails.selectedScenario === undefined
+        ? 'Change the scenario used in the below evaluation'
+        : scenarioDetails.selectedScenario.description
+    }
+    portalClassName="control-popover"
+    interactionKind="hover"
   >
     <HTMLSelect
       className="scenario-switcher"
@@ -390,7 +394,7 @@ const ScenarioSwitcher = ({
           : scenarioDetails.selectedScenario.id
       }
     />
-  </Tooltip>
+  </Popover>
 );
 
 export const ViewerControls = ({

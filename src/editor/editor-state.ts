@@ -590,13 +590,14 @@ export const computeEditorState = <
       templateScenario === undefined
         ? undefined
         : {
-            name: templateScenario.name,
-            id: templateScenario.id,
+            description: templateScenario.description,
             /**
              * If templateScenario is defined, we should always know whether the
              * selected scenario is expected to pass.
              */
             expectedToPass: scenarioIsExpectedToPass as boolean,
+            id: templateScenario.id,
+            name: templateScenario.name,
             verifyResult,
           },
   };
