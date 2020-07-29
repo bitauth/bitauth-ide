@@ -476,15 +476,18 @@ export const ViewerControls = ({
           content={
             <div>
               <p>
-                This scenario is expected to{' '}
-                {scenarioDetails.selectedScenario?.expectedToPass
-                  ? 'pass'
-                  : 'fail'}
-                . The scenario{' '}
-                {typeof scenarioDetails.selectedScenario?.verifyResult ===
-                'string'
-                  ? `failed with the error: ${scenarioDetails.selectedScenario.verifyResult}`
-                  : 'passed.'}
+                {scenarioDetails.selectedScenario === undefined
+                  ? 'This is the default scenario. To test for success or failure, add a scenario to this script.'
+                  : `This scenario is expected to ${
+                      scenarioDetails.selectedScenario.expectedToPass
+                        ? 'pass'
+                        : 'fail'
+                    }. The scenario ${
+                      typeof scenarioDetails.selectedScenario?.verifyResult ===
+                      'string'
+                        ? `failed with the error: ${scenarioDetails.selectedScenario.verifyResult}`
+                        : 'passed.'
+                    }`}
               </p>
               <details>
                 <summary>Scenario</summary>
@@ -509,7 +512,8 @@ export const ViewerControls = ({
           interactionKind="hover"
           position="bottom-right"
         >
-          {(scenarioDetails.selectedScenario?.verifyResult === true &&
+          {scenarioDetails.selectedScenario === undefined ||
+          (scenarioDetails.selectedScenario?.verifyResult === true &&
             scenarioDetails.selectedScenario.expectedToPass === true) ||
           (typeof scenarioDetails.selectedScenario?.verifyResult === 'string' &&
             scenarioDetails.selectedScenario.expectedToPass === false) ? (
