@@ -20,11 +20,7 @@ import {
 import './ScriptEditor.scss';
 import { ActionCreators } from '../../state/reducer';
 import { MonacoMarkerDataRequired } from '../../btl-utils/editor-tooling';
-import {
-  CurrentScripts,
-  VariableDetails,
-  ScriptDetails,
-} from '../../state/types';
+import { VariableDetails, ScriptDetails } from '../../state/types';
 import { getScriptTooltipIcon } from '../project-explorer/ProjectExplorer';
 import { Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
@@ -199,7 +195,7 @@ export const ScriptEditor = (props: {
   variableDetails: VariableDetails;
   setCursorLine: React.Dispatch<React.SetStateAction<undefined | number>>;
   viewer: HTMLDivElement | undefined;
-  currentScripts: CurrentScripts;
+  usedIds: string[];
   assignScriptModel: typeof ActionCreators.assignScriptModel;
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
@@ -874,7 +870,7 @@ export const ScriptEditor = (props: {
         closeDialog={() => {
           setEditScriptDialogIsOpen(false);
         }}
-        currentScripts={props.currentScripts}
+        usedIds={props.usedIds}
         editScript={props.editScript}
         deleteScript={props.deleteScript}
       />

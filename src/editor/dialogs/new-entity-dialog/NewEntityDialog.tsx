@@ -1,7 +1,7 @@
 import '../editor-dialog.scss';
 import React, { useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import { ActiveDialog, CurrentEntities } from '../../../state/types';
+import { ActiveDialog } from '../../../state/types';
 import {
   Classes,
   Dialog,
@@ -17,10 +17,10 @@ import { createInsecureUuidV4 } from '../../../state/utils';
 export const NewEntityDialog = ({
   activeDialog,
   closeDialog,
-  currentEntities,
+  usedIds,
   createEntity,
 }: {
-  currentEntities: CurrentEntities;
+  usedIds: string[];
   activeDialog: ActiveDialog;
   closeDialog: typeof ActionCreators.closeDialog;
   createEntity: typeof ActionCreators.createEntity;
@@ -28,7 +28,6 @@ export const NewEntityDialog = ({
   const [entityName, setEntityName] = useState('');
   const [entityId, setEntityId] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
-  const usedIds = currentEntities.map((entity) => entity.id);
 
   return (
     <Dialog
@@ -95,7 +94,7 @@ export const NewEntityDialog = ({
             ) : (
               <span>
                 <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
-                The Entity ID <code>{nonUniqueId}</code> is already in use.
+                The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
           </div>

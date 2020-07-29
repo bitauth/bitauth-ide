@@ -2,11 +2,7 @@ import '../editor-dialog.scss';
 import './EditVariableDialog.scss';
 import React, { useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import {
-  IDETemplateEntity,
-  CurrentVariables,
-  IDEVariable,
-} from '../../../state/types';
+import { IDETemplateEntity, IDEVariable } from '../../../state/types';
 import {
   Classes,
   Dialog,
@@ -84,23 +80,23 @@ const variableTypeDescriptions: {
 
 export const EditVariableDialog = ({
   entity,
-  currentVariables,
   variableInternalId,
   variable,
   isOpen,
   closeDialog,
   openGuide,
   upsertVariable,
+  usedIds,
   deleteVariable,
 }: {
   entity: IDETemplateEntity;
-  currentVariables: CurrentVariables;
   variableInternalId?: string;
   variable?: IDEVariable;
   isOpen: boolean;
   closeDialog: () => any;
   openGuide: typeof ActionCreators.openGuide;
   upsertVariable: typeof ActionCreators.upsertVariable;
+  usedIds: string[];
   deleteVariable: typeof ActionCreators.deleteVariable;
 }) => {
   const [variableName, setVariableName] = useState(variable?.name ?? '');
@@ -282,22 +278,13 @@ export const EditVariableDialog = ({
             ) : (
               <span>
                 <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
-                The Variable ID <code>{nonUniqueId}</code> is already in use.
+                The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
           </div>
           <Button
             disabled={variableId === ''}
             onClick={() => {
-              /**
-               * TODO: we should really be tracking all "usedIds" together rather than
-               * tracking variable, entity, and script IDs separately. Entity ID's can
-               * overlap with the others, but variable and script IDs conflict. (Currently,
-               * the compiler assumes you meant the variable if a conflict arises.)
-               */
-              const usedIds = currentVariables
-                .map((v) => v.id)
-                .filter((id) => variable === undefined || variable.id !== id);
               if (usedIds.indexOf(variableId) !== -1) {
                 setNonUniqueId(variableId);
               } else {

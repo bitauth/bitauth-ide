@@ -2,7 +2,7 @@ import '../editor-dialog.scss';
 import './ImportScriptDialog.scss';
 import React, { useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
-import { ActiveDialog, CurrentScripts } from '../../../state/types';
+import { ActiveDialog } from '../../../state/types';
 import {
   Classes,
   Dialog,
@@ -28,19 +28,18 @@ const tokenizeHex = (hex: string) => {
 export const ImportScriptDialog = ({
   activeDialog,
   closeDialog,
-  currentScripts,
   createScript,
+  usedIds,
 }: {
-  currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
   closeDialog: typeof ActionCreators.closeDialog;
   createScript: typeof ActionCreators.createScript;
+  usedIds: string[];
 }) => {
   const [bytecode, setBytecode] = useState('');
   const [scriptName, setScriptName] = useState('');
   const [scriptId, setScriptId] = useState('');
   const [nonUniqueId, setNonUniqueId] = useState('');
-  const usedIds = currentScripts.map((script) => script.id);
 
   return (
     <Dialog
@@ -133,7 +132,7 @@ export const ImportScriptDialog = ({
             ) : (
               <span>
                 <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
-                The Script ID <code>{nonUniqueId}</code> is already in use.
+                The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
           </div>

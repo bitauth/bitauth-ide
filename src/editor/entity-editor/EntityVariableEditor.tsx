@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
 import './EntityVariableEditor.scss';
 import { connect } from 'react-redux';
-import {
-  AppState,
-  IDETemplateEntity,
-  CurrentVariables,
-  IDEVariable,
-} from '../../state/types';
+import { AppState, IDETemplateEntity, IDEVariable } from '../../state/types';
 import { Card, Elevation, Icon } from '@blueprintjs/core';
 import { EditVariableDialog } from '../dialogs/edit-variable-dialog/EditVariableDialog';
-import {
-  variableIcon,
-  wrapInterfaceTooltip,
-  getCurrentVariables,
-} from '../common';
+import { variableIcon, wrapInterfaceTooltip, getUsedIds } from '../common';
 import { ActionCreators } from '../../state/reducer';
 
 interface EntityVariablesProps {
   entityInternalId: string;
   entity: IDETemplateEntity;
   variablesByInternalId: AppState['currentTemplate']['variablesByInternalId'];
-  currentVariables: CurrentVariables;
+  usedIds: string[];
 }
 
 interface EntityVariablesDispatch {
@@ -34,7 +25,7 @@ export const EntityVariableEditor = connect(
     entityInternalId: entityInternalId,
     entity: state.currentTemplate.entitiesByInternalId[entityInternalId],
     variablesByInternalId: state.currentTemplate.variablesByInternalId,
-    currentVariables: getCurrentVariables(state),
+    usedIds: getUsedIds(state),
   }),
   {
     deleteVariable: ActionCreators.deleteVariable,
@@ -104,7 +95,7 @@ export const EntityVariableEditor = connect(
           setCurrentVariableInternalId(undefined);
           setCurrentVariable(undefined);
         }}
-        currentVariables={props.currentVariables}
+        usedIds={props.usedIds}
         deleteVariable={props.deleteVariable}
         entity={props.entity}
         isOpen={editingVariable}

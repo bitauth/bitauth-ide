@@ -6,12 +6,7 @@ import { EvaluationViewer } from './evaluation-viewer/EvaluationViewer';
 import React, { useState, useCallback } from 'react';
 import { connect } from 'react-redux';
 import { unknownValue } from '../utils';
-import {
-  AppState,
-  ActiveDialog,
-  CurrentScripts,
-  CurrentEntities,
-} from '../state/types';
+import { AppState, ActiveDialog, CurrentScripts } from '../state/types';
 import {
   ProjectEditorMode,
   IDESupportedProgramState,
@@ -25,7 +20,7 @@ import { ActionCreators } from '../state/reducer';
 import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
 import { EntitySettingsEditor } from './entity-editor/EntitySettingsEditor';
 import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
-import { getCurrentScripts, getCurrentEntities } from './common';
+import { getUsedIds, getCurrentScripts } from './common';
 import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
 import { TemplateSettings } from './template-settings/TemplateSettings';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
@@ -67,9 +62,9 @@ interface EditorProps<ProgramState extends IDESupportedProgramState>
   computed: ComputedEditorState<ProgramState>;
   currentlyEditingInternalId: string | undefined;
   currentScripts: CurrentScripts;
-  currentEntities: CurrentEntities;
   activeDialog: ActiveDialog;
   evaluationViewerSettings: EvaluationViewerSettings;
+  usedIds: string[];
 }
 
 export const Editor = connect(
@@ -77,9 +72,9 @@ export const Editor = connect(
     computed: computeEditorState(state),
     currentlyEditingInternalId: state.currentlyEditingInternalId,
     currentScripts: getCurrentScripts(state),
-    currentEntities: getCurrentEntities(state),
     activeDialog: state.activeDialog,
     evaluationViewerSettings: state.evaluationViewerSettings,
+    usedIds: getUsedIds(state),
   }),
   {
     closeDialog: ActionCreators.closeDialog,
@@ -159,7 +154,6 @@ export const Editor = connect(
   ) => (
     <ScriptEditor
       assignScriptModel={props.assignScriptModel}
-      currentScripts={props.currentScripts}
       deleteScript={props.deleteScript}
       editScript={props.editScript}
       frame={computed.scriptEditorFrames[indexFromTop]}
@@ -169,6 +163,7 @@ export const Editor = connect(
       setCursorLine={setCursorLine[indexFromTop]}
       viewer={viewerElements[indexFromTop]}
       updateScript={props.updateScript}
+      usedIds={props.usedIds}
       variableDetails={computed.variableDetails}
     />
   );
@@ -424,19 +419,20 @@ export const Editor = connect(
       <NewEntityDialog
         activeDialog={props.activeDialog}
         closeDialog={props.closeDialog}
-        currentEntities={props.currentEntities}
+        usedIds={props.usedIds}
         createEntity={props.createEntity}
       />
       <NewScriptDialog
         activeDialog={props.activeDialog}
         closeDialog={props.closeDialog}
-        currentScripts={props.currentScripts}
         createScript={props.createScript}
+        currentScripts={props.currentScripts}
+        usedIds={props.usedIds}
       />
       <ImportScriptDialog
         activeDialog={props.activeDialog}
         closeDialog={props.closeDialog}
-        currentScripts={props.currentScripts}
+        usedIds={props.usedIds}
         createScript={props.createScript}
       />
       <ImportExportDialog

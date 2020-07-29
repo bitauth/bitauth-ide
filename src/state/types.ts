@@ -461,6 +461,12 @@ export type CurrentEntities = {
   internalId: string;
 }[];
 
+export type CurrentScenarios = {
+  name?: string;
+  id: string;
+  internalId: string;
+}[];
+
 export type CurrentVariables = {
   name?: string;
   id: string;
