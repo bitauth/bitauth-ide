@@ -73,14 +73,14 @@ export const AsyncLoader = connect(
           instantiateSha256(),
           instantiateSha512(),
           instantiateVirtualMachineBCH(),
-        ]).then(([ripemd160, secp256k1, sha256, sha512, BCH_2019_05]) => {
+        ]).then(([ripemd160, secp256k1, sha256, sha512, latestBCH]) => {
           loadVMsAndCrypto({
             vms: {
-              BCH_2020_05: BCH_2019_05,
+              BCH_2020_05: latestBCH,
               // TODO: add other VMs
-              BCH_2020_11_SPEC: BCH_2019_05,
-              BTC_2017_08: BCH_2019_05,
-              BSV_2020_02: BCH_2019_05,
+              BCH_2020_11_SPEC: latestBCH,
+              BTC_2017_08: latestBCH,
+              BSV_2020_02: latestBCH,
             },
             crypto: {
               ripemd160,
