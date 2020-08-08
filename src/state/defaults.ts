@@ -16,10 +16,7 @@ export const emptyTemplate: AuthenticationTemplate = {
   name: 'Untitled',
   entities: {},
   scripts: {},
-  supported: [
-    'BCH_2019_11',
-    'BCH_2020_05',
-  ] as AuthenticationVirtualMachineIdentifier[],
+  supported: ['BCH_2020_05'] as AuthenticationVirtualMachineIdentifier[],
   version: 0 as 0,
 };
 
