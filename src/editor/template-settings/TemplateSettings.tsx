@@ -114,7 +114,7 @@ export const TemplateSettings = connect(
   const [promptDelete, setPromptDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [fastName, setFastName] = useState(props.name);
-  const [fastDescription, setFastDescription] = useState(props.name);
+  const [fastDescription, setFastDescription] = useState(props.description);
   return (
     <div className="TemplateSettings EditorPane">
       <div className="EditorPaneContents template-settings">
