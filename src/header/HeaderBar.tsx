@@ -8,8 +8,12 @@ import {
   PopoverInteractionKind,
 } from '@blueprintjs/core';
 import { ItemRenderer, Select } from '@blueprintjs/select';
-import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
-import { IDEMode, AppState, ActiveDialog } from '../state/types';
+import {
+  IDEMode,
+  AppState,
+  ActiveDialog,
+  IDESupportedVM,
+} from '../state/types';
 import GitHubLogo from './github-logo.svg';
 import { IconNames } from '@blueprintjs/icons';
 import { wrapInterfaceTooltip } from '../editor/common';
@@ -21,6 +25,7 @@ import {
   LocalStorageEvents,
 } from '../state/local-storage';
 import { workingOnWalletMode } from '../state/defaults';
+import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
 
 interface IDESupportedModes {
   id: IDEMode;
@@ -28,11 +33,17 @@ interface IDESupportedModes {
   disabled: boolean;
 }
 
-interface IDESupportedVirtualMachine {
-  id: AuthenticationVirtualMachineIdentifier;
-  name: string;
-  disabled: boolean;
-}
+type IDESupportedVirtualMachine =
+  | {
+      id: IDESupportedVM;
+      name: string;
+      disabled: boolean;
+    }
+  | {
+      id: AuthenticationVirtualMachineIdentifier;
+      name: string;
+      disabled: true;
+    };
 
 const ideModes: IDESupportedModes[] = [
   { id: IDEMode.editor, name: 'Editor Mode', disabled: false },
@@ -41,9 +52,9 @@ const ideModes: IDESupportedModes[] = [
 
 const vms: IDESupportedVirtualMachine[] = [
   { id: 'BCH_2020_05', name: 'BCH 2020-05 VM', disabled: false },
-  { id: 'BCH_2020_11', name: 'BCH 2020-11 VM', disabled: true },
+  { id: 'BCH_2022_05_SPEC', name: 'BCH TxInt VM', disabled: false },
   { id: 'BTC_2017_08', name: 'BTC 2017-08 VM', disabled: true },
-  { id: 'BSV_2018_11', name: 'BSV 2018-11 VM', disabled: true },
+  { id: 'BSV_2020_02', name: 'BSV 2020-02 VM', disabled: true },
 ];
 
 const ModeSelect = Select.ofType<IDESupportedModes>();
@@ -82,23 +93,32 @@ const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
 };
 
 interface HeaderDispatch {
-  openGuide: typeof ActionCreators.openGuide;
+  activateVm: typeof ActionCreators.activateVm;
   closeDialog: typeof ActionCreators.closeDialog;
+  openGuide: typeof ActionCreators.openGuide;
   setIDEMode: typeof ActionCreators.setIDEMode;
 }
 interface HeaderProps extends HeaderDispatch {
   activeDialog: ActiveDialog;
+  currentVmId: IDESupportedVM;
   ideMode: IDEMode;
+  supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
 }
+
+const selectVm = (vmId: IDESupportedVM) =>
+  vms.find((vm) => vm.id === vmId) ?? vms[0];
 
 export const HeaderBar = connect(
   (state: AppState) => ({
     activeDialog: state.activeDialog,
+    currentVmId: state.currentVmId,
     ideMode: state.ideMode,
+    supportedVirtualMachines: state.currentTemplate.supportedVirtualMachines,
   }),
   {
-    openGuide: ActionCreators.openGuide,
+    activateVm: ActionCreators.activateVm,
     closeDialog: ActionCreators.closeDialog,
+    openGuide: ActionCreators.openGuide,
     setIDEMode: ActionCreators.setIDEMode,
   }
 )((props: HeaderProps) => {
@@ -118,6 +138,7 @@ export const HeaderBar = connect(
       }, 3000);
     }
   }, []);
+
   return (
     <div className="HeaderBar">
       <div className="left-section">
@@ -201,16 +222,23 @@ export const HeaderBar = connect(
           <VirtualMachineSelect
             itemRenderer={renderVm}
             items={vms}
-            onItemSelect={() =>
-              // TODO: if template supports VM, switch – otherwise ask with a popup.
-              console.log(
-                'TODO: if template supports VM, switch – otherwise ask with a popup.'
-              )
-            }
-            activeItem={vms[0]}
+            onItemSelect={(item) => {
+              const vmId = item.id as IDESupportedVM;
+              if (props.supportedVirtualMachines.includes(vmId)) {
+                props.activateVm(vmId);
+              } else {
+                window.alert(
+                  `This template is not configured to support the ${item.name}. To switch to this VM, first enable support for it in the template settings.`
+                );
+              }
+            }}
+            activeItem={selectVm(props.currentVmId)}
             filterable={false}
           >
-            <Button text={vms[0].name} rightIcon="caret-down" />
+            <Button
+              text={selectVm(props.currentVmId).name}
+              rightIcon="caret-down"
+            />
           </VirtualMachineSelect>
         </div>
       </div>

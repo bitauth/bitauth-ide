@@ -12,6 +12,7 @@ import { base64ToBin, binToUtf8 } from '@bitauth/libauth';
 import { inflate } from 'pako';
 import { importAuthenticationTemplate } from '../state/import-export';
 import { getRoute, Routes } from './routing';
+import { instantiateVirtualMachineBCHTxInt } from './txint-vm';
 
 const clearRoute = () => window.history.pushState(null, 'Bitauth IDE', '/');
 
@@ -73,23 +74,26 @@ export const AsyncLoader = connect(
           instantiateSha256(),
           instantiateSha512(),
           instantiateVirtualMachineBCH(),
-        ]).then(([ripemd160, secp256k1, sha256, sha512, latestBCH]) => {
-          loadVMsAndCrypto({
-            vms: {
-              BCH_2020_05: latestBCH,
-              // TODO: add other VMs
-              BCH_2020_11_SPEC: latestBCH,
-              BTC_2017_08: latestBCH,
-              BSV_2020_02: latestBCH,
-            },
-            crypto: {
-              ripemd160,
-              secp256k1,
-              sha256,
-              sha512,
-            },
-          });
-        });
+          instantiateVirtualMachineBCHTxInt(),
+        ]).then(
+          ([ripemd160, secp256k1, sha256, sha512, latestBCH, txIntVm]) => {
+            loadVMsAndCrypto({
+              vms: {
+                BCH_2020_05: latestBCH,
+                BCH_2022_05_SPEC: txIntVm,
+                // TODO: add other VMs
+                BTC_2017_08: latestBCH,
+                BSV_2020_02: latestBCH,
+              },
+              crypto: {
+                ripemd160,
+                secp256k1,
+                sha256,
+                sha512,
+              },
+            });
+          }
+        );
       }, 0);
     }
 

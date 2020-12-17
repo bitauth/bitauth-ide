@@ -24,11 +24,11 @@ const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
       <span className="tag live">live</span>
     </span>
   ),
-  BCH_2020_11_SPEC: (
+  BCH_2022_05_SPEC: (
     <span className="vm">
-      <code>BCH_2020_11_SPEC</code>
+      <code>BCH_2022_05_SPEC</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2020 November Proposal</span>
+      <span className="version">2022 May Proposal (TxInt)</span>
       <span className="tag spec">Spec</span>
     </span>
   ),

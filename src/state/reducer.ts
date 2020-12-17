@@ -509,6 +509,21 @@ class App extends ImmerReducer<AppState> {
     this.draftState.activeDialog = ActiveDialog.none;
   }
   importTemplate(template: AppState['currentTemplate']) {
+    const firstSupportedVm = template.supportedVirtualMachines.find<IDESupportedVM>(
+      (templateSupported): templateSupported is IDESupportedVM =>
+        [
+          'BCH_2022_05_SPEC',
+          'BCH_2020_05',
+          'BSV_2020_02',
+          'BTC_2017_08',
+        ].includes(templateSupported)
+    );
+    if (
+      !template.supportedVirtualMachines.includes(this.state.currentVmId) &&
+      firstSupportedVm !== undefined
+    ) {
+      this.draftState.currentVmId = firstSupportedVm;
+    }
     this.draftState.templateLoadTime = new Date();
     this.draftState.currentTemplate = template;
     this.draftState.currentlyEditingInternalId = '';
@@ -534,6 +549,9 @@ class App extends ImmerReducer<AppState> {
   }
   switchScenario(scenarioInternalId: string) {
     this.draftState.currentScenarioInternalId = scenarioInternalId;
+  }
+  activateVm(vm: IDESupportedVM) {
+    this.draftState.currentVmId = vm;
   }
 }
 

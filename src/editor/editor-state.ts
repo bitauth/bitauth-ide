@@ -42,6 +42,10 @@ import {
 } from './editor-types';
 import { exportAuthenticationTemplate } from '../state/import-export';
 import { samplesToEvaluationLines } from '../btl-utils/editor-tooling';
+import {
+  OpcodesBCHTxInt,
+  AuthenticationProgramStateBCHTxInt,
+} from '../init/txint-vm';
 
 const getVirtualizedUnlockingScriptId = (
   testSetupInternalId: string,
@@ -224,6 +228,9 @@ export const computeEditorState = <
             internalId: scenario.internalId,
           }));
 
+  const vmOpcodes =
+    state.currentVmId === 'BCH_2022_05_SPEC' ? OpcodesBCHTxInt : OpcodesBCH;
+
   const compiler = createCompiler<
     TransactionContextCommon,
     AnyCompilationEnvironment<TransactionContextCommon>,
@@ -231,7 +238,7 @@ export const computeEditorState = <
     AuthenticationProgramStateBCH
   >({
     ...environment,
-    opcodes: generateBytecodeMap(OpcodesBCH),
+    opcodes: generateBytecodeMap(vmOpcodes),
     operations: compilerOperationsBCH,
     ripemd160: crypto.ripemd160,
     secp256k1: crypto.secp256k1,
@@ -414,17 +421,17 @@ export const computeEditorState = <
            * `unlockingBytecode`. Here we replace that value with our virtualized
            * unlocking bytecode.
            */
-          inputs: (scenario as Scenario).program.spendingTransaction.inputs.map<
-            Input
-          >((input) => ({
-            outpointIndex: input.outpointIndex,
-            outpointTransactionHash: input.outpointTransactionHash,
-            sequenceNumber: input.sequenceNumber,
-            unlockingBytecode:
-              input.unlockingBytecode === undefined
-                ? virtualizedUnlockingBytecode
-                : input.unlockingBytecode,
-          })),
+          inputs: (scenario as Scenario).program.spendingTransaction.inputs.map<Input>(
+            (input) => ({
+              outpointIndex: input.outpointIndex,
+              outpointTransactionHash: input.outpointTransactionHash,
+              sequenceNumber: input.sequenceNumber,
+              unlockingBytecode:
+                input.unlockingBytecode === undefined
+                  ? virtualizedUnlockingBytecode
+                  : input.unlockingBytecode,
+            })
+          ),
           locktime: (scenario as Scenario).program.spendingTransaction.locktime,
           outputs: (scenario as Scenario).program.spendingTransaction.outputs,
           version: (scenario as Scenario).program.spendingTransaction.version,
@@ -437,7 +444,12 @@ export const computeEditorState = <
   >['verifyResult'] =
     debugTrace === undefined
       ? undefined
-      : vm.verify(debugTrace[debugTrace.length - 1]);
+      : vm.verify(
+          (debugTrace[
+            debugTrace.length - 1
+          ] as unknown) as AuthenticationProgramStateBCHTxInt &
+            AuthenticationProgramStateBCH
+        );
 
   const resolvedIdentifiers = [
     lockingScriptCompilation,
@@ -499,9 +511,7 @@ export const computeEditorState = <
     let frameSamples: EvaluationSample<ProgramState>[] | undefined;
     let evaluationLines: EvaluationViewerLine<ProgramState>[] | undefined;
     if (tryEvaluation) {
-      const successfulCompilation = compilation as CompilationResultSuccess<
-        ProgramState
-      >;
+      const successfulCompilation = compilation as CompilationResultSuccess<ProgramState>;
       const lastSourceLine = successfulCompilation.parse.end.line;
       const reduction = successfulCompilation.reduce;
       if (isP2sh && used === 'locking') {
