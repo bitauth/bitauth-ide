@@ -108,6 +108,7 @@ export const EditVariableDialog = ({
   const [variableType, setVariableType] = useState(variable?.type ?? 'Key');
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
+  const otherIds = usedIds.filter((usedId) => usedId !== variable?.id);
   return (
     <Dialog
       className="bp3-dark editor-dialog EditVariableDialog"
@@ -285,7 +286,7 @@ export const EditVariableDialog = ({
           <Button
             disabled={variableId === ''}
             onClick={() => {
-              if (usedIds.indexOf(variableId) !== -1) {
+              if (otherIds.indexOf(variableId) !== -1) {
                 setNonUniqueId(variableId);
               } else {
                 upsertVariable({

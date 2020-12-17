@@ -15,6 +15,7 @@ import {
 } from '@bitauth/libauth';
 import { EvaluationViewerSettings } from '../editor/editor-types';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
+import { AuthenticationProgramStateBCHTxInt } from '../init/txint-vm';
 
 export enum IDEMode {
   /**
@@ -250,7 +251,7 @@ export type IDETemplateScript =
 export type DisableId = true;
 
 export type IDESupportedVM =
-  | 'BCH_2020_11_SPEC'
+  | 'BCH_2022_05_SPEC'
   | 'BCH_2020_05'
   | 'BSV_2020_02'
   | 'BTC_2017_08';
@@ -265,9 +266,9 @@ export type IDESupportedVmStore = { [key in IDESupportedVM]: any };
  * TODO: support other VMs
  */
 export interface IDELoadedVMs extends IDESupportedVmStore {
-  BCH_2020_11_SPEC: AuthenticationVirtualMachine<
+  BCH_2022_05_SPEC: AuthenticationVirtualMachine<
     AuthenticationProgramBCH,
-    AuthenticationProgramStateBCH
+    AuthenticationProgramStateBCHTxInt
   >;
   BCH_2020_05: AuthenticationVirtualMachine<
     AuthenticationProgramBCH,

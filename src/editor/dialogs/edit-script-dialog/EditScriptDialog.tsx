@@ -48,6 +48,7 @@ export const EditScriptDialog = ({
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
   const isTest = scriptType === 'test-setup' || scriptType === 'test-check';
+  const otherIds = usedIds.filter((usedId) => usedId !== id);
   return (
     <Dialog
       className="editor-dialog EditScriptDialog"
@@ -213,7 +214,7 @@ export const EditScriptDialog = ({
               (!isTest && scriptId === '')
             }
             onClick={() => {
-              if (!isTest && usedIds.indexOf(scriptId) !== -1) {
+              if (!isTest && otherIds.indexOf(scriptId) !== -1) {
                 setNonUniqueId(scriptId);
               } else {
                 editScript({
