@@ -1,19 +1,16 @@
 version: 2.1
 orbs:
-  cypress: cypress-io/cypress@1.25.0
+  cypress: cypress-io/cypress@2
 workflows:
   build:
     jobs:
       - cypress/install:
           yarn: true
-          executor: cypress/base-12-16-1
+          executor: cypress/base-14
       - cypress/run:
           requires:
             - cypress/install
-          executor: cypress/base-12-16-1
-          # https://github.com/cypress-io/circleci-orb/issues/299
-          command: apt-get update && apt-get install -y libgbm-dev && yarn ci:serve-and-test
-          no-workspace: true
+          executor: cypress/base-14
           record: true
           parallel: true
           parallelism: 4
