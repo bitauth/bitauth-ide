@@ -233,11 +233,16 @@ export type IDETemplateScript =
 
 export type DisableId = true;
 
-export type IDESupportedVM =
-  | 'BCH_2022_05'
-  | 'BCH_SPEC'
-  | 'BSV_2020_02'
-  | 'BTC_2017_08';
+/**
+ * Ordered by import selection preference.
+ */
+export const IDEVms = [
+  'BCH_2022_05',
+  'BCH_SPEC',
+  'BSV_2020_02',
+  'BTC_2017_08',
+] as const;
+export type IDESupportedVM = typeof IDEVms[number];
 export type IDEUnsupportedVM = Exclude<
   AuthenticationVirtualMachineIdentifier,
   IDESupportedVM

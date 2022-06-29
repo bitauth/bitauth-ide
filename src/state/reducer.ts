@@ -19,13 +19,17 @@ import {
   IDETemplateUnlockingScript,
   IDETemplateTestCheckScript,
   IDETemplateTestSetupScript,
+  IDEVms,
 } from './types';
 import { defaultState, emptyTemplate } from './defaults';
 import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
 import { ideImportAuthenticationTemplate } from './import-export';
 import { EvaluationViewerSettings } from '../editor/editor-types';
-import { AuthenticationTemplateScriptLocking } from '@bitauth/libauth';
+import {
+  AuthenticationTemplateScriptLocking,
+  AuthenticationVirtualMachineIdentifier,
+} from '@bitauth/libauth';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {
@@ -510,12 +514,7 @@ class App extends ImmerReducer<AppState> {
     const firstSupportedVm =
       template.supportedVirtualMachines.find<IDESupportedVM>(
         (templateSupported): templateSupported is IDESupportedVM =>
-          [
-            'BCH_2022_05_SPEC',
-            'BCH_2020_05',
-            'BSV_2020_02',
-            'BTC_2017_08',
-          ].includes(templateSupported)
+          IDEVms.includes(templateSupported as IDESupportedVM)
       );
     if (
       !template.supportedVirtualMachines.includes(this.state.currentVmId) &&
