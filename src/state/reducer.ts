@@ -26,10 +26,7 @@ import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
 import { ideImportAuthenticationTemplate } from './import-export';
 import { EvaluationViewerSettings } from '../editor/editor-types';
-import {
-  AuthenticationTemplateScriptLocking,
-  AuthenticationVirtualMachineIdentifier,
-} from '@bitauth/libauth';
+import { AuthenticationTemplateScriptLocking } from '@bitauth/libauth';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {

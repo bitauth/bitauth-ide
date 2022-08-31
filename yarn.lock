@@ -1063,10 +1063,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bitauth/libauth@2.0.0-alpha.5":
-  version "2.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@bitauth/libauth/-/libauth-2.0.0-alpha.5.tgz#7627935e2fc4a4397d59cf94602ccc2c7f4ab80f"
-  integrity sha512-15YqTp7BwV04/LvCivcg4uG8k06/O0lfFeXmVr1qH8OtmEL8PHSq1mkEvl5AIfj90vojBM8s2jprGOfui/rj9g==
+"@bitauth/libauth@2.0.0-alpha.6":
+  version "2.0.0-alpha.6"
+  resolved "https://registry.yarnpkg.com/@bitauth/libauth/-/libauth-2.0.0-alpha.6.tgz#92f951afa23ac0f29409d2d38409bc7584b002df"
+  integrity sha512-YyrTKr2svYNFZilsdIFru037aRiqDO5J/MrG7KpKHVi21B+Nu+u9oUWFM5GGVdYRb+SIkqryUm/UwgfxrSmKqw==
 
 "@bitauth/react-scripts-bitauth-ide@^5.0.1-patch2":
   version "5.0.1-patch2"
