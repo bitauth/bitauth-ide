@@ -54,7 +54,7 @@ export const vmErrorAssistanceBCH: {
               </p>
               <ol>
                 {state.signedMessages.map((message, index) => {
-                  const hex = binToHex(message);
+                  const hex = binToHex(message.digest);
                   return (
                     <li key={index} className="error-signed-message-list-item">
                       <Popover
