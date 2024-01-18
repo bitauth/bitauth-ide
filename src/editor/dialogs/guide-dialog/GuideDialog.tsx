@@ -66,7 +66,7 @@ export const GuideDialog = ({
         </p>
         <h3>Scripts</h3>
         <p>
-          all Bitauth templates define a set of scripts which are used by its
+          All Bitauth templates define a set of scripts which are used by its
           entities. There are 4 types of scripts:
         </p>
         <ul>
