@@ -289,6 +289,14 @@ export const signatureOperationParameterDescriptions: {
     'A.K.A. "SIGHASH_ALL" (Recommended)',
     'The recommended and most frequently used signing serialization algorithm. This signs each element of the transaction using the private key, preventing an attacker from being able to reuse the signature on a modified transaction.',
   ],
+  all_outputs_all_utxos: [
+    'A.K.A. `SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID`',
+    ''
+  ],
+  all_outputs_single_input_INVALID_all_utxos: [
+    'A.K.A. `SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY`',
+    ''
+  ],
   all_outputs_single_input: [
     'A.K.A. "SIGHASH_ALL" with "ANYONE_CAN_PAY"',
     'A modification to the "all_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.',
@@ -297,17 +305,42 @@ export const signatureOperationParameterDescriptions: {
     'A.K.A. "SIGHASH_SINGLE"',
     'A signing serialization algorithm which only covers the output with the same index value as the input being spent. Warning: this can cause vulnerabilities by allowing the transaction to be modified after being signed.',
   ],
+  corresponding_output_all_utxos: [
+    'A.K.A. `SIGHASH_SINGLE|SIGHASH_UTXOS|SIGHASH_FORKID`',
+    ''
+  ],
   corresponding_output_single_input: [
     'A.K.A. "SIGHASH_SINGLE" with "ANYONE_CAN_PAY"',
     'A modification to the "corresponding_output" signing serialization algorithm which does not cover inputs other than the one being spent.',
+  ],
+  corresponding_output_single_input_INVALID_all_utxos: [
+    'A.K.A. `SIGHASH_SINGLE|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY`',
+    ''
+  ],
+  default: [
+    'An alias for `all_outputs_all_utxos`\n'+
+    '(A.K.A. `SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID`),\n'+
+    'the most secure signing serialization algorithm.\n'+
+    'Note that as of 2022, `all_outputs` (A.K.A. `SIGHASH_ALL|SIGHASH_FORKID`)\n'+
+    'is more commonly used and is therefore a better choice for privacy in\n'+
+    'common, existing contract types.',
+    ''
   ],
   no_outputs: [
     'A.K.A. "SIGHASH_NONE"',
     'A signing serialization algorithm which only covers other inputs. Warning: this allows anyone to modify the outputs after being signed.',
   ],
+  no_outputs_all_utxos: [
+    'A.K.A `SIGHASH_NONE|SIGHASH_UTXOS|SIGHASH_FORKID`',
+    ''
+  ],
   no_outputs_single_input: [
     'A.K.A. "SIGHASH_NONE" with "ANYONE_CAN_PAY"',
     'A modification to the "no_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.',
+  ],
+  no_outputs_single_input_INVALID_all_utxos: [
+    'A.K.A. `SIGHASH_NONE|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY`',
+    ''
   ],
 };
 
@@ -358,6 +391,35 @@ export const signingSerializationOperationDetails: {
     | CompilerOperationsSigningSerializationComponent
     | CompilerOperationsSigningSerializationFull]: [string, string];
 } = {
+  full_all_outputs_all_utxos: [
+    'full_all_outputs_all_utxos',
+    ''
+  ],
+  full_all_outputs_single_input_INVALID_all_utxos: [
+    'full_all_outputs_single_input_INVALID_all_utxos',
+    ''
+  ],
+  full_corresponding_output_all_utxos: [
+    'full_corresponding_output_all_utxos',
+    ''
+  ],
+  full_default: [
+    'full_default',
+    ''
+  ],
+  full_no_outputs_all_utxos: [
+    'full_no_outputs_all_utxos',
+    ''
+  ],
+  full_corresponding_output_single_input_INVALID_all_utxos: [
+    'full_corresponding_output_single_input_INVALID_all_utxos',
+    ''
+  ],
+  full_no_outputs_single_input_INVALID_all_utxos: [
+    'full_no_outputs_single_input_INVALID_all_utxos',
+    ''
+  ],
+
   corresponding_output: [
     'Corresponding Output',
     'The signing serialization of the transaction output with the same index as the current input. If no output with the same index exists, this inserts no bytes.',

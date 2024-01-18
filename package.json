@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@bitauth/libauth": "2.0.0-alpha.6",
+    "@bitauth/libauth": "2.0.0-alpha.8",
     "@bitauth/react-scripts-bitauth-ide": "^5.0.1-patch2",
     "@blueprintjs/core": "^4.3.1",
     "@blueprintjs/select": "^4.2.1",
