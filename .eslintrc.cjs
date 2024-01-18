@@ -21,7 +21,13 @@ module.exports = {
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['coverage', 'dist', 'libauth', '.eslintrc.cjs'],
+  ignorePatterns: [
+    'coverage',
+    'dist',
+    'libauth',
+    'playwright-report',
+    '.eslintrc.cjs',
+  ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'import', 'react-refresh'],
   settings: {

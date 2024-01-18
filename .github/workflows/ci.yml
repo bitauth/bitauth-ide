@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -15,17 +15,23 @@ jobs:
       - run: yarn test:lint
 
   prod-e2e:
-    timeout-minutes: 5
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.41.0-jammy
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      # The "preinstall" script runs "git submodule update --init --recursive"
+      # to avoid requiring users to understand this project's submodules
+      # configuration. Since the files are owned by a different user than the
+      # GitHub Action runner (a quirk of GitHub Actions), updating the
+      # submodules again would error: `fatal: detected dubious ownership in repository at '/__w/bitauth-ide/bitauth-ide'`
+      # We can safely disable this check for CI.
+      - run: git config --global --add safe.directory '*'
       - run: yarn install --immutable --immutable-cache
       - run: yarn build
       - run: yarn test:e2e:prod
@@ -38,17 +44,17 @@ jobs:
       - uses: codecov/codecov-action@v3
 
   dev-e2e-and-coverage:
-    timeout-minutes: 5
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.41.0-jammy
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: 'recursive'
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: git config --global --add safe.directory '*'
       - run: yarn install --immutable --immutable-cache
       - run: yarn test:e2e
       - uses: actions/upload-artifact@v4

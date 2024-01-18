@@ -38,11 +38,10 @@ Read more about it in [the blog post](https://blog.bitjson.com/bitauth-ide-write
 
 Pull Requests are welcome!
 
-This application requires [Yarn](https://yarnpkg.com/) for development. If you don't have Yarn, make sure you have `Node.js` installed, then run `npm install -g yarn`. Once Yarn is installed, recursive-clone `bitauth-ide` and run the `start` package script:
+This application requires [Yarn](https://yarnpkg.com/) for development. With `Node.js` installed, the `yarn` package manager can be installed by running `corepack enable`. Once `yarn` is installed:
 
 ```sh
-# note the use of --recursive to clone submodules
-git clone --recursive https://github.com/bitauth/bitauth-ide.git
+git clone https://github.com/bitauth/bitauth-ide.git
 cd bitauth-ide
 yarn
 yarn start

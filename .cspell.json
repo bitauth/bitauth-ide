@@ -19,6 +19,7 @@
     "CHECKSIG",
     "CHECKSIGVERIFY",
     "Codecov",
+    "corepack",
     "Dreyzehner",
     "EQUALVERIFY",
     "filechooser",

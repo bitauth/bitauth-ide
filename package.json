@@ -48,6 +48,7 @@
     "workbox-window": "^7.0.0"
   },
   "scripts": {
+    "preinstall": "git submodule update --init --recursive && cd libauth && yarn && yarn build",
     "start": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
