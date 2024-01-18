@@ -1,0 +1,59 @@
+.Editor {
+  flex-grow: 1;
+  flex: 1;
+
+  .loading {
+    background-color: var(--editor-background-color);
+  }
+}
+
+.EditorPane {
+  display: flex;
+  flex-direction: column;
+
+  .EditorPaneContents {
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  & h2 {
+    flex-shrink: 0;
+    font-weight: normal;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 8px 14px;
+    height: 14px;
+    box-sizing: content-box;
+    box-sizing: initial;
+  }
+  .description {
+    margin: 0 0 24px;
+    /* this is important for ASCII diagrams */
+    font-family: var(--monospace-font-family);
+  }
+}
+
+.ide-secondary-button {
+  background: none transparent !important;
+  border: 1px solid #fff5 !important;
+  color: #fffa !important;
+  margin-right: 12px;
+
+  .bp5-icon {
+    margin: 0 8px 4px 0 !important;
+    color: #fff5 !important;
+  }
+}
+
+.ide-secondary-button.delete-item-button {
+  background: none transparent !important;
+  border: 1px solid #fff1 !important;
+  color: #fff5 !important;
+  margin-right: 12px;
+  .bp5-icon {
+    margin: 0 8px 4px 0 !important;
+    color: #fff3 !important;
+  }
+}

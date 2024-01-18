@@ -1,0 +1,8 @@
+[submodule ".yarn"]
+	path = .yarn
+	url = https://github.com/bitauth/bitauth-ide-dependencies
+  shallow = true
+[submodule "libauth"]
+	path = libauth
+	url = https://github.com/bitauth/libauth
+  shallow = true

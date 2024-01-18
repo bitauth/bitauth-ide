@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
-import './TemplateSettings.scss';
+import './TemplateSettings.css';
+import { ActionCreators } from '../../state/reducer';
+import { AppState, IDESupportedVM } from '../../state/types';
+
+import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
 import {
+  Alert,
+  Button,
+  Checkbox,
   EditableText,
   FormGroup,
-  Button,
-  Icon,
   Intent,
-  Alert,
-  Checkbox,
 } from '@blueprintjs/core';
-import { AppState, IDESupportedVM } from '../../state/types';
+import { Changes, Edit, Saved, Trash } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
-import { IconNames } from '@blueprintjs/icons';
-import { ActionCreators } from '../../state/reducer';
-import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
 
 const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
-  BCH_2022_05: (
+  BCH_2023_05: (
     <span className="vm">
-      <code>BCH_2022_05</code>
+      <code>BCH_2023_05</code>
       <span className="chain">Bitcoin Cash</span>
       <span className="version">2022 May Upgrade</span>
       <span className="tag live">live</span>
@@ -26,9 +26,9 @@ const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
   ),
   BCH_SPEC: (
     <span className="vm">
-      <code>BCH_CHIPs</code>
+      <code>BCH_SPEC</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2023 May Proposals</span>
+      <span className="version">Future Proposals</span>
       <span className="tag spec">Spec</span>
     </span>
   ),
@@ -50,20 +50,20 @@ const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
   ),
 };
 
-interface TemplateSettingsProps {
+type TemplateSettingsProps = {
   name: string;
   description: string;
   supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
-}
+};
 
-interface TemplateSettingsDispatch {
+type TemplateSettingsDispatch = {
   updateTemplateName: typeof ActionCreators.updateTemplateName;
   updateTemplateDescription: typeof ActionCreators.updateTemplateDescription;
   updateTemplateSupportedVM: typeof ActionCreators.updateTemplateSupportedVM;
   resetTemplate: typeof ActionCreators.resetTemplate;
   importExport: typeof ActionCreators.importExport;
   showWelcomePane: typeof ActionCreators.showWelcomePane;
-}
+};
 
 const urlRegExp =
   /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/g;
@@ -78,11 +78,7 @@ const activateLinks = (description: string) => {
       target="_blank"
       rel="noopener noreferrer"
       key={match}
-      href={
-        ['http://', 'https://'].indexOf(match) === -1
-          ? `https://${match}`
-          : match
-      }
+      href={match.match(/https?:\/\//) ? match : `https://${match}`}
     >
       {match}
     </a>
@@ -110,7 +106,7 @@ export const TemplateSettings = connect(
     resetTemplate: ActionCreators.resetTemplate,
     importExport: ActionCreators.importExport,
     showWelcomePane: ActionCreators.showWelcomePane,
-  }
+  },
 )((props: TemplateSettingsProps & TemplateSettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -121,28 +117,35 @@ export const TemplateSettings = connect(
       <div className="EditorPaneContents template-settings">
         <h3 className="name">
           <EditableText
+            contentId="template-name"
             maxLength={100}
             placeholder="Template Name"
             selectAllOnFocus={true}
             value={fastName}
-            onChange={(name) => setFastName(name)}
+            onChange={(name) => {
+              setFastName(name);
+            }}
             onConfirm={(name) => props.updateTemplateName(name)}
             disabled={!isEditing}
           />
           {isEditing ? (
             <Button
               className="ide-secondary-button"
-              onClick={() => setIsEditing(false)}
+              onClick={() => {
+                setIsEditing(false);
+              }}
             >
-              <Icon icon={IconNames.SAVED} iconSize={10} />
+              <Saved size={10} />
               Done
             </Button>
           ) : (
             <Button
               className="ide-secondary-button"
-              onClick={() => setIsEditing(true)}
+              onClick={() => {
+                setIsEditing(true);
+              }}
             >
-              <Icon icon={IconNames.EDIT} iconSize={10} />
+              <Edit size={10} />
               Edit
             </Button>
           )}
@@ -150,13 +153,16 @@ export const TemplateSettings = connect(
         <div className="description">
           {isEditing ? (
             <EditableText
+              contentId="template-description"
               maxLength={50000}
               minLines={3}
               multiline={true}
-              placeholder="A brief description of this authentication template..."
+              placeholder="A brief description of this wallet template..."
               selectAllOnFocus={true}
               value={fastDescription}
-              onChange={(description) => setFastDescription(description)}
+              onChange={(description) => {
+                setFastDescription(description);
+              }}
               onConfirm={(description) =>
                 props.updateTemplateDescription(description)
               }
@@ -175,7 +181,7 @@ export const TemplateSettings = connect(
                   {' '}
                   <p>
                     Here you can edit the list of Virtual Machines that this
-                    authentication template supports.
+                    wallet template supports.
                   </p>
                   <p>
                     Bitcoin VMs vary in subtle but critical ways. While many
@@ -185,8 +191,8 @@ export const TemplateSettings = connect(
                 </>
               ) : (
                 <p>
-                  This authentication template has been confirmed to work on
-                  these Bitcoin VMs.
+                  This wallet template has been confirmed to work on these
+                  Bitcoin VMs.
                 </p>
               )}
             </span>
@@ -198,14 +204,13 @@ export const TemplateSettings = connect(
               .filter(([id]) =>
                 isEditing
                   ? true
-                  : props.supportedVirtualMachines.indexOf(
-                      id as IDESupportedVM
-                    ) !== -1
+                  : props.supportedVirtualMachines.includes(
+                      id as IDESupportedVM,
+                    ),
               )
               .map(([id, label]) => {
                 const vm = id as IDESupportedVM;
-                const enabled =
-                  props.supportedVirtualMachines.indexOf(vm) !== -1;
+                const enabled = props.supportedVirtualMachines.includes(vm);
                 return (
                   <Checkbox
                     checked={enabled}
@@ -234,14 +239,16 @@ export const TemplateSettings = connect(
           className="ide-secondary-button import-button"
           onClick={() => props.importExport()}
         >
-          <Icon icon={IconNames.CHANGES} iconSize={10} />
+          <Changes size={10} />
           Import/Export Template...
         </Button>
         <Button
           className="ide-secondary-button delete-item-button"
-          onClick={() => setPromptDelete(true)}
+          onClick={() => {
+            setPromptDelete(true);
+          }}
         >
-          <Icon icon={IconNames.TRASH} iconSize={10} />
+          <Trash size={10} />
           Reset to a Built-in Template...
         </Button>
         <Alert
@@ -251,7 +258,9 @@ export const TemplateSettings = connect(
           isOpen={promptDelete}
           canEscapeKeyCancel={true}
           canOutsideClickCancel={true}
-          onCancel={() => setPromptDelete(false)}
+          onCancel={() => {
+            setPromptDelete(false);
+          }}
           onConfirm={() => {
             props.resetTemplate();
             setPromptDelete(false);
@@ -260,7 +269,7 @@ export const TemplateSettings = connect(
         >
           <p>
             Are you sure you want to delete this entire project and start with a
-            new authentication template?
+            new wallet template?
           </p>
           <p>
             While this template can be restored from its autosave, consider

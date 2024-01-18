@@ -1,57 +1,61 @@
-import {
-  Range,
-  ResolvedScript,
-  ScriptReductionTraceChildNode,
-  binToHex,
-  BuiltInVariables,
-  ScriptReductionTraceScriptNode,
-  extractUnexecutedRanges,
-  containsRange,
-} from '@bitauth/libauth';
-import React, { useEffect, useState } from 'react';
-import MonacoEditor from 'react-monaco-editor';
-import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
-import {
-  bitauthTemplatingLanguage,
-  bitauthDark,
-  monacoOptions,
-  prepMonaco,
-} from './monaco-config';
-import './ScriptEditor.scss';
+import './ScriptEditor.css';
+import { MonacoMarkerDataRequired } from '../../cash-assembly/editor-tooling';
 import { ActionCreators } from '../../state/reducer';
-import { MonacoMarkerDataRequired } from '../../btl-utils/editor-tooling';
-import { VariableDetails, ScriptDetails } from '../../state/types';
-import { getScriptTooltipIcon } from '../project-explorer/ProjectExplorer';
-import { Icon } from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
-import { wrapInterfaceTooltip } from '../common';
-import { CompilationResult } from '@bitauth/libauth';
-import { IDESupportedProgramState, ScriptEditorFrame } from '../editor-types';
 import {
-  opcodeHoverProviderBCH,
-  opcodeCompletionItemProviderBCH,
-  isCorrectScript,
+  IDESupportedProgramState,
+  ScriptDetails,
+  VariableDetails,
+} from '../../state/types';
+import { getScriptTooltipIcon, wrapInterfaceTooltip } from '../common';
+import { EditScriptDialog } from '../dialogs/edit-script-dialog/EditScriptDialog';
+import { ScriptEditorFrame } from '../editor-types';
+
+import {
   builtInVariableDetails,
-  getSigningSerializationOperationDetails,
-  getKeyOperationDetails,
   getKeyOperationDescriptions,
+  getKeyOperationDetails,
+  getSigningSerializationOperationDetails,
+  isCorrectScript,
   keyOperationsWhichRequireAParameter,
+  opcodeCompletionItemProviderBCH,
+  opcodeHoverProviderBCH,
   signatureOperationParameterDescriptions,
   signingSerializationOperationDetails,
 } from './bch-language';
 import { compilationErrorAssistance } from './error-assistance';
+import {
+  bitauthDark,
+  cashAssemblyLanguageId,
+  monacoOptions,
+  prepMonaco,
+} from './monaco-config';
+
+import {
+  binToHex,
+  BuiltInVariables,
+  CompilationResult,
+  containsRange,
+  extractUnexecutedRanges,
+  Range,
+  ResolvedScript,
+  ScriptReductionTraceChildNode,
+  ScriptReductionTraceScriptNode,
+} from '@bitauth/libauth';
+import { Settings } from '@blueprintjs/icons';
+import { Editor } from '@monaco-editor/react';
+import * as MonacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
+import React, { useEffect, useState } from 'react';
 
 const cursorIsAtEndOfRange = (
   cursor: { column: number; lineNumber: number },
-  range: Range
+  range: Range,
 ) =>
   cursor.lineNumber === range.endLineNumber &&
   cursor.column === range.endColumn;
 
 const isWithinRange = (
   position: { lineNumber: number; column: number },
-  range: Range
+  range: Range,
 ) =>
   containsRange(
     range,
@@ -61,22 +65,24 @@ const isWithinRange = (
       startColumn: position.column,
       startLineNumber: position.lineNumber,
     },
-    false
+    false,
   );
 
-const selectResolvedSegmentAtPosition = (
-  resolvedScript: ResolvedScript,
-  position: { lineNumber: number; column: number }
-): ResolvedScript[number] | undefined => {
+const selectResolvedSegmentAtPosition = <
+  ProgramState = IDESupportedProgramState,
+>(
+  resolvedScript: ResolvedScript<ProgramState>,
+  position: { lineNumber: number; column: number },
+): ResolvedScript<ProgramState>[number] | undefined => {
   const firstMatch = resolvedScript.find((segment) =>
-    isWithinRange(position, segment.range)
+    isWithinRange(position, segment.range),
   );
   if (firstMatch !== undefined && Array.isArray(firstMatch.value)) {
     const internalSelected = selectResolvedSegmentAtPosition(
       firstMatch.value,
-      position
+      position,
     );
-    return internalSelected === undefined ? firstMatch : internalSelected;
+    return internalSelected ?? firstMatch;
   }
   return firstMatch;
 };
@@ -85,7 +91,7 @@ const selectReductionSourceSegmentAtPosition = (
   reduce:
     | ScriptReductionTraceScriptNode<IDESupportedProgramState>
     | ScriptReductionTraceChildNode<IDESupportedProgramState>,
-  position: { lineNumber: number; column: number }
+  position: { lineNumber: number; column: number },
 ): ScriptReductionTraceChildNode<IDESupportedProgramState> | undefined => {
   const matchesRange = isWithinRange(position, reduce.range);
   if (matchesRange) {
@@ -105,7 +111,7 @@ const selectReductionSourceSegmentAtPosition = (
         .map((child) => selectReductionSourceSegmentAtPosition(child, position))
         .filter((selected) => selected !== undefined);
       const closestMatch = matches[0];
-      return closestMatch === undefined ? reduce : closestMatch;
+      return closestMatch ?? reduce;
     }
     return reduce;
   }
@@ -114,7 +120,7 @@ const selectReductionSourceSegmentAtPosition = (
 
 type ActiveHint = {
   range: Range;
-  hoverContents: monacoEditor.IMarkdownString[];
+  hoverContents: MonacoEditor.IMarkdownString[];
 };
 
 const updateMarkers =
@@ -127,9 +133,9 @@ const updateMarkers =
     setActiveHints,
   }: {
     compilation: CompilationResult | undefined;
-    editor: monacoEditor.editor.IStandaloneCodeEditor;
+    editor: MonacoEditor.editor.IStandaloneCodeEditor;
     frame: ScriptEditorFrame<IDESupportedProgramState>;
-    monaco: typeof monacoEditor;
+    monaco: typeof MonacoEditor;
     script: string;
     setActiveHints: React.Dispatch<
       React.SetStateAction<ActiveHint[] | undefined>
@@ -144,13 +150,13 @@ const updateMarkers =
     if (model !== null && model.getValue() === script) {
       let markers: MonacoMarkerDataRequired[] = [];
       let activeHints: ActiveHint[] = [];
-      if (compilation !== undefined && compilation.success !== true) {
+      if (compilation !== undefined && !compilation.success) {
         const raw = compilation.errors.map<MonacoMarkerDataRequired>(
           (error) => ({
             ...error.range,
-            severity: monacoEditor.MarkerSeverity.Error,
+            severity: MonacoEditor.MarkerSeverity.Error,
             message: error.error,
-          })
+          }),
         );
         const cursor = editor.getPosition();
         const hasFocus = editor.hasTextFocus();
@@ -163,26 +169,29 @@ const updateMarkers =
             ? raw.filter((marker) => !cursorIsAtEndOfRange(cursor, marker))
             : raw;
 
-        const hints = markersNotUnderEdit.reduce((all, marker) => {
-          const helpItem = compilationErrorAssistance.find((item) =>
-            item.regex.test(marker.message)
-          );
-          if (helpItem !== undefined) {
-            const hint: ActiveHint = {
-              hoverContents: helpItem
-                .generateHints(marker.message, frame)
-                .map((markdown) => ({ value: markdown })),
-              range: {
-                endColumn: marker.endColumn,
-                endLineNumber: marker.endLineNumber,
-                startColumn: marker.startColumn,
-                startLineNumber: marker.startLineNumber,
-              },
-            };
-            return [...all, hint];
-          }
-          return all;
-        }, [] as ActiveHint[]);
+        const hints = markersNotUnderEdit.reduce<ActiveHint[]>(
+          (all, marker) => {
+            const helpItem = compilationErrorAssistance.find((item) =>
+              item.regex.test(marker.message),
+            );
+            if (helpItem !== undefined) {
+              const hint: ActiveHint = {
+                hoverContents: helpItem
+                  .generateHints(marker.message, frame)
+                  .map((markdown) => ({ value: markdown })),
+                range: {
+                  endColumn: marker.endColumn,
+                  endLineNumber: marker.endLineNumber,
+                  startColumn: marker.startColumn,
+                  startLineNumber: marker.startLineNumber,
+                },
+              };
+              return [...all, hint];
+            }
+            return all;
+          },
+          [],
+        );
         activeHints = hints;
         markers = markersNotUnderEdit;
       }
@@ -216,15 +225,14 @@ export const ScriptEditor = (props: {
     scriptType,
   } = props.frame;
   const [editor, setEditor] = useState(
-    undefined as undefined | monacoEditor.editor.IStandaloneCodeEditor
+    undefined as undefined | MonacoEditor.editor.IStandaloneCodeEditor,
   );
   const [monaco, setMonaco] = useState(
-    undefined as undefined | typeof monacoEditor
+    undefined as undefined | typeof MonacoEditor,
   );
   const [editScriptDialogIsOpen, setEditScriptDialogIsOpen] = useState(false);
-  const [latestInternalId, setLatestInternalId] = useState('');
   const [activeHints, setActiveHints] = useState(
-    undefined as ActiveHint[] | undefined
+    undefined as ActiveHint[] | undefined,
   );
 
   const tryResize = () => {
@@ -254,7 +262,7 @@ export const ScriptEditor = (props: {
       if (monacoModel === undefined) {
         const newModel = monaco.editor.createModel(
           script,
-          bitauthTemplatingLanguage
+          cashAssemblyLanguageId,
         );
         props.assignScriptModel({ internalId, monacoModel: newModel });
       } else {
@@ -277,14 +285,14 @@ export const ScriptEditor = (props: {
   useEffect(() => {
     if (monaco !== undefined && editor !== undefined) {
       const compilationErrorAssistanceHoverProvider =
-        monaco.languages.registerHoverProvider(bitauthTemplatingLanguage, {
+        monaco.languages.registerHoverProvider(cashAssemblyLanguageId, {
           provideHover: (model, position) => {
             if (!isCorrectScript(model, script)) {
               return;
             }
             if (activeHints !== undefined) {
               const matchingHint = activeHints.find((hint) =>
-                isWithinRange(position, hint.range)
+                isWithinRange(position, hint.range),
               );
               if (matchingHint !== undefined) {
                 return {
@@ -304,7 +312,7 @@ export const ScriptEditor = (props: {
   useEffect(() => {
     if (monaco !== undefined && editor !== undefined) {
       const bytecodeHoverProvider = monaco.languages.registerHoverProvider(
-        bitauthTemplatingLanguage,
+        cashAssemblyLanguageId,
         {
           provideHover: (model, position) => {
             if (!isCorrectScript(model, script)) {
@@ -317,14 +325,14 @@ export const ScriptEditor = (props: {
             ) {
               const resolvedSegment = selectResolvedSegmentAtPosition(
                 compilation.resolve,
-                position
+                position,
               );
               if (resolvedSegment && resolvedSegment.type === 'comment') {
                 return;
               }
               const segment = selectReductionSourceSegmentAtPosition(
                 compilation.reduce,
-                position
+                position,
               );
               /**
                * To avoid being annoying/distracting, we only show the bytecode
@@ -343,7 +351,7 @@ export const ScriptEditor = (props: {
                   contents: [
                     {
                       value: `**Compiled**: \`0x${binToHex(
-                        segment.bytecode
+                        segment.bytecode,
                       )}\``,
                     },
                   ],
@@ -352,18 +360,18 @@ export const ScriptEditor = (props: {
               }
             }
           },
-        }
+        },
       );
       /**
        * We register here to ensure opcode hover information appears above the
        * bytecode hover information.
        */
       const opcodeHoverProvider = monaco.languages.registerHoverProvider(
-        bitauthTemplatingLanguage,
-        opcodeHoverProviderBCH(script)
+        cashAssemblyLanguageId,
+        opcodeHoverProviderBCH(script),
       );
       const identifierHoverProvider = monaco.languages.registerHoverProvider(
-        bitauthTemplatingLanguage,
+        cashAssemblyLanguageId,
         {
           provideHover: (model, position) => {
             if (!isCorrectScript(model, script)) {
@@ -372,15 +380,17 @@ export const ScriptEditor = (props: {
             if (compilation !== undefined && 'resolve' in compilation) {
               const segment = selectResolvedSegmentAtPosition(
                 compilation.resolve,
-                position
+                position,
               );
               if (segment !== undefined && segment.type === 'bytecode') {
                 const range = segment.range;
                 if ('variable' in segment) {
                   const parts = segment.variable.split('.');
-                  const variableId = parts[0];
+                  const variableId = parts[0]!;
                   switch (variableId) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
                     case BuiltInVariables.currentBlockTime:
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison, no-fallthrough
                     case BuiltInVariables.currentBlockHeight:
                       return {
                         contents: [
@@ -393,21 +403,24 @@ export const ScriptEditor = (props: {
                         ],
                         range,
                       };
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
                     case BuiltInVariables.signingSerialization:
+                      // eslint-disable-next-line no-case-declarations
                       const { description, name } =
-                        getSigningSerializationOperationDetails(parts[1]);
+                        getSigningSerializationOperationDetails(parts[1]!);
                       return {
                         contents: [
                           {
                             value: `**${name}**`,
                           },
                           {
-                            value: description,
+                            value: description!,
                           },
                         ],
                         range,
                       };
                     default:
+                      // eslint-disable-next-line no-case-declarations
                       const details = props.variableDetails[variableId];
                       if (details !== undefined) {
                         const {
@@ -429,7 +442,7 @@ export const ScriptEditor = (props: {
                               } (${details.entity.name})`,
                             },
                             ...(hasOperation
-                              ? [{ value: operationDescription as string }]
+                              ? [{ value: operationDescription! }]
                               : []),
                             ...(details.variable.description
                               ? [{ value: details.variable.description }]
@@ -475,18 +488,18 @@ export const ScriptEditor = (props: {
               }
             }
           },
-        }
+        },
       );
 
       const opcodeCompletionProvider =
         monaco.languages.registerCompletionItemProvider(
-          bitauthTemplatingLanguage,
-          opcodeCompletionItemProviderBCH
+          cashAssemblyLanguageId,
+          opcodeCompletionItemProviderBCH,
         );
 
       const variableCompletionProvider =
         monaco.languages.registerCompletionItemProvider(
-          bitauthTemplatingLanguage,
+          cashAssemblyLanguageId,
           {
             provideCompletionItems: (model, position) => {
               if (!isCorrectScript(model, script)) {
@@ -504,12 +517,10 @@ export const ScriptEditor = (props: {
                * If match is `null`, the user manually triggered autocomplete:
                * show all potential variable options.
                */
-              const assumedMatch = match === null ? [''] : match;
+              const assumedMatch = match ?? [''];
               const parts = assumedMatch[0].split('.');
-              const targetId = parts[0];
-              const operation = parts[1] as string | undefined;
-              const parameter = parts[2] as string | undefined;
-
+              const [tId, operation, parameter] = parts;
+              const targetId = tId!;
               const word = model.getWordUntilPosition(position);
               const range: Range = {
                 startLineNumber: position.lineNumber,
@@ -522,8 +533,8 @@ export const ScriptEditor = (props: {
                 return {
                   suggestions: [
                     ...Object.entries(props.variableDetails)
-                      .filter(([id]) => id.indexOf(targetId) !== -1)
-                      .map<monacoEditor.languages.CompletionItem>(
+                      .filter(([id]) => id.includes(targetId))
+                      .map<MonacoEditor.languages.CompletionItem>(
                         ([id, { variable, entity }]) => {
                           const triggerNextSuggestion =
                             variable.type === 'Key' ||
@@ -544,25 +555,26 @@ export const ScriptEditor = (props: {
                                 }
                               : {}),
                           };
-                        }
+                        },
                       ),
                     ...Object.entries(props.scriptDetails)
-                      .filter(([id]) => id.indexOf(targetId) !== -1)
-                      .map<monacoEditor.languages.CompletionItem>(
+                      .filter(([id]) => id.includes(targetId))
+                      .map<MonacoEditor.languages.CompletionItem>(
                         ([id, script]) => ({
                           label: id,
                           detail: `${script.name} – Script`,
                           kind: monaco.languages.CompletionItemKind.Function,
                           insertText: id,
                           range,
-                        })
+                        }),
                       ),
                     ...Object.entries(builtInVariableDetails)
-                      .filter(([id]) => id.indexOf(targetId) !== -1)
-                      .map<monacoEditor.languages.CompletionItem>(
+                      .filter(([id]) => id.includes(targetId))
+                      .map<MonacoEditor.languages.CompletionItem>(
                         ([id, [name, description]]) => {
                           const triggerNextSuggestion =
-                            id === BuiltInVariables.signingSerialization;
+                            id ===
+                            (BuiltInVariables.signingSerialization as string);
                           return {
                             label: id,
                             detail: name,
@@ -579,7 +591,7 @@ export const ScriptEditor = (props: {
                                 }
                               : {}),
                           };
-                        }
+                        },
                       ),
                   ],
                 };
@@ -594,13 +606,15 @@ export const ScriptEditor = (props: {
                 (details.variable.type !== 'HdKey' &&
                   details.variable.type !== 'Key')
               ) {
-                if (targetId === BuiltInVariables.signingSerialization) {
+                if (
+                  targetId === (BuiltInVariables.signingSerialization as string)
+                ) {
                   return {
                     suggestions: Object.entries(
-                      signingSerializationOperationDetails
+                      signingSerializationOperationDetails,
                     )
-                      .filter(([op]) => op.indexOf(operation) !== -1)
-                      .map<monacoEditor.languages.CompletionItem>(
+                      .filter(([op]) => op.includes(operation))
+                      .map<MonacoEditor.languages.CompletionItem>(
                         ([op, [name, description]]) => ({
                           label: op,
                           detail: name,
@@ -608,7 +622,7 @@ export const ScriptEditor = (props: {
                           kind: monaco.languages.CompletionItemKind.Function,
                           insertText: op,
                           range,
-                        })
+                        }),
                       ),
                   };
                 }
@@ -619,12 +633,11 @@ export const ScriptEditor = (props: {
                 const descriptions = getKeyOperationDescriptions();
                 return {
                   suggestions: Object.entries(descriptions)
-                    .filter(([op]) => op.indexOf(operation) !== -1)
-                    .map<monacoEditor.languages.CompletionItem>(
+                    .filter(([op]) => op.includes(operation))
+                    .map<MonacoEditor.languages.CompletionItem>(
                       ([op, descriptions]) => {
                         const requiresParameter =
-                          keyOperationsWhichRequireAParameter.indexOf(op) !==
-                          -1;
+                          keyOperationsWhichRequireAParameter.includes(op);
                         return {
                           label: op,
                           detail: descriptions[0],
@@ -641,14 +654,12 @@ export const ScriptEditor = (props: {
                               }
                             : {}),
                         };
-                      }
+                      },
                     ),
                 };
               }
 
-              if (
-                keyOperationsWhichRequireAParameter.indexOf(operation) === -1
-              ) {
+              if (!keyOperationsWhichRequireAParameter.includes(operation)) {
                 return;
               }
 
@@ -658,10 +669,10 @@ export const ScriptEditor = (props: {
               ) {
                 return {
                   suggestions: Object.entries(
-                    signatureOperationParameterDescriptions
+                    signatureOperationParameterDescriptions,
                   )
-                    .filter(([param]) => param.indexOf(parameter) !== -1)
-                    .map<monacoEditor.languages.CompletionItem>(
+                    .filter(([param]) => param.includes(parameter))
+                    .map<MonacoEditor.languages.CompletionItem>(
                       ([param, descriptions]) => ({
                         label: param,
                         detail: descriptions[0],
@@ -669,7 +680,7 @@ export const ScriptEditor = (props: {
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: param,
                         range,
-                      })
+                      }),
                     ),
                 };
               } else if (
@@ -678,15 +689,15 @@ export const ScriptEditor = (props: {
               ) {
                 return {
                   suggestions: Object.entries(props.scriptDetails)
-                    .filter(([id]) => id.indexOf(parameter) !== -1)
-                    .map<monacoEditor.languages.CompletionItem>(
+                    .filter(([id]) => id.includes(parameter))
+                    .map<MonacoEditor.languages.CompletionItem>(
                       ([id, scriptInfo]) => ({
                         label: id,
                         detail: scriptInfo.name,
                         kind: monaco.languages.CompletionItemKind.Variable,
                         insertText: id,
                         range,
-                      })
+                      }),
                     ),
                 };
               } else {
@@ -695,7 +706,7 @@ export const ScriptEditor = (props: {
               }
             },
             triggerCharacters: ['.'],
-          }
+          },
         );
 
       const update = updateMarkers({
@@ -734,6 +745,7 @@ export const ScriptEditor = (props: {
   useEffect(() => {
     if (editor !== undefined && samples !== undefined) {
       const unexecutedRanges = extractUnexecutedRanges(samples);
+      // TODO: migrate to editor.createDecorationsCollection
       const decorations = editor.deltaDecorations(
         [],
         [
@@ -741,7 +753,7 @@ export const ScriptEditor = (props: {
             range,
             options: { inlineClassName: 'unexecuted-sample' },
           })),
-        ]
+        ],
       );
       return () => {
         /**
@@ -757,7 +769,7 @@ export const ScriptEditor = (props: {
   /**
    * This is used to manually synchronize scroll position between the
    * ScriptEditor and EvaluationViewer for a particular editor frame. (This
-   * dramatically improves scrolling performance over normal React renders.)
+   * significantly improves scrolling performance over normal React renders.)
    */
   useEffect(() => {
     if (props.viewer !== undefined && editor !== undefined) {
@@ -771,8 +783,8 @@ export const ScriptEditor = (props: {
           }
         }
       });
-      const viewerListener: EventListener = (ev: Event): any => {
-        if (editor !== undefined && props.viewer !== undefined) {
+      const viewerListener: EventListener = (): void => {
+        if (props.viewer !== undefined) {
           editor.setScrollTop(props.viewer.scrollTop);
         }
       };
@@ -783,17 +795,6 @@ export const ScriptEditor = (props: {
       };
     }
   }, [editor, props.viewer]);
-
-  if (latestInternalId !== internalId) {
-    /**
-     * Since we re-use the same editor instance for multiple scripts, switching
-     * to a longer script causes the editor to highlight the range which was
-     * suddenly "added". Here we just deselect it to be less annoying.
-     */
-    editor && editor.setPosition({ column: 1, lineNumber: 1 });
-    setLatestInternalId(internalId);
-    return null;
-  }
 
   return (
     <div className={`ScriptEditor ScriptEditor-${scriptType}`}>
@@ -824,16 +825,14 @@ export const ScriptEditor = (props: {
             setEditScriptDialogIsOpen(true);
           }}
         >
-          {wrapInterfaceTooltip(
-            <Icon icon={IconNames.SETTINGS} iconSize={10} />,
-            'Edit Script Settings'
-          )}
+          {wrapInterfaceTooltip(<Settings size={10} />, 'Edit Script Settings')}
         </div>
       </h2>
       <div className="editor">
-        <MonacoEditor
-          editorWillMount={prepMonaco}
-          editorDidMount={(editor, monaco) => {
+        <Editor
+          beforeMount={prepMonaco}
+          keepCurrentModel={true}
+          onMount={(editor, monaco) => {
             editor.onDidBlurEditorText(() => {
               editor.updateOptions({ renderLineHighlight: 'none' });
               props.setCursorLine(undefined);
@@ -848,18 +847,18 @@ export const ScriptEditor = (props: {
             setEditor(editor);
             setMonaco(monaco);
           }}
+          path={id}
           options={monacoOptions}
-          language={bitauthTemplatingLanguage}
+          language={cashAssemblyLanguageId}
           theme={bitauthDark}
           /**
-           * Use uncontrolled mode – once the Monaco model is created, we don't
-           * update it from outside of the editor. (We let Monaco handle all
-           * editing.)
+           * Note, this editor uses uncontrolled mode – once the Monaco model is
+           * created, we don't update it from outside of the editor. (We let
+           * Monaco handle all editing.)
            */
-          value={undefined}
-          onChange={(value, event) =>
+          onChange={(value) =>
             props.updateScript({
-              script: value,
+              script: value ?? '',
               internalId,
             })
           }

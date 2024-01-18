@@ -1,27 +1,27 @@
-import '../editor-dialog.scss';
-import './EditVariableDialog.scss';
-import React, { useState } from 'react';
+import '../editor-dialog.css';
+import './EditVariableDialog.css';
 import { ActionCreators } from '../../../state/reducer';
 import { IDETemplateEntity, IDEVariable } from '../../../state/types';
-import {
-  Classes,
-  Dialog,
-  FormGroup,
-  InputGroup,
-  Button,
-  Icon,
-  Intent,
-  Alert,
-  EditableText,
-  HTMLSelect,
-} from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
+import { unknownValue } from '../../../utils';
 import {
   toConventionalId,
   variableIcon,
   wrapInterfaceTooltip,
 } from '../../common';
-import { unknownValue } from '../../../utils';
+
+import {
+  Alert,
+  Button,
+  Classes,
+  Dialog,
+  EditableText,
+  FormGroup,
+  HTMLSelect,
+  InputGroup,
+  Intent,
+} from '@blueprintjs/core';
+import { Trash, WarningSign } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 
 const variableTypes: {
   label: string;
@@ -93,7 +93,7 @@ export const EditVariableDialog = ({
   variableInternalId?: string;
   variable?: IDEVariable;
   isOpen: boolean;
-  closeDialog: () => any;
+  closeDialog: () => void;
   openGuide: typeof ActionCreators.openGuide;
   upsertVariable: typeof ActionCreators.upsertVariable;
   usedIds: string[];
@@ -102,7 +102,7 @@ export const EditVariableDialog = ({
   const [variableName, setVariableName] = useState(variable?.name ?? '');
   const [nameWasModified, setNameWasModified] = useState(false);
   const [variableDescription, setVariableDescription] = useState(
-    variable?.description ?? ''
+    variable?.description ?? '',
   );
   const [variableId, setVariableId] = useState(variable?.id ?? '');
   const [variableType, setVariableType] = useState(variable?.type ?? 'Key');
@@ -111,7 +111,7 @@ export const EditVariableDialog = ({
   const otherIds = usedIds.filter((usedId) => usedId !== variable?.id);
   return (
     <Dialog
-      className="bp4-dark editor-dialog EditVariableDialog"
+      className="bp5-dark editor-dialog EditVariableDialog"
       onOpening={() => {
         setVariableName(variable?.name ?? '');
         setNameWasModified(false);
@@ -156,6 +156,7 @@ export const EditVariableDialog = ({
                   if (!nameWasModified) setVariableName('');
                   setVariableId('');
                   break;
+                /* istanbul ignore next */
                 default:
                   unknownValue(type);
               }
@@ -164,10 +165,7 @@ export const EditVariableDialog = ({
         </FormGroup>
         <div className="divider" />
         <h3 className="name">
-          {wrapInterfaceTooltip(
-            <Icon icon={variableIcon(variableType)} iconSize={12} />,
-            variableType
-          )}
+          {wrapInterfaceTooltip(variableIcon(variableType), variableType)}
           <EditableText
             maxLength={100}
             placeholder="Variable Name"
@@ -190,7 +188,9 @@ export const EditVariableDialog = ({
             placeholder="A brief description of this variable..."
             selectAllOnFocus={true}
             value={variableDescription}
-            onChange={(description) => setVariableDescription(description)}
+            onChange={(description) => {
+              setVariableDescription(description);
+            }}
           />
         </div>
         <div className="divider" />
@@ -225,9 +225,9 @@ export const EditVariableDialog = ({
         <FormGroup
           helperText={
             <span>
-              This dialog can be used to modify the variable's type, name,
+              This dialog can be used to modify the variable&apos;s type, name,
               description, and ID. To set a specific value for testing, add the
-              value to a scenario. See "Developing Scenarios" in the{' '}
+              value to a scenario. See &ldquo;Developing Scenarios&rdquo; in the{' '}
               <button className="guide-link" onClick={() => openGuide()}>
                 guide
               </button>{' '}
@@ -246,7 +246,7 @@ export const EditVariableDialog = ({
                 setPromptDelete(true);
               }}
             >
-              <Icon icon={IconNames.TRASH} iconSize={10} />
+              <Trash size={10} />
               Delete Variable
             </Button>
             <Alert
@@ -256,7 +256,9 @@ export const EditVariableDialog = ({
               isOpen={promptDelete}
               canEscapeKeyCancel={true}
               canOutsideClickCancel={true}
-              onCancel={() => setPromptDelete(false)}
+              onCancel={() => {
+                setPromptDelete(false);
+              }}
               onConfirm={() => {
                 deleteVariable(variableInternalId);
                 setPromptDelete(false);
@@ -278,7 +280,7 @@ export const EditVariableDialog = ({
               <span />
             ) : (
               <span>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
@@ -286,7 +288,7 @@ export const EditVariableDialog = ({
           <Button
             disabled={variableId === ''}
             onClick={() => {
-              if (otherIds.indexOf(variableId) !== -1) {
+              if (otherIds.includes(variableId)) {
                 setNonUniqueId(variableId);
               } else {
                 upsertVariable({

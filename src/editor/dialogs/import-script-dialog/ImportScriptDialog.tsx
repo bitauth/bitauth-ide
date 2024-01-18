@@ -1,26 +1,26 @@
-import '../editor-dialog.scss';
-import './ImportScriptDialog.scss';
-import React, { useState } from 'react';
+import '../editor-dialog.css';
+import './ImportScriptDialog.css';
 import { ActionCreators } from '../../../state/reducer';
 import { ActiveDialog } from '../../../state/types';
+import { createInsecureUuidV4 } from '../../../utils';
+import { toConventionalId } from '../../common';
+
+import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
 import {
+  Button,
   Classes,
   Dialog,
   FormGroup,
   InputGroup,
-  Button,
-  Icon,
 } from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { toConventionalId } from '../../common';
-import { createInsecureUuidV4 } from '../../../state/utils';
-import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
+import { WarningSign } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 
 const disassembleHex = (hex: string) => disassembleBytecodeBCH(hexToBin(hex));
 const tokenizeHex = (hex: string) => {
   const splitAtErrors = disassembleHex(hex).split('[');
   return [
-    ...splitAtErrors[0].split(' '),
+    ...splitAtErrors[0]!.split(' '),
     ...(splitAtErrors.length > 1 ? [`[${splitAtErrors[1]}`] : []),
   ];
 };
@@ -58,8 +58,8 @@ export const ImportScriptDialog = ({
               ) : (
                 <p>
                   <code className="preview">
-                    {tokenizeHex(bytecode).map((token) => (
-                      <span>
+                    {tokenizeHex(bytecode).map((token, i) => (
+                      <span key={i}>
                         <span className="preview-token">{token}</span>{' '}
                       </span>
                     ))}
@@ -131,7 +131,7 @@ export const ImportScriptDialog = ({
               <span />
             ) : (
               <span>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
@@ -139,7 +139,7 @@ export const ImportScriptDialog = ({
           <Button
             disabled={scriptName === '' || scriptId === ''}
             onClick={() => {
-              if (usedIds.indexOf(scriptId) !== -1) {
+              if (usedIds.includes(scriptId)) {
                 setNonUniqueId(scriptId);
               } else {
                 setBytecode('');

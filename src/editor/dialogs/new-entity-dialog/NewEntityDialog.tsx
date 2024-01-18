@@ -1,18 +1,18 @@
-import '../editor-dialog.scss';
-import React, { useState } from 'react';
+import '../editor-dialog.css';
 import { ActionCreators } from '../../../state/reducer';
 import { ActiveDialog } from '../../../state/types';
+import { createInsecureUuidV4 } from '../../../utils';
+import { toConventionalId } from '../../common';
+
 import {
+  Button,
   Classes,
   Dialog,
   FormGroup,
   InputGroup,
-  Button,
-  Icon,
 } from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { toConventionalId } from '../../common';
-import { createInsecureUuidV4 } from '../../../state/utils';
+import { WarningSign } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 
 export const NewEntityDialog = ({
   activeDialog,
@@ -33,7 +33,7 @@ export const NewEntityDialog = ({
     <Dialog
       className="editor-dialog"
       onClose={() => closeDialog()}
-      title="Add Entity to Authentication Template"
+      title="Add Entity to Wallet Template"
       isOpen={activeDialog === ActiveDialog.newEntity}
       canOutsideClickClose={false}
     >
@@ -93,7 +93,7 @@ export const NewEntityDialog = ({
               <span />
             ) : (
               <span>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
@@ -101,7 +101,7 @@ export const NewEntityDialog = ({
           <Button
             disabled={entityName === '' || entityId === ''}
             onClick={() => {
-              if (usedIds.indexOf(entityId) !== -1) {
+              if (usedIds.includes(entityId)) {
                 setNonUniqueId(entityId);
               } else {
                 setEntityName('');

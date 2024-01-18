@@ -1,0 +1,66 @@
+.App {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--standard-font-family);
+}
+
+code {
+  font-family: var(--monospace-font-family);
+}
+
+.mosaic.mosaic-blueprint-theme.bp5-dark {
+  background-color: var(--interface-background-color);
+}
+
+.mosaic-root {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.mosaic-tile {
+  margin: 0;
+}
+
+/**
+ * If your monitor isn't huge, Bitauth IDE will have horizontal scroll bars. If
+ * you scroll too far, the built-in "swipe to go back" behavior could cause
+ * immense frustration. Here we disable it. We also disable vertical overscroll,
+ * since the UI should really remain stable.
+ */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/**
+ * Globally match the scrollbar style of Monaco editor.
+ */
+@supports (-moz-appearance: none) {
+  html {
+    scrollbar-color: rgba(122, 122, 122, 0.4) transparent;
+    scrollbar-width: 3px;
+  }
+}
+*::-webkit-scrollbar {
+  width: 3px !important;
+  height: 3px !important;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0.4) !important;
+  border: 0px none !important;
+  border-radius: 0px !important;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(121, 121, 121, 0.5) !important;
+}
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(121, 121, 121, 0.6) !important;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}

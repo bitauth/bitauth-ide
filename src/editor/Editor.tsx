@@ -1,37 +1,43 @@
-import './Editor.scss';
-import { Mosaic } from 'react-mosaic-component';
-import { ProjectExplorer } from './project-explorer/ProjectExplorer';
-import { ScriptEditor } from './script-editor/ScriptEditor';
-import { EvaluationViewer } from './evaluation-viewer/EvaluationViewer';
-import React, { useState, useCallback } from 'react';
-import { connect } from 'react-redux';
-import { unknownValue } from '../utils';
-import { AppState, ActiveDialog, CurrentScripts } from '../state/types';
-import {
-  ProjectEditorMode,
-  IDESupportedProgramState,
-  ComputedEditorState,
-  EditorStateScriptMode,
-  ScriptEditorPane,
-  ScriptEvaluationViewerPane,
-  EvaluationViewerSettings,
-} from './editor-types';
+import './Editor.css';
 import { ActionCreators } from '../state/reducer';
-import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
-import { EntitySettingsEditor } from './entity-editor/EntitySettingsEditor';
-import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
-import { getUsedIds, getCurrentScripts } from './common';
-import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
-import { TemplateSettings } from './template-settings/TemplateSettings';
+import {
+  ActiveDialog,
+  AppState,
+  CurrentScripts,
+  EvaluationViewerSettings,
+  IDESupportedProgramState,
+} from '../state/types';
+import { unknownValue } from '../utils';
+
+import { getCurrentScripts, getUsedIds } from './common';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
 import { ImportScriptDialog } from './dialogs/import-script-dialog/ImportScriptDialog';
-import { WelcomePane } from './welcome-pane/WelcomePane';
+import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
+import { NewScriptDialog } from './dialogs/new-script-dialog/NewScriptDialog';
 import { computeEditorState } from './editor-state';
-import { WalletEditor } from './wallet/wallet-editor/WalletEditor';
+import {
+  ComputedEditorState,
+  EditorStateScriptMode,
+  ProjectEditorMode,
+  ScriptEditorPane,
+  ScriptEvaluationViewerPane,
+} from './editor-types';
+import { EntitySettingsEditor } from './entity-editor/EntitySettingsEditor';
+import { EntityVariableEditor } from './entity-editor/EntityVariableEditor';
+import { EvaluationViewer } from './evaluation-viewer/EvaluationViewer';
+import { ProjectExplorer } from './project-explorer/ProjectExplorer';
+import { ScriptEditor } from './script-editor/ScriptEditor';
+import { TemplateSettings } from './template-settings/TemplateSettings';
 import { TransactionEditor } from './wallet/transaction-editor/TransactionEditor';
+import { WalletEditor } from './wallet/wallet-editor/WalletEditor';
 import { WalletHistoryExplorer } from './wallet/wallet-history-explorer/WalletHistoryExplorer';
+import { WelcomePane } from './welcome-pane/WelcomePane';
 
-enum Pane {
+import { useCallback, useEffect, useState } from 'react';
+import { Mosaic } from 'react-mosaic-component';
+import { connect } from 'react-redux';
+
+const enum Pane {
   projectExplorer = 'projectExplorerPane',
   templateSettingsEditor = 'templateSettingsEditorPane',
   entitySettingsEditor = 'entitySettingsEditorPane',
@@ -43,7 +49,7 @@ enum Pane {
   transactionEditor = 'transactionEditor',
 }
 
-interface EditorDispatch {
+type EditorDispatch = {
   updateScript: typeof ActionCreators.updateScript;
   closeDialog: typeof ActionCreators.closeDialog;
   assignScriptModel: typeof ActionCreators.assignScriptModel;
@@ -54,17 +60,16 @@ interface EditorDispatch {
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
   importExport: typeof ActionCreators.importExport;
   switchScenario: typeof ActionCreators.switchScenario;
-}
+};
 
-interface EditorProps<ProgramState extends IDESupportedProgramState>
-  extends EditorDispatch {
+type EditorProps<ProgramState extends IDESupportedProgramState> = {
   computed: ComputedEditorState<ProgramState>;
   currentlyEditingInternalId: string | undefined;
   currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
   evaluationViewerSettings: EvaluationViewerSettings;
   usedIds: string[];
-}
+} & EditorDispatch;
 
 export const Editor = connect(
   (state: AppState) => ({
@@ -87,7 +92,7 @@ export const Editor = connect(
       ActionCreators.changeEvaluationViewerSettings,
     importExport: ActionCreators.importExport,
     switchScenario: ActionCreators.switchScenario,
-  }
+  },
 )((props: EditorProps<IDESupportedProgramState>) => {
   const [projectExplorerWidth, setProjectExplorerWidth] = useState(21);
   const [scriptEditorWidths, setScriptEditorWidths] = useState(40);
@@ -96,13 +101,13 @@ export const Editor = connect(
   const [frames3TopSplitHeight, setFrames3TopSplitHeight] = useState(15);
   const [frames3BottomSplitHeight, setFrames3BottomSplitHeight] = useState(50);
   const [cursorLineFrame1, setCursorLineFrame1] = useState(
-    undefined as number | undefined
+    undefined as number | undefined,
   );
   const [cursorLineFrame2, setCursorLineFrame2] = useState(
-    undefined as number | undefined
+    undefined as number | undefined,
   );
   const [cursorLineFrame3, setCursorLineFrame3] = useState(
-    undefined as number | undefined
+    undefined as number | undefined,
   );
   const [walletEditorWidth, setWalletEditorWidth] = useState(45);
   const [walletHistoryHeight, setWalletHistoryHeight] = useState(60);
@@ -147,19 +152,41 @@ export const Editor = connect(
     viewerRefCallbackFrame3,
   ];
 
+  useEffect(() => {
+    const setKey = (value: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      (window as any)._IDE_E2E_TESTING_VIEW_CONFIG = value;
+    };
+
+    setKey({
+      setProjectExplorerWidth,
+      setScriptEditorWidths,
+      setSettingsWidth,
+      setFrames2SplitHeight,
+      setFrames3TopSplitHeight,
+      setFrames3BottomSplitHeight,
+      setWalletEditorWidth,
+      setWalletHistoryHeight,
+    });
+
+    return () => {
+      setKey(undefined);
+    };
+  }, []);
+
   const renderScriptEditor = (
     computed: EditorStateScriptMode<IDESupportedProgramState>,
-    indexFromTop: 0 | 1 | 2
+    indexFromTop: 0 | 1 | 2,
   ) => (
     <ScriptEditor
       assignScriptModel={props.assignScriptModel}
       deleteScript={props.deleteScript}
       editScript={props.editScript}
-      frame={computed.scriptEditorFrames[indexFromTop]}
+      frame={computed.scriptEditorFrames[indexFromTop]!}
       isP2SH={computed.lockingType === 'p2sh20'}
       isPushed={computed.isPushed}
       scriptDetails={computed.scriptDetails}
-      setCursorLine={setCursorLine[indexFromTop]}
+      setCursorLine={setCursorLine[indexFromTop]!}
       viewer={viewerElements[indexFromTop]}
       updateScript={props.updateScript}
       usedIds={props.usedIds}
@@ -169,13 +196,13 @@ export const Editor = connect(
 
   const renderEvaluationViewer = (
     computed: EditorStateScriptMode<IDESupportedProgramState>,
-    indexFromTop: 0 | 1 | 2
+    indexFromTop: 0 | 1 | 2,
   ) => (
     <EvaluationViewer
       computedState={{
         evaluationSource: computed.scriptEditorEvaluationSource,
         evaluationTrace: computed.scriptEditorEvaluationTrace,
-        frame: computed.scriptEditorFrames[indexFromTop],
+        frame: computed.scriptEditorFrames[indexFromTop]!,
         lookup: computed.identifyStackItems,
       }}
       changeEvaluationViewerSettings={props.changeEvaluationViewerSettings}
@@ -186,14 +213,14 @@ export const Editor = connect(
       scenarioDetails={computed.scenarioDetails}
       showControls={indexFromTop === 0}
       switchScenario={props.switchScenario}
-      viewerRef={viewerRefCallbacks[indexFromTop]}
+      viewerRef={viewerRefCallbacks[indexFromTop]!}
     />
   );
 
   return (
     <div className="Editor">
       <Mosaic<Pane | ScriptEditorPane | ScriptEvaluationViewerPane>
-        className="mosaic-blueprint-theme bp4-dark"
+        className="mosaic-blueprint-theme bp5-dark"
         renderTile={(id) => {
           const computed =
             props.computed as EditorStateScriptMode<IDESupportedProgramState>;
@@ -242,9 +269,12 @@ export const Editor = connect(
             case Pane.transactionEditor:
               return <TransactionEditor />;
             default:
+              /* istanbul ignore next */
               unknownValue(id);
               return (
-                <h3>Editor error – tried to render Mosaic tile: "{id}"</h3>
+                <h3>
+                  Editor error – tried to render Mosaic tile: &quot;{id}&quot;
+                </h3>
               );
           }
         }}
@@ -252,119 +282,133 @@ export const Editor = connect(
           props.computed.editorMode === ProjectEditorMode.welcome
             ? Pane.welcome
             : props.computed.editorMode === ProjectEditorMode.importing
-            ? Pane.importing
-            : props.computed.editorMode === ProjectEditorMode.wallet
-            ? {
-                direction: 'row',
-                first: Pane.walletEditor,
-                splitPercentage: walletEditorWidth,
-                second: {
-                  direction: 'column',
-                  first: Pane.walletHistoryExplorer,
-                  second: Pane.transactionEditor,
-                  splitPercentage: walletHistoryHeight,
-                },
-              }
-            : {
-                direction: 'row',
-                first: Pane.projectExplorer,
-                second:
-                  props.computed.editorMode ===
-                  ProjectEditorMode.templateSettingsEditor
-                    ? Pane.templateSettingsEditor
-                    : props.computed.editorMode ===
-                      ProjectEditorMode.entityEditor
-                    ? {
-                        direction: 'row',
-                        first: Pane.entitySettingsEditor,
-                        second: Pane.entityVariableEditor,
-                        splitPercentage: settingsWidth,
-                      }
-                    : props.computed.editorMode ===
-                      ProjectEditorMode.isolatedScriptEditor
-                    ? {
-                        direction: 'row',
-                        first: ScriptEditorPane.zero,
-                        second: ScriptEvaluationViewerPane.zero,
-                        splitPercentage: scriptEditorWidths,
-                      }
-                    : props.computed.editorMode ===
-                      ProjectEditorMode.scriptPairEditor
-                    ? {
-                        direction: 'row',
-                        first: {
-                          direction: 'column',
-                          first: ScriptEditorPane.zero,
-                          second: ScriptEditorPane.one,
-                          splitPercentage: frames2SplitHeight,
-                        },
-                        second: {
-                          direction: 'column',
-                          first: ScriptEvaluationViewerPane.zero,
-                          second: ScriptEvaluationViewerPane.one,
-                          splitPercentage: frames2SplitHeight,
-                        },
-                        splitPercentage: scriptEditorWidths,
-                      }
-                    : props.computed.editorMode ===
-                      ProjectEditorMode.testedScriptEditor
-                    ? {
-                        direction: 'row',
-                        first: {
-                          direction: 'column',
-                          first: ScriptEditorPane.zero,
-                          second: {
-                            direction: 'column',
-                            first: ScriptEditorPane.one,
-                            second: ScriptEditorPane.two,
-                            splitPercentage: frames3BottomSplitHeight,
-                          },
-                          splitPercentage: frames3TopSplitHeight,
-                        },
-                        second: {
-                          direction: 'column',
-                          first: ScriptEvaluationViewerPane.zero,
-                          second: {
-                            direction: 'column',
-                            first: ScriptEvaluationViewerPane.one,
-                            second: ScriptEvaluationViewerPane.two,
-                            splitPercentage: frames3BottomSplitHeight,
-                          },
-                          splitPercentage: frames3TopSplitHeight,
-                        },
-                        splitPercentage: scriptEditorWidths,
-                      }
-                    : unknownValue(props.computed.editorMode),
-                splitPercentage: projectExplorerWidth,
-              }
+              ? Pane.importing
+              : props.computed.editorMode === ProjectEditorMode.wallet
+                ? {
+                    direction: 'row',
+                    first: Pane.walletEditor,
+                    splitPercentage: walletEditorWidth,
+                    second: {
+                      direction: 'column',
+                      first: Pane.walletHistoryExplorer,
+                      second: Pane.transactionEditor,
+                      splitPercentage: walletHistoryHeight,
+                    },
+                  }
+                : {
+                    direction: 'row',
+                    first: Pane.projectExplorer,
+                    second:
+                      props.computed.editorMode ===
+                      ProjectEditorMode.templateSettingsEditor
+                        ? Pane.templateSettingsEditor
+                        : props.computed.editorMode ===
+                            ProjectEditorMode.entityEditor
+                          ? {
+                              direction: 'row',
+                              first: Pane.entitySettingsEditor,
+                              second: Pane.entityVariableEditor,
+                              splitPercentage: settingsWidth,
+                            }
+                          : props.computed.editorMode ===
+                              ProjectEditorMode.isolatedScriptEditor
+                            ? {
+                                direction: 'row',
+                                first: ScriptEditorPane.zero,
+                                second: ScriptEvaluationViewerPane.zero,
+                                splitPercentage: scriptEditorWidths,
+                              }
+                            : props.computed.editorMode ===
+                                ProjectEditorMode.scriptPairEditor
+                              ? {
+                                  direction: 'row',
+                                  first: {
+                                    direction: 'column',
+                                    first: ScriptEditorPane.zero,
+                                    second: ScriptEditorPane.one,
+                                    splitPercentage: frames2SplitHeight,
+                                  },
+                                  second: {
+                                    direction: 'column',
+                                    first: ScriptEvaluationViewerPane.zero,
+                                    second: ScriptEvaluationViewerPane.one,
+                                    splitPercentage: frames2SplitHeight,
+                                  },
+                                  splitPercentage: scriptEditorWidths,
+                                }
+                              : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                                props.computed.editorMode ===
+                                  ProjectEditorMode.testedScriptEditor
+                                ? {
+                                    direction: 'row',
+                                    first: {
+                                      direction: 'column',
+                                      first: ScriptEditorPane.zero,
+                                      second: {
+                                        direction: 'column',
+                                        first: ScriptEditorPane.one,
+                                        second: ScriptEditorPane.two,
+                                        splitPercentage:
+                                          frames3BottomSplitHeight,
+                                      },
+                                      splitPercentage: frames3TopSplitHeight,
+                                    },
+                                    second: {
+                                      direction: 'column',
+                                      first: ScriptEvaluationViewerPane.zero,
+                                      second: {
+                                        direction: 'column',
+                                        first: ScriptEvaluationViewerPane.one,
+                                        second: ScriptEvaluationViewerPane.two,
+                                        splitPercentage:
+                                          frames3BottomSplitHeight,
+                                      },
+                                      splitPercentage: frames3TopSplitHeight,
+                                    },
+                                    splitPercentage: scriptEditorWidths,
+                                  }
+                                : /* istanbul ignore next */ unknownValue(
+                                    props.computed.editorMode,
+                                  ),
+                    splitPercentage: projectExplorerWidth,
+                  }
         }
         onChange={(node) => {
+          /**
+           * Emulation of click + drag for Mosaic is not yet reliable in
+           * Playwright. Instead, the window system should be manually tested
+           * when this code is modified.
+           *
+           * Note also that `window._IDE_E2E_TESTING_VIEW_CONFIG` is used for
+           * programmatic configuration of pane sizes during E2E testing.
+           */
+          /* istanbul ignore next */
           if (node && typeof node === 'object') {
             if (
               node.first === Pane.walletEditor &&
               walletEditorWidth !== node.splitPercentage
             ) {
-              setWalletEditorWidth(node.splitPercentage as number);
+              setWalletEditorWidth(node.splitPercentage!);
             } else if (
               node.first === Pane.projectExplorer &&
               projectExplorerWidth !== node.splitPercentage
             ) {
-              setProjectExplorerWidth(node.splitPercentage as number);
+              setProjectExplorerWidth(node.splitPercentage!);
             }
             if (typeof node.second === 'object') {
               if (
                 node.second.first === Pane.entitySettingsEditor &&
                 settingsWidth !== node.second.splitPercentage
               ) {
-                setSettingsWidth(node.second.splitPercentage as number);
+                setSettingsWidth(node.second.splitPercentage!);
               } else if (
                 node.second.first === Pane.walletHistoryExplorer &&
                 walletHistoryHeight !== node.second.splitPercentage
               ) {
-                setWalletHistoryHeight(node.second.splitPercentage as number);
+                setWalletHistoryHeight(node.second.splitPercentage!);
               } else {
                 if (scriptEditorWidths !== node.second.splitPercentage) {
-                  setScriptEditorWidths(node.second.splitPercentage as number);
+                  setScriptEditorWidths(node.second.splitPercentage!);
                 }
                 if (
                   typeof node.second.first === 'object' &&
@@ -374,39 +418,36 @@ export const Editor = connect(
                     typeof node.second.first.second === 'object' &&
                     typeof node.second.second.second === 'object'
                   ) {
-                    const editorLine1 = node.second.first
-                      .splitPercentage as number;
-                    const viewerLine1 = node.second.second
-                      .splitPercentage as number;
+                    const editorLine1 = node.second.first.splitPercentage!;
+                    const viewerLine1 = node.second.second.splitPercentage!;
                     setFrames3TopSplitHeight(
                       frames3TopSplitHeight !== editorLine1
                         ? editorLine1
-                        : viewerLine1
+                        : viewerLine1,
                     );
-                    const editorLine2 = node.second.first.second
-                      .splitPercentage as number;
-                    const viewerLine2 = node.second.second.second
-                      .splitPercentage as number;
+                    const editorLine2 =
+                      node.second.first.second.splitPercentage!;
+                    const viewerLine2 =
+                      node.second.second.second.splitPercentage!;
                     setFrames3BottomSplitHeight(
                       frames3BottomSplitHeight !== editorLine2
                         ? editorLine2
-                        : viewerLine2
+                        : viewerLine2,
                     );
                   } else {
-                    const editorLine = node.second.first
-                      .splitPercentage as number;
-                    const viewerLine = node.second.second
-                      .splitPercentage as number;
+                    const editorLine = node.second.first.splitPercentage!;
+                    const viewerLine = node.second.second.splitPercentage!;
                     setFrames2SplitHeight(
                       frames2SplitHeight !== editorLine
                         ? editorLine
-                        : viewerLine
+                        : viewerLine,
                     );
                   }
                 }
               }
             }
           }
+          /* istanbul ignore next */
           window.dispatchEvent(new Event('resize'));
         }}
         resize={{ minimumPaneSizePercentage: 10 }}

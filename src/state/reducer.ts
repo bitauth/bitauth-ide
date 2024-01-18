@@ -1,32 +1,35 @@
+/* eslint-disable no-case-declarations, @typescript-eslint/no-unsafe-member-access */
+
+import { createInsecureUuidV4, unknownValue } from '../utils';
+
+import { defaultState, emptyTemplate } from './defaults';
+import { ideImportWalletTemplate } from './import-export';
 import {
-  ImmerReducer,
-  createReducerFunction,
+  ActiveDialog,
+  AppState,
+  BaseScriptType,
+  EvaluationViewerSettings,
+  IDEActivatableScript,
+  IDEMode,
+  IDESupportedVM,
+  IDETemplateIsolatedScript,
+  IDETemplateLockingScript,
+  IDETemplateTestCheckScript,
+  IDETemplateTestedScript,
+  IDETemplateTestSetupScript,
+  IDETemplateUnlockingScript,
+  IDEVariable,
+  IDEVms,
+  WalletTreeClass,
+} from './types';
+
+import { WalletTemplateScriptLocking } from '@bitauth/libauth';
+import {
   createActionCreators,
+  createReducerFunction,
+  ImmerReducer,
   setPrefix,
 } from 'immer-reducer';
-import {
-  AppState,
-  IDEMode,
-  ActiveDialog,
-  BaseScriptType,
-  IDETemplateLockingScript,
-  IDETemplateIsolatedScript,
-  IDETemplateTestedScript,
-  IDESupportedVM,
-  IDEVariable,
-  WalletTreeClass,
-  IDEActivatableScript,
-  IDETemplateUnlockingScript,
-  IDETemplateTestCheckScript,
-  IDETemplateTestSetupScript,
-  IDEVms,
-} from './types';
-import { defaultState, emptyTemplate } from './defaults';
-import { unknownValue } from '../utils';
-import { createInsecureUuidV4 } from './utils';
-import { ideImportAuthenticationTemplate } from './import-export';
-import { EvaluationViewerSettings } from '../editor/editor-types';
-import { AuthenticationTemplateScriptLocking } from '@bitauth/libauth';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {
@@ -51,7 +54,7 @@ class App extends ImmerReducer<AppState> {
   }
   updateTemplateSupportedVM(vm: IDESupportedVM, enable: boolean) {
     const vms = this.draftState.currentTemplate.supportedVirtualMachines.filter(
-      (id) => id !== vm
+      (id) => id !== vm,
     );
     this.draftState.currentTemplate.supportedVirtualMachines = enable
       ? [...vms, vm]
@@ -64,7 +67,7 @@ class App extends ImmerReducer<AppState> {
     this.draftState.activeDialog = ActiveDialog.importExport;
   }
   resetTemplate() {
-    const empty = ideImportAuthenticationTemplate(emptyTemplate);
+    const empty = ideImportWalletTemplate(emptyTemplate);
     if (typeof empty === 'string') {
       throw new Error('Invalid empty template.');
     }
@@ -103,52 +106,53 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentlyEditingInternalId = internalId;
   }
   updateEntityName(internalId: string, name: string) {
-    this.draftState.currentTemplate.entitiesByInternalId[internalId].name =
+    this.draftState.currentTemplate.entitiesByInternalId[internalId]!.name =
       name;
   }
   updateEntityDescription(internalId: string, description: string) {
     this.draftState.currentTemplate.entitiesByInternalId[
       internalId
-    ].description = description;
+    ]!.description = description;
   }
   updateEntityId(internalId: string, id: string) {
-    this.draftState.currentTemplate.entitiesByInternalId[internalId].id = id;
+    this.draftState.currentTemplate.entitiesByInternalId[internalId]!.id = id;
   }
   updateEntityScriptUsage(internalId: string, usesAllScripts: boolean) {
     this.draftState.currentTemplate.entitiesByInternalId[
       internalId
-    ].usesAllScripts = usesAllScripts;
+    ]!.usesAllScripts = usesAllScripts;
   }
   updateEntityScripts(
     internalId: string,
-    changes: { [scriptInternalId: string]: boolean }
+    changes: { [scriptInternalId: string]: boolean },
   ) {
     const previousValues = this.draftState.currentTemplate.entitiesByInternalId[
       internalId
-    ].scriptInternalIds.reduce(
+    ]!.scriptInternalIds.reduce<{ [internalId: string]: boolean }>(
       (map, internalId) => ({
         ...map,
         [internalId]: true,
       }),
-      {} as { [internalId: string]: boolean }
+      {},
     );
     const merged = { ...previousValues, ...changes };
     const result = Object.keys(merged).filter(
-      (internalId) => merged[internalId]
+      (internalId) => merged[internalId],
     );
     this.draftState.currentTemplate.entitiesByInternalId[
       internalId
-    ].scriptInternalIds = result;
+    ]!.scriptInternalIds = result;
   }
   deleteEntity(internalId: string) {
     const variables =
-      this.draftState.currentTemplate.entitiesByInternalId[internalId]
+      this.draftState.currentTemplate.entitiesByInternalId[internalId]!
         .variableInternalIds;
     variables.forEach((variableInternalId) => {
       delete this.draftState.currentTemplate.variablesByInternalId[
-        variableInternalId
+        variableInternalId // eslint-disable-line @typescript-eslint/no-dynamic-delete
       ];
     });
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete this.draftState.currentTemplate.entitiesByInternalId[internalId];
     this.draftState.currentlyEditingInternalId = undefined;
   }
@@ -167,11 +171,11 @@ class App extends ImmerReducer<AppState> {
     id: string;
     type: IDEVariable['type'];
   }) {
-    const variableInternalId = internalId || createInsecureUuidV4();
+    const variableInternalId = internalId ?? createInsecureUuidV4();
     const variable =
       this.draftState.currentTemplate.variablesByInternalId[
         variableInternalId
-      ] || {};
+      ] ?? ({} as IDEVariable);
     variable.name = name;
     variable.description = description;
     variable.id = id;
@@ -181,29 +185,30 @@ class App extends ImmerReducer<AppState> {
     const target =
       this.draftState.currentTemplate.entitiesByInternalId[
         owningEntityInternalId
-      ].variableInternalIds;
-    if (target.indexOf(variableInternalId) === -1) {
+      ]!.variableInternalIds;
+    if (!target.includes(variableInternalId)) {
       target.push(variableInternalId);
     }
   }
   deleteVariable(internalId: string) {
     const entities = Object.keys(
-      this.draftState.currentTemplate.entitiesByInternalId
+      this.draftState.currentTemplate.entitiesByInternalId,
     );
     entities.forEach((entityInternalId) => {
       const variables =
-        this.draftState.currentTemplate.entitiesByInternalId[entityInternalId]
+        this.draftState.currentTemplate.entitiesByInternalId[entityInternalId]!
           .variableInternalIds;
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
-      ].variableInternalIds = variables.filter(
-        (variableInternalId) => variableInternalId !== internalId
+      ]!.variableInternalIds = variables.filter(
+        (variableInternalId) => variableInternalId !== internalId,
       );
     });
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete this.draftState.currentTemplate.variablesByInternalId[internalId];
   }
   updateScript({ internalId, script }: { internalId: string; script: string }) {
-    this.draftState.currentTemplate.scriptsByInternalId[internalId].script =
+    this.draftState.currentTemplate.scriptsByInternalId[internalId]!.script =
       script;
   }
   activateScript(internalId: string) {
@@ -215,14 +220,12 @@ class App extends ImmerReducer<AppState> {
     ] as IDEActivatableScript;
 
     const passesScenarioInternalIds =
-      'passesInternalIds' in activatedScript &&
-      activatedScript.passesInternalIds !== undefined
+      'passesInternalIds' in activatedScript
         ? activatedScript.passesInternalIds
         : [];
 
     const failsScenarioInternalIds =
-      'failsInternalIds' in activatedScript &&
-      activatedScript.failsInternalIds !== undefined
+      'failsInternalIds' in activatedScript
         ? activatedScript.failsInternalIds
         : [];
 
@@ -234,7 +237,7 @@ class App extends ImmerReducer<AppState> {
     if (
       this.draftState.lastSelectedScenarioInternalId !== undefined &&
       availableScenarioInternalIds.includes(
-        this.draftState.lastSelectedScenarioInternalId
+        this.draftState.lastSelectedScenarioInternalId,
       )
     ) {
       this.draftState.currentScenarioInternalId =
@@ -246,10 +249,10 @@ class App extends ImmerReducer<AppState> {
       internalIds
         .map(
           (internalId) =>
-            this.draftState.currentTemplate.scenariosByInternalId[internalId]
+            this.draftState.currentTemplate.scenariosByInternalId[internalId],
         )
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((scenario) => scenario.internalId);
+        .sort((a, b) => a!.name.localeCompare(b!.name))
+        .map((scenario) => scenario!.internalId);
 
     /**
      * The list of scenarios which apply to this script, with `passes` before
@@ -273,11 +276,13 @@ class App extends ImmerReducer<AppState> {
     monacoModel,
   }: {
     internalId: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     monacoModel: any;
   }) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.draftState.currentTemplate.scriptsByInternalId[
       internalId
-    ].monacoModel = monacoModel;
+    ]!.monacoModel = monacoModel;
   }
   newScript() {
     this.draftState.activeDialog = ActiveDialog.newScript;
@@ -292,20 +297,21 @@ class App extends ImmerReducer<AppState> {
     internalId: string;
     name: string;
     id: string;
-    lockingType?: AuthenticationTemplateScriptLocking['lockingType'];
+    lockingType?: WalletTemplateScriptLocking['lockingType'];
     isPushed?: boolean;
   }) {
     const currentScript =
-      this.draftState.currentTemplate.scriptsByInternalId[internalId];
+      this.draftState.currentTemplate.scriptsByInternalId[internalId]!;
     if (currentScript.type === 'test-check') {
       const setupInternalId = currentScript.testSetupInternalId;
       this.draftState.currentTemplate.scriptsByInternalId[
         setupInternalId
-      ].name = name;
+      ]!.name = name;
       return;
     }
-    this.draftState.currentTemplate.scriptsByInternalId[internalId].name = name;
-    this.draftState.currentTemplate.scriptsByInternalId[internalId].id = id;
+    this.draftState.currentTemplate.scriptsByInternalId[internalId]!.name =
+      name;
+    this.draftState.currentTemplate.scriptsByInternalId[internalId]!.id = id;
     if (lockingType !== undefined) {
       (
         this.draftState.currentTemplate.scriptsByInternalId[
@@ -336,7 +342,7 @@ class App extends ImmerReducer<AppState> {
           {
             internalId: script.internalId,
             type: script.type,
-            script: script.contents || '',
+            script: script.contents ?? '',
             id: script.id,
             name: script.name,
           } as IDETemplateIsolatedScript;
@@ -371,7 +377,7 @@ class App extends ImmerReducer<AppState> {
         this.draftState.currentlyEditingInternalId = undefined;
         return;
       case 'unlocking':
-        const lockingInternalId = script.parentInternalId as string;
+        const lockingInternalId = script.parentInternalId!;
         this.draftState.currentTemplate.scriptsByInternalId[script.internalId] =
           {
             ageLock: undefined,
@@ -386,10 +392,11 @@ class App extends ImmerReducer<AppState> {
             timeLockType: undefined,
             type: script.type,
           } as IDETemplateUnlockingScript;
+
         const lock =
           this.draftState.currentTemplate.scriptsByInternalId[
             lockingInternalId
-          ];
+          ]!;
         if (lock.type !== 'locking') {
           this.draftState.currentTemplate.scriptsByInternalId[
             lockingInternalId
@@ -413,7 +420,7 @@ class App extends ImmerReducer<AppState> {
       case 'test-setup':
         const testSetupInternalId = script.internalId;
         const checkInternalId = createInsecureUuidV4();
-        const parentInternalId = script.parentInternalId as string;
+        const parentInternalId = script.parentInternalId!;
         this.draftState.currentlyEditingInternalId = script.internalId;
         this.draftState.currentTemplate.scriptsByInternalId[checkInternalId] = {
           type: 'test-check',
@@ -453,29 +460,30 @@ class App extends ImmerReducer<AppState> {
   }
   deleteScript(internalId: string) {
     const deleteTarget =
-      this.draftState.currentTemplate.scriptsByInternalId[internalId];
+      this.draftState.currentTemplate.scriptsByInternalId[internalId]!;
     const deleteInternalIds = [
       internalId,
       ...(deleteTarget.type === 'locking' || deleteTarget.type === 'tested'
         ? deleteTarget.childInternalIds
         : deleteTarget.type === 'test-setup'
-        ? [deleteTarget.testCheckInternalId]
-        : []),
+          ? [deleteTarget.testCheckInternalId]
+          : []),
     ];
     deleteInternalIds.forEach((scriptInternalId) => {
-      delete this.draftState.currentTemplate.scriptsByInternalId[
-        scriptInternalId
-      ];
+      delete (
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        this.draftState.currentTemplate.scriptsByInternalId[scriptInternalId]
+      );
     });
 
     const remaining = Object.keys(
-      this.draftState.currentTemplate.scriptsByInternalId
+      this.draftState.currentTemplate.scriptsByInternalId,
     );
     remaining.forEach((iId) => {
-      const script = this.draftState.currentTemplate.scriptsByInternalId[iId];
+      const script = this.draftState.currentTemplate.scriptsByInternalId[iId]!;
       if (script.type === 'tested' || script.type === 'locking') {
         script.childInternalIds = script.childInternalIds.filter(
-          (childId) => deleteInternalIds.indexOf(childId) === -1
+          (childId) => !deleteInternalIds.includes(childId),
         );
         if (script.childInternalIds.length === 0) {
           this.draftState.currentTemplate.scriptsByInternalId[iId] = {
@@ -490,15 +498,15 @@ class App extends ImmerReducer<AppState> {
     });
 
     const entities = Object.keys(
-      this.draftState.currentTemplate.entitiesByInternalId
+      this.draftState.currentTemplate.entitiesByInternalId,
     );
     entities.forEach((entityInternalId) => {
       const entity =
-        this.draftState.currentTemplate.entitiesByInternalId[entityInternalId];
+        this.draftState.currentTemplate.entitiesByInternalId[entityInternalId]!;
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
-      ].scriptInternalIds = entity.scriptInternalIds.filter(
-        (iId) => deleteInternalIds.indexOf(iId) === -1
+      ]!.scriptInternalIds = entity.scriptInternalIds.filter(
+        (iId) => !deleteInternalIds.includes(iId),
       );
     });
     this.draftState.currentEditingMode = 'template-settings';
@@ -511,7 +519,7 @@ class App extends ImmerReducer<AppState> {
     const firstSupportedVm =
       template.supportedVirtualMachines.find<IDESupportedVM>(
         (templateSupported): templateSupported is IDESupportedVM =>
-          IDEVms.includes(templateSupported as IDESupportedVM)
+          IDEVms.includes(templateSupported as IDESupportedVM),
       );
     if (
       !template.supportedVirtualMachines.includes(this.state.currentVmId) &&
@@ -529,18 +537,20 @@ class App extends ImmerReducer<AppState> {
     this.draftState.evaluationViewerSettings = settings;
   }
   toggleWalletTreeNode(id: string, className: string, isExpanded: boolean) {
-    if (className === WalletTreeClass.wallet) {
-      this.draftState.wallets.walletsByInternalId[id].isExpanded = isExpanded;
+    if (className === (WalletTreeClass.wallet as string)) {
+      this.draftState.wallets.walletsByInternalId[id]!.isExpanded = isExpanded;
     }
-    if (className === WalletTreeClass.address) {
-      this.draftState.wallets.addressesByInternalId[id].isExpanded = isExpanded;
+    if (className === (WalletTreeClass.address as string)) {
+      this.draftState.wallets.addressesByInternalId[id]!.isExpanded =
+        isExpanded;
     }
   }
   toggleAllWalletTreeNodes(isExpanded: boolean) {
     [
       ...Object.values(this.draftState.wallets.walletsByInternalId),
       ...Object.values(this.draftState.wallets.addressesByInternalId),
-    ].map((node) => (node.isExpanded = isExpanded));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ].map((node) => ((node as any).isExpanded = isExpanded));
   }
   switchScenario(scenarioInternalId: string) {
     this.draftState.currentScenarioInternalId = scenarioInternalId;

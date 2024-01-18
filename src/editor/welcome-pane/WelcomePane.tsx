@@ -1,22 +1,19 @@
-import React from 'react';
-import './WelcomePane.scss';
-import { AppState, IDETemplate } from '../../state/types';
-import { connect } from 'react-redux';
-import { IconNames } from '@blueprintjs/icons';
+import './WelcomePane.css';
+import { ideImportWalletTemplate } from '../../state/import-export';
 import { ActionCreators } from '../../state/reducer';
-import multi from '../../templates/2-of-3.json';
+import { IDETemplate } from '../../state/types';
 import recoverable from '../../templates/2-of-2-recoverable.json';
-import { ideImportAuthenticationTemplate } from '../../state/import-export';
-import {
-  AuthenticationTemplate,
-  authenticationTemplateP2pkh,
-} from '@bitauth/libauth';
-import { Icon } from '@blueprintjs/core';
-import { createInsecureUuidV4 } from '../../state/utils';
+import multi from '../../templates/2-of-3.json';
+import { createInsecureUuidV4 } from '../../utils';
+
+import { WalletTemplate, walletTemplateP2pkh } from '@bitauth/libauth';
+import { Clean, People, Person, Repeat, Time } from '@blueprintjs/icons';
+import { connect } from 'react-redux';
 
 const isValidTemplate = (result: IDETemplate | string): result is IDETemplate =>
   typeof result !== 'string';
 const assertValidTemplate = (result: IDETemplate | string) => {
+  /* istanbul ignore next */
   if (!isValidTemplate(result)) {
     throw new Error(`Default template is invalid: ${result}`);
   }
@@ -24,28 +21,24 @@ const assertValidTemplate = (result: IDETemplate | string) => {
 };
 
 const defaultTemplates = {
-  single: assertValidTemplate(
-    ideImportAuthenticationTemplate(authenticationTemplateP2pkh)
-  ),
-  multi: assertValidTemplate(
-    ideImportAuthenticationTemplate(multi as AuthenticationTemplate)
-  ),
+  single: assertValidTemplate(ideImportWalletTemplate(walletTemplateP2pkh)),
+  multi: assertValidTemplate(ideImportWalletTemplate(multi as WalletTemplate)),
   recoverable: assertValidTemplate(
-    ideImportAuthenticationTemplate(recoverable as AuthenticationTemplate)
+    ideImportWalletTemplate(recoverable as WalletTemplate),
   ),
 };
 
-interface WelcomePaneDispatch {
+type WelcomePaneDispatch = {
   importExport: typeof ActionCreators.importExport;
   importTemplate: typeof ActionCreators.importTemplate;
   openTemplateSettings: typeof ActionCreators.openTemplateSettings;
   resetTemplate: typeof ActionCreators.resetTemplate;
   createScript: typeof ActionCreators.createScript;
-}
+};
 
-const templateIconSize = 12;
+const iconSize = 12;
 
-export const WelcomePane = connect((state: AppState) => ({}), {
+export const WelcomePane = connect(() => ({}), {
   importExport: ActionCreators.importExport,
   importTemplate: ActionCreators.importTemplate,
   openTemplateSettings: ActionCreators.openTemplateSettings,
@@ -64,7 +57,7 @@ export const WelcomePane = connect((state: AppState) => ({}), {
           }}
         >
           <h4>
-            <Icon icon={IconNames.PERSON} iconSize={templateIconSize} />
+            <Person size={iconSize} />
             Single Signature (P2PKH) &rarr;
           </h4>
           <p>Transactions are signed by only a single key.</p>
@@ -77,7 +70,7 @@ export const WelcomePane = connect((state: AppState) => ({}), {
           }}
         >
           <h4>
-            <Icon icon={IconNames.PEOPLE} iconSize={templateIconSize} />
+            <People size={iconSize} />
             2-of-3 Multi-Signature &rarr;
           </h4>
           <p>Transactions require any two of three co-owners to sign.</p>
@@ -90,7 +83,7 @@ export const WelcomePane = connect((state: AppState) => ({}), {
           }}
         >
           <h4>
-            <Icon icon={IconNames.TIME} iconSize={templateIconSize} />
+            <Time size={iconSize} />
             2-of-2 Recoverable Vault &rarr;
           </h4>
           <p>
@@ -106,7 +99,7 @@ export const WelcomePane = connect((state: AppState) => ({}), {
             }}
           >
             <h4>
-              <Icon icon={IconNames.DIAGRAM_TREE} iconSize={templateIconSize} />
+              <DiagramTree size={iconSize} />
               1-of-8 Tree Signature &rarr;
             </h4>
             <p>
@@ -122,8 +115,8 @@ export const WelcomePane = connect((state: AppState) => ({}), {
             }}
           >
             <h4>
-              <Icon icon={IconNames.OFFLINE} iconSize={templateIconSize} />
-              Zero-Confirmation Forfeit (ZCF) &rarr;
+              <Offline size={iconSize} />
+              Zero-Confirmation Escrow (ZCE) &rarr;
             </h4>
             <p>
               A single-signature wallet with a public bounty – if the owner
@@ -160,7 +153,7 @@ OP_ADD`,
           }}
         >
           <h4>
-            <Icon icon={IconNames.CLEAN} iconSize={templateIconSize} />
+            <Clean size={iconSize} />
             Scratch Pad &rarr;
           </h4>
           <p>A blank slate, ready for some creative genius.</p>
@@ -173,7 +166,7 @@ OP_ADD`,
           }}
         >
           <h4>
-            <Icon icon={IconNames.REPEAT} iconSize={templateIconSize} />
+            <Repeat size={iconSize} />
             Import or Restore Template &rarr;
           </h4>
           <p>Import or restore a template from a previous session.</p>

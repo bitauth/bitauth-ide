@@ -1,24 +1,24 @@
-import '../editor-dialog.scss';
-import React, { useState } from 'react';
+import '../editor-dialog.css';
 import { ActionCreators } from '../../../state/reducer';
 import {
   ActiveDialog,
-  ScriptType,
   BaseScriptType,
   CurrentScripts,
+  ScriptType,
 } from '../../../state/types';
+import { createInsecureUuidV4 } from '../../../utils';
+import { toConventionalId } from '../../common';
+
 import {
+  Button,
   Classes,
   Dialog,
   FormGroup,
   HTMLSelect,
   InputGroup,
-  Button,
-  Icon,
 } from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { toConventionalId } from '../../common';
-import { createInsecureUuidV4 } from '../../../state/utils';
+import { WarningSign } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 
 const scriptTypes: { label: string; value: ScriptType }[] = [
   { label: 'Locking Script', value: 'locking' },
@@ -69,7 +69,7 @@ export const NewScriptDialog = ({
         script.type === 'isolated' ||
         (scriptType === 'unlocking'
           ? script.type === 'locking'
-          : script.type === 'tested')
+          : script.type === 'tested'),
     )
     .map((script) => ({
       label: script.name,
@@ -80,7 +80,7 @@ export const NewScriptDialog = ({
     <Dialog
       className="editor-dialog"
       onClose={() => closeDialog()}
-      title="Add Script to Authentication Template"
+      title="Add Script to wallet template"
       isOpen={activeDialog === ActiveDialog.newScript}
       canOutsideClickClose={false}
     >
@@ -114,7 +114,9 @@ export const NewScriptDialog = ({
             id="parent-script"
             options={availableParents}
             value={scriptParentId}
-            onChange={(e) => setScriptParentId(e.currentTarget.value)}
+            onChange={(e) => {
+              setScriptParentId(e.currentTarget.value);
+            }}
           />
         </FormGroup>
         <FormGroup
@@ -166,7 +168,7 @@ export const NewScriptDialog = ({
               <span />
             ) : (
               <span>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
@@ -180,7 +182,7 @@ export const NewScriptDialog = ({
                 availableParents.length === 0)
             }
             onClick={() => {
-              if (usedIds.indexOf(scriptId) !== -1) {
+              if (usedIds.includes(scriptId)) {
                 setNonUniqueId(scriptId);
               } else {
                 setScriptName('');
@@ -196,7 +198,7 @@ export const NewScriptDialog = ({
                     parentInternalId:
                       scriptParentId !== ''
                         ? scriptParentId
-                        : availableParents[0].value,
+                        : availableParents[0]!.value,
                   }),
                 });
                 closeDialog();

@@ -1,21 +1,21 @@
-import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import {
-  OpcodesBCH,
-  OpcodeDescriptionsBCH,
-  Range,
-  CompilerOperationsKeyBCH,
-  SigningSerializationAlgorithmIdentifier,
   BuiltInVariables,
+  CompilerOperationsKeyBCH,
   CompilerOperationsSigningSerializationComponent,
   CompilerOperationsSigningSerializationFull,
+  OpcodeDescriptionsBCH,
+  OpcodesBCH,
+  Range,
+  SigningSerializationAlgorithmIdentifier,
 } from '@bitauth/libauth';
+import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
-const opcodeNames = Object.keys(OpcodesBCH).filter(
-  (key) => key.slice(0, 3) === 'OP_'
+const opcodeNames = Object.keys(OpcodesBCH).filter((key) =>
+  key.startsWith('OP_'),
 );
 
-const unknownOpcodes = opcodeNames.filter(
-  (key) => key.slice(0, 10) === 'OP_UNKNOWN'
+const unknownOpcodes = opcodeNames.filter((key) =>
+  key.startsWith('OP_UNKNOWN'),
 );
 
 const disabledOpcodes = [
@@ -34,7 +34,7 @@ const disabledOpcodes = [
 ];
 
 const pushBytesOpcodes = opcodeNames
-  .filter((key) => key.slice(0, 12) === 'OP_PUSHBYTES')
+  .filter((key) => key.startsWith('OP_PUSHBYTES'))
   .concat('OP_PUSHDATA_1', 'OP_PUSHDATA_2', 'OP_PUSHDATA_4');
 
 const pushNumberOpcodes = [
@@ -128,7 +128,7 @@ const sortedOpcodes = [
   ...signatureCheckingOpcodes,
   ...blockingOpcodes,
 ];
-const otherOpcodes = opcodeNames.filter((c) => sortedOpcodes.indexOf(c) === -1);
+const otherOpcodes = opcodeNames.filter((c) => !sortedOpcodes.includes(c));
 
 export const languageBCH = {
   unknownOpcodes,
@@ -149,17 +149,16 @@ export const languageBCH = {
  * string illustrating stack operations.
  */
 const descriptions = Object.entries(OpcodeDescriptionsBCH)
-  .filter(([key]) => key.slice(0, 3) === 'OP_')
+  .filter(([key]) => key.startsWith('OP_'))
   .reduce<{ [opcode: string]: [string, string?] }>((map, [key, value]) => {
     const parts = value.split('(E.g.');
-    const description = parts[0];
-    const example = parts[1];
+    const [description, example] = parts;
     return {
       ...map,
       [key]:
         example !== undefined
-          ? [description, example.slice(0, example.length - 1)]
-          : [description],
+          ? [description!, example.slice(0, example.length - 1)]
+          : [description!],
     };
   }, {});
 
@@ -169,11 +168,11 @@ const descriptions = Object.entries(OpcodeDescriptionsBCH)
  */
 export const isCorrectScript = (
   model: Monaco.editor.ITextModel,
-  script: string
+  script: string,
 ) => model.getValue() === script;
 
 export const opcodeHoverProviderBCH = (
-  script: string
+  script: string,
 ): Monaco.languages.HoverProvider => ({
   provideHover: (model, position) => {
     if (!isCorrectScript(model, script)) {
@@ -182,12 +181,12 @@ export const opcodeHoverProviderBCH = (
     const query = model.getWordAtPosition(position);
     if (query !== null) {
       if (descriptions[query.word] !== undefined) {
-        const exampleString = descriptions[query.word][1];
+        const exampleString = descriptions[query.word]![1];
         return {
           contents: [
             { value: `**${query.word}**` },
             ...(exampleString !== undefined ? [{ value: exampleString }] : []),
-            { value: descriptions[query.word][0] },
+            { value: descriptions[query.word]![0] },
           ],
         };
       }
@@ -206,9 +205,9 @@ const completableOpcodes = [
 const opcodeSuggestions = (range: Range) =>
   completableOpcodes.map<Monaco.languages.CompletionItem>((opcode) => ({
     label: opcode,
-    detail: descriptions[opcode] === undefined ? '' : descriptions[opcode][1],
+    detail: descriptions[opcode] === undefined ? '' : descriptions[opcode]![1],
     documentation:
-      descriptions[opcode] === undefined ? '' : descriptions[opcode][0],
+      descriptions[opcode] === undefined ? '' : descriptions[opcode]![0],
     kind: Monaco.languages.CompletionItemKind.Function,
     insertText: opcode,
     range,
@@ -230,7 +229,7 @@ export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemPro
         query !== null &&
         (query.word === 'O' ||
           query.word === 'OP' ||
-          query.word.slice(0, 3) === 'OP_')
+          query.word.startsWith('OP_'))
           ? opcodeSuggestions(range)
           : [];
       return { suggestions };
@@ -286,66 +285,62 @@ export const signatureOperationParameterDescriptions: {
   [parameter in SigningSerializationAlgorithmIdentifier]: [string, string];
 } = {
   all_outputs: [
-    'A.K.A. "SIGHASH_ALL" (Recommended)',
+    'A.K.A. "SIGHASH_ALL|SIGHASH_FORKID"',
     'The recommended and most frequently used signing serialization algorithm. This signs each element of the transaction using the private key, preventing an attacker from being able to reuse the signature on a modified transaction.',
   ],
-  all_outputs_all_utxos: [
-    'A.K.A. `SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID`',
-    ''
-  ],
-  all_outputs_single_input_INVALID_all_utxos: [
-    'A.K.A. `SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY`',
-    ''
-  ],
   all_outputs_single_input: [
-    'A.K.A. "SIGHASH_ALL" with "ANYONE_CAN_PAY"',
+    'A.K.A. "SIGHASH_ALL|SIGHASH_FORKID|ANYONECANPAY"',
     'A modification to the "all_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.',
   ],
+  all_outputs_all_utxos: [
+    'A.K.A. "SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID"',
+    'A modification to the "all_outputs" signing serialization algorithm which also covers all input UTXOs.',
+  ],
+  all_outputs_single_input_INVALID_all_utxos: [
+    'A.K.A. "SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY"',
+    'This signing serialization algorithm is provided for testing purposes, SIGHASH_UTXOS and ANYONECANPAY are invalid if used together.',
+  ],
   corresponding_output: [
-    'A.K.A. "SIGHASH_SINGLE"',
+    'A.K.A. "SIGHASH_SINGLE|SIGHASH_FORKID"',
     'A signing serialization algorithm which only covers the output with the same index value as the input being spent. Warning: this can cause vulnerabilities by allowing the transaction to be modified after being signed.',
   ],
   corresponding_output_all_utxos: [
-    'A.K.A. `SIGHASH_SINGLE|SIGHASH_UTXOS|SIGHASH_FORKID`',
-    ''
+    'A.K.A. "SIGHASH_SINGLE|SIGHASH_FORKID"',
+    'A signing serialization algorithm which only covers the output with the same index value as the input being spent and all input UTXOs. Warning: this can cause vulnerabilities by allowing the transaction to be modified after being signed.',
   ],
   corresponding_output_single_input: [
-    'A.K.A. "SIGHASH_SINGLE" with "ANYONE_CAN_PAY"',
+    'A.K.A. "SIGHASH_SINGLE|SIGHASH_FORKID|ANYONECANPAY"',
     'A modification to the "corresponding_output" signing serialization algorithm which does not cover inputs other than the one being spent.',
   ],
   corresponding_output_single_input_INVALID_all_utxos: [
-    'A.K.A. `SIGHASH_SINGLE|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY`',
-    ''
+    'A.K.A. "SIGHASH_SINGLE|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY"',
+    'This signing serialization algorithm is provided for testing purposes, SIGHASH_UTXOS and ANYONECANPAY are invalid if used together.',
   ],
   default: [
-    'An alias for `all_outputs_all_utxos`\n'+
-    '(A.K.A. `SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID`),\n'+
-    'the most secure signing serialization algorithm.\n'+
-    'Note that as of 2022, `all_outputs` (A.K.A. `SIGHASH_ALL|SIGHASH_FORKID`)\n'+
-    'is more commonly used and is therefore a better choice for privacy in\n'+
-    'common, existing contract types.',
-    ''
+    '(Recommended) A.K.A. "SIGHASH_ALL|SIGHASH_UTXOS|SIGHASH_FORKID"',
+    'An alias for `all_outputs_all_utxos`, the most secure signing serialization algorithm.',
   ],
   no_outputs: [
-    'A.K.A. "SIGHASH_NONE"',
+    'A.K.A. "SIGHASH_NONE|SIGHASH_FORKID"',
     'A signing serialization algorithm which only covers other inputs. Warning: this allows anyone to modify the outputs after being signed.',
   ],
   no_outputs_all_utxos: [
-    'A.K.A `SIGHASH_NONE|SIGHASH_UTXOS|SIGHASH_FORKID`',
-    ''
+    'A.K.A. "SIGHASH_NONE|SIGHASH_UTXOS|SIGHASH_FORKID"',
+    'A signing serialization algorithm which only covers other inputs and input UTXOs. Warning: this allows anyone to modify the outputs after being signed.',
   ],
   no_outputs_single_input: [
-    'A.K.A. "SIGHASH_NONE" with "ANYONE_CAN_PAY"',
+    'A.K.A. "SIGHASH_NONE|SIGHASH_FORKID|ANYONECANPAY"',
     'A modification to the "no_outputs" signing serialization algorithm which does not cover inputs other than the one being spent.',
   ],
   no_outputs_single_input_INVALID_all_utxos: [
-    'A.K.A. `SIGHASH_NONE|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY`',
-    ''
+    'A.K.A. "SIGHASH_NONE|SIGHASH_UTXOS|SIGHASH_FORKID|ANYONECANPAY"',
+    'This signing serialization algorithm is provided for testing purposes, SIGHASH_UTXOS and ANYONECANPAY are invalid if used together.',
   ],
 };
 
 const keyOperationPartsToDetails = (operation: string, parameter: string) => {
   return (
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     getKeyOperationDescriptions(parameter)[
       operation as CompilerOperationsKeyBCH
     ] || [
@@ -360,7 +355,7 @@ const keyOperationPartsToDetails = (operation: string, parameter: string) => {
 export const getKeyOperationDetails = (variableParts: string[]) => {
   const hasOperation = variableParts.length > 1;
   const [operationName, operationDescription] = hasOperation
-    ? keyOperationPartsToDetails(variableParts[1], variableParts[2])
+    ? keyOperationPartsToDetails(variableParts[1]!, variableParts[2]!)
     : [undefined, undefined];
   return {
     hasOperation,
@@ -391,35 +386,6 @@ export const signingSerializationOperationDetails: {
     | CompilerOperationsSigningSerializationComponent
     | CompilerOperationsSigningSerializationFull]: [string, string];
 } = {
-  full_all_outputs_all_utxos: [
-    'full_all_outputs_all_utxos',
-    ''
-  ],
-  full_all_outputs_single_input_INVALID_all_utxos: [
-    'full_all_outputs_single_input_INVALID_all_utxos',
-    ''
-  ],
-  full_corresponding_output_all_utxos: [
-    'full_corresponding_output_all_utxos',
-    ''
-  ],
-  full_default: [
-    'full_default',
-    ''
-  ],
-  full_no_outputs_all_utxos: [
-    'full_no_outputs_all_utxos',
-    ''
-  ],
-  full_corresponding_output_single_input_INVALID_all_utxos: [
-    'full_corresponding_output_single_input_INVALID_all_utxos',
-    ''
-  ],
-  full_no_outputs_single_input_INVALID_all_utxos: [
-    'full_no_outputs_single_input_INVALID_all_utxos',
-    ''
-  ],
-
   corresponding_output: [
     'Corresponding Output',
     'The signing serialization of the transaction output with the same index as the current input. If no output with the same index exists, this inserts no bytes.',
@@ -440,25 +406,53 @@ export const signingSerializationOperationDetails: {
     'Full Serialization (all_outputs)',
     'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, transaction_outpoints_hash, transaction_sequence_numbers_hash, covered_bytecode_length, covered_bytecode, output_value, transaction_outputs_hash, 0x41 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
   ],
+  full_all_outputs_all_utxos: [
+    'Full Serialization (all_outputs_all_utxos)',
+    'The complete signing serialization as generated by the all_outputs_all_utxos algorithm – the concatenation of: version, transaction_outpoints_hash, transaction_utxos_hash, transaction_sequence_numbers_hash, covered_bytecode_length, covered_bytecode, output_value, transaction_outputs_hash, 0x41 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
+  ],
   full_all_outputs_single_input: [
     'Full Serialization (all_outputs_single_input)',
     'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, 64 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value, transaction_outputs_hash, 0xc1 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
+  ],
+  full_all_outputs_single_input_INVALID_all_utxos: [
+    'Full Serialization (all_outputs_single_input_INVALID_all_utxos)',
+    'This signing serialization algorithm is provided for testing purposes, SIGHASH_UTXOS and ANYONECANPAY are invalid if used together.',
   ],
   full_corresponding_output: [
     'Full Serialization (corresponding_output)',
     'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, transaction_outpoints_hash, 32 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value, corresponding_output_hash (or if no corresponding output exists, 32 bytes of 0x00), 0x43 (the byte representing this signing    serialization type), and 0x000000 (fork ID).',
   ],
+  full_corresponding_output_all_utxos: [
+    'Full Serialization (corresponding_output_all_utxos)',
+    'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, transaction_outpoints_hash, transaction_utxos_hash, 32 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value, corresponding_output_hash (or if no corresponding output exists, 32 bytes of 0x00), 0x43 (the byte representing this signing    serialization type), and 0x000000 (fork ID).',
+  ],
   full_corresponding_output_single_input: [
     'Full Serialization (corresponding_output_single_input)',
     'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, 64 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value</code>, corresponding_output_hash (or if no corresponding output exists, 32 bytes of 0x00), 0xc3 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
+  ],
+  full_corresponding_output_single_input_INVALID_all_utxos: [
+    'Full Serialization (corresponding_output_single_input_INVALID_all_utxos)',
+    'This signing serialization algorithm is provided for testing purposes, SIGHASH_UTXOS and ANYONECANPAY are invalid if used together.',
+  ],
+  full_default: [
+    'Full Serialization (default)',
+    'An alias for full_all_outputs_all_utxos, the complete signing serialization as generated by the all_outputs_all_utxos algorithm – the concatenation of: version, transaction_outpoints_hash, transaction_utxos_hash, transaction_sequence_numbers_hash, covered_bytecode_length, covered_bytecode, output_value, transaction_outputs_hash, 0x41 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
   ],
   full_no_outputs: [
     'Full Serialization (no_outputs)',
     'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, transaction_outpoints_hash, 32 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value, 32 bytes of 0x00, 0x42 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
   ],
+  full_no_outputs_all_utxos: [
+    'Full Serialization (no_outputs_all_utxos)',
+    'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, transaction_outpoints_hash, transaction_utxos_hash, 32 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value, 32 bytes of 0x00, 0x42 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
+  ],
   full_no_outputs_single_input: [
     'Full Serialization (no_outputs_single_input)',
     'The complete signing serialization as generated by the all_outputs algorithm – the concatenation of: version, 64 bytes of 0x00, covered_bytecode_length, covered_bytecode, output_value, 32 bytes of 0x00, 0xc2 (the byte representing this signing serialization type), and 0x000000 (fork ID).',
+  ],
+  full_no_outputs_single_input_INVALID_all_utxos: [
+    'Full Serialization (no_outputs_single_input_INVALID_all_utxos)',
+    'This signing serialization algorithm is provided for testing purposes, SIGHASH_UTXOS and ANYONECANPAY are invalid if used together.',
   ],
   locktime: ['Locktime', "The transaction's locktime."],
   outpoint_index: [

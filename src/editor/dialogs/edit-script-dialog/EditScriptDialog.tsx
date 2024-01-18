@@ -1,20 +1,20 @@
-import '../editor-dialog.scss';
-import React, { useState } from 'react';
+import '../editor-dialog.css';
 import { ActionCreators } from '../../../state/reducer';
 import { ScriptType } from '../../../state/types';
+import { toConventionalId } from '../../common';
+
 import {
+  Alert,
+  Button,
   Classes,
   Dialog,
   FormGroup,
   InputGroup,
-  Button,
-  Icon,
-  Switch,
   Intent,
-  Alert,
+  Switch,
 } from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { toConventionalId } from '../../common';
+import { Trash, WarningSign } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 
 export const EditScriptDialog = ({
   scriptType,
@@ -39,7 +39,7 @@ export const EditScriptDialog = ({
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
   isOpen: boolean;
-  closeDialog: () => any;
+  closeDialog: () => void;
 }) => {
   const [scriptName, setScriptName] = useState(name);
   const [scriptId, setScriptId] = useState(id);
@@ -142,10 +142,11 @@ export const EditScriptDialog = ({
             helperText={
               <span>
                 If enabled, this script will be wrapped in a push statement for
-                testing. This is useful for scripts which serve as "bytecode
-                templates" – e.g. formatted messages or signature preimages.
-                These scripts are typically not evaluated as bytecode but appear
-                within push statements elsewhere in the template.
+                testing. This is useful for scripts which serve as
+                &ldquo;bytecode templates&rdquo; – e.g. formatted messages or
+                signature preimages. These scripts are typically not evaluated
+                as bytecode but appear within push statements elsewhere in the
+                template.
               </span>
             }
             label="Pushed Script"
@@ -168,7 +169,7 @@ export const EditScriptDialog = ({
             setPromptDelete(true);
           }}
         >
-          <Icon icon={IconNames.TRASH} iconSize={10} />
+          <Trash size={10}></Trash>
           Delete {isTest ? 'Test' : 'Script'}
         </Button>
         <Alert
@@ -178,7 +179,9 @@ export const EditScriptDialog = ({
           isOpen={promptDelete}
           canEscapeKeyCancel={true}
           canOutsideClickCancel={true}
-          onCancel={() => setPromptDelete(false)}
+          onCancel={() => {
+            setPromptDelete(false);
+          }}
           onConfirm={() => deleteScript(internalId)}
         >
           <p>Are you sure you want to delete the script “{name}”?</p>
@@ -199,7 +202,7 @@ export const EditScriptDialog = ({
               <span />
             ) : (
               <span>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 The ID <code>{nonUniqueId}</code> is already in use.
               </span>
             )}
@@ -214,7 +217,7 @@ export const EditScriptDialog = ({
               (!isTest && scriptId === '')
             }
             onClick={() => {
-              if (!isTest && otherIds.indexOf(scriptId) !== -1) {
+              if (!isTest && otherIds.includes(scriptId)) {
                 setNonUniqueId(scriptId);
               } else {
                 editScript({

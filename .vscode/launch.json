@@ -7,36 +7,9 @@
     {
       "type": "chrome",
       "request": "launch",
-      "name": "Launch in Chrome",
+      "name": "Launch Chrome against localhost",
       "url": "http://localhost:3000",
-      "webRoot": "${workspaceFolder}",
-      "timeout": 30000
-    },
-    {
-      "name": "Debug CRA Tests",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/react-scripts",
-      "args": ["test", "--runInBand", "--no-cache", "--watchAll=false"],
-      "cwd": "${workspaceRoot}",
-      "protocol": "inspector",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "env": { "CI": "true" },
-      "disableOptimisticBPs": true
-    },
-    // To use: run `yarn cypress`, in a separate terminal. In the Cypress
-    // UI, start a test. In VS Code, run "Attach to Cypress", then restart the
-    // test to begin debugging.
-    {
-      "type": "chrome",
-      "request": "attach",
-      "name": "Attach to Cypress (yarn cypress)",
-      "port": 9222,
-      "urlFilter": "http://localhost*",
-      "webRoot": "${workspaceFolder}",
-      "sourceMaps": true,
-      "skipFiles": ["cypress_runner.js"]
+      "webRoot": "${workspaceFolder}"
     }
   ]
 }

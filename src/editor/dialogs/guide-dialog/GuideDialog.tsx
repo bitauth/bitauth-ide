@@ -1,8 +1,8 @@
-import '../editor-dialog.scss';
-import './GuideDialog.scss';
-import React from 'react';
+import '../editor-dialog.css';
+import './GuideDialog.css';
 import { ActionCreators } from '../../../state/reducer';
 import { ActiveDialog } from '../../../state/types';
+
 import { Classes, Dialog } from '@blueprintjs/core';
 
 export const GuideDialog = ({
@@ -25,13 +25,13 @@ export const GuideDialog = ({
         <p>
           <em>Bitauth IDE</em> is an integrated development environment for
           bitcoin authentication. This guide will explain features of the IDE
-          and templating language.
+          and CashAssembly.
         </p>
         <h2>Bitauth Templates</h2>
         <p>
-          When you work in Bitauth IDE, you're working on a{' '}
-          <em>Bitauth Template</em>. It's a JSON file which fully describes the
-          authentication protocol for a bitcoin wallet. Compatible wallet
+          When you work in Bitauth IDE, you&apos;re working on a{' '}
+          <em>Bitauth Template</em>. It&apos;s a JSON file which fully describes
+          the authentication protocol for a bitcoin wallet. Compatible wallet
           software can import your template and generate a fully-functional
           wallet, even for complex, multi-party protocols. Bitauth IDE lets you
           write, test, and export Bitauth templates.
@@ -43,11 +43,11 @@ export const GuideDialog = ({
             the wallet.
           </li>
           <li>
-            <em>Scripts</em> – the code used by wallet software to create
+            <em>Scripts</em> – the code used by wallet software to create
             addresses and transactions.
           </li>
           <li>
-            <em>Scenarios</em> – a set of example situations used for testing
+            <em>Scenarios</em> – a set of example situations used for testing
             and fee estimation.
           </li>
         </ul>
@@ -75,15 +75,15 @@ export const GuideDialog = ({
             generated.
           </li>
           <li>
-            <em>Unlocking Scripts</em> – scripts which enable wallet software to
+            <em>Unlocking Scripts</em> – scripts which enable wallet software to
             spend from the wallet.
           </li>
           <li>
-            <em>Isolated Scripts</em> – scripts used as macros or bytecode
+            <em>Isolated Scripts</em> – scripts used as macros or bytecode
             templates.
           </li>
           <li>
-            <em>Isolated Script Tests</em> – a pair of scripts (<em>Setup</em>{' '}
+            <em>Isolated Script Tests</em> – a pair of scripts (<em>Setup</em>{' '}
             and <em>Check</em>) used to verify the functionality of an isolated
             script.
           </li>
@@ -111,19 +111,18 @@ export const GuideDialog = ({
           with different variable values, and in different transaction contexts.
           See <code>Developing Scenarios</code> below for details.
         </p>
-        <h2>Bitauth Templating Language (BTL)</h2>
+        <h2>CashAssembly</h2>
         <p>
-          Bitauth template scripts are written in{' '}
-          <em>Bitauth Templating Language (BTL)</em>. The language is very
-          low-level – any bitcoin virtual machine bytecode can be represented in
-          BTL.
+          Bitauth IDE scripts are written in <em>CashAssembly</em>. The language
+          is very low-level – any bitcoin virtual machine bytecode can be
+          represented in CashAssembly.
         </p>
         <h3>Opcodes</h3>
         <p>
-          Opcode identifiers in BTL are prefixed with <code>OP_</code>. During
-          compilation, opcode identifiers are replaced with their bytecode
-          equivalents. E.g <code>OP_0 OP_1 OP_ADD</code> will compile to the
-          bytecode <code>005193</code> (hex-encoded).
+          Opcode identifiers in CashAssembly are prefixed with <code>OP_</code>.
+          During compilation, opcode identifiers are replaced with their
+          bytecode equivalents. E.g <code>OP_0 OP_1 OP_ADD</code> will compile
+          to the bytecode <code>005193</code> (hex-encoded).
         </p>
         <p>
           All opcodes are also autocompleted within the IDE. To read a
@@ -131,7 +130,7 @@ export const GuideDialog = ({
           also find resources describing bitcoin opcodes online.
         </p>
         <h3>Literal Data Types</h3>
-        <p>BTL supports 4 literal data types:</p>
+        <p>CashAssembly supports 4 literal data types:</p>
         <ul>
           <li>
             <em>Hex literals</em> – hex-encoded data, prefixed with{' '}
@@ -140,15 +139,15 @@ export const GuideDialog = ({
             hex literal, e.g. <code>0x0000_1111_0000_1111</code>.
           </li>
           <li>
-            <em>UTF8 literals</em> – UTF8-encoded data, surrounded by single
-            quotes (<code>'</code>) or double quotes (<code>"</code>), e.g.{' '}
-            <code>'this is a string'</code> or{' '}
+            <em>UTF8 literals</em> – UTF8-encoded data, surrounded by single
+            quotes (<code>&#39;</code>) or double quotes (<code>&#34;</code>),
+            e.g. <code>&#39;this is a string&#39;</code> or{' '}
             <code>
-              "UTF8{' '}
+              &#34;UTF8{' '}
               <span role="img" aria-label="thumbs up">
                 👍
               </span>
-              "
+              &#34;
             </code>
             .
           </li>
@@ -173,9 +172,9 @@ export const GuideDialog = ({
           contents to the stack.
         </p>
         <p>
-          For example <code>&lt;"abc"&gt;</code> will generate the bytecode to
-          push <code>"abc"</code> (<code>616263</code>) to the stack:{' '}
-          <code>03616263</code> (disassembled:{' '}
+          For example <code>&lt;&#34;abc&#34;&gt;</code> will generate the
+          bytecode to push <code>&#34;abc&#34;</code> (<code>616263</code>) to
+          the stack: <code>03616263</code> (disassembled:{' '}
           <code>OP_PUSHBYTES_3 0x616263</code>). Pushes are automatically
           minimized: e.g. <code>&lt;1&gt;</code> compiles to <code>51</code>{' '}
           (disassembled: <code>OP_1</code>), and <code>&lt;OP_0&gt;</code>{' '}
@@ -183,8 +182,8 @@ export const GuideDialog = ({
           <code>0100</code> (disassembled: <code>OP_PUSHBYTES_1 0x00</code>).
         </p>
         <p>
-          Any valid BTL can be contained in a push statement (including further
-          push statements), so code like{' '}
+          Any valid CashAssembly can be contained in a push statement (including
+          further push statements), so code like{' '}
           <code>&lt;&lt;&lt;&lt;1&gt;&gt;&gt;&gt;</code> is valid. (Result:{' '}
           <code>03020151</code>)
         </p>
@@ -283,37 +282,38 @@ export const GuideDialog = ({
             signing serialization algorithm. This signs each element of the
             transaction using the private key, preventing an attacker from being
             able to reuse the signature on a modified transaction. (A.K.A.
-            "SIGHASH_ALL")
+            &ldquo;SIGHASH_ALL&rdquo;)
           </li>
           <li>
             <code>all_outputs_single_input</code>– a modification to the
-            "all_outputs" signing serialization algorithm which does not cover
-            inputs other than the one being spent. (A.K.A. "SIGHASH_ALL" with
-            "ANYONE_CAN_PAY")
+            &ldquo;all_outputs&rdquo; signing serialization algorithm which does
+            not cover inputs other than the one being spent. (A.K.A.
+            &ldquo;SIGHASH_ALL&rdquo; with &ldquo;ANYONE_CAN_PAY&rdquo;)
           </li>
           <li>
             <code>corresponding_output</code>– a signing serialization algorithm
             which only covers the output with the same index value as the input
             being spent. Warning: this can cause vulnerabilities by allowing the
             transaction to be modified in certain ways after being signed.
-            (A.K.A. "SIGHASH_SINGLE")
+            (A.K.A. &ldquo;SIGHASH_SINGLE&rdquo;)
           </li>
           <li>
             <code>corresponding_output_single_input</code>– a modification to
-            the "corresponding_output" signing serialization algorithm which
-            does not cover inputs other than the one being spent. (A.K.A.
-            "SIGHASH_SINGLE" with "ANYONE_CAN_PAY")
+            the &ldquo;corresponding_output&rdquo; signing serialization
+            algorithm which does not cover inputs other than the one being
+            spent. (A.K.A. &ldquo;SIGHASH_SINGLE&rdquo; with
+            &ldquo;ANYONE_CAN_PAY&rdquo;)
           </li>
           <li>
             <code>no_outputs</code>– a signing serialization algorithm which
             only covers other inputs. Warning: this allows anyone to modify the
-            outputs after being signed. (A.K.A. "SIGHASH_NONE")
+            outputs after being signed. (A.K.A. &ldquo;SIGHASH_NONE&rdquo;)
           </li>
           <li>
             <code>no_outputs_single_input</code>– a modification to the
-            "no_outputs" signing serialization algorithm which does not cover
-            inputs other than the one being spent. (A.K.A. "SIGHASH_NONE" with
-            "ANYONE_CAN_PAY")
+            &ldquo;no_outputs&rdquo; signing serialization algorithm which does
+            not cover inputs other than the one being spent. (A.K.A.
+            &ldquo;SIGHASH_NONE&rdquo; with &ldquo;ANYONE_CAN_PAY&rdquo;)
           </li>
         </ul>
         <p>
@@ -355,14 +355,16 @@ export const GuideDialog = ({
           <code>)</code> which use the bitcoin virtual machine itself to assist
           in generating bytecode. The contents of an evaluation are compiled and
           evaluated, and the top element on the resulting stack is then inserted
-          as bytecode. E.g. <code>$(&lt;1&gt; &lt;2&gt; OP_ADD) "abc"</code>{' '}
-          produces the bytecode <code>03616263</code> (disassembled:{' '}
+          as bytecode. E.g.{' '}
+          <code>$(&lt;1&gt; &lt;2&gt; OP_ADD) &#34;abc&#34;</code> produces the
+          bytecode <code>03616263</code> (disassembled:{' '}
           <code>OP_PUSHBYTES_3 0x616263</code>).
         </p>
         <p>
           This is surprisingly useful – often the procedure to create a desired
           bytecode sequence is similar to the procedure later used to validate
-          it. For example, a P2SH locking script is generated using this BTL:
+          it. For example, a P2SH locking script is generated using this
+          CashAssembly:
         </p>
         <p>
           <code>
@@ -399,23 +401,23 @@ export const GuideDialog = ({
           </li>
           <li>
             <code>signing_serialization</code>– Provides access to both the full
-            contents and individual components of the transaction's signing
+            contents and individual components of the transaction&apos;s signing
             serialization.
           </li>
         </ul>
         <h4>Signing Serialization Operations</h4>
         <p>
           Signing Serialization information is useful for defining
-          "covenant"-style scripts which validate properties of the final
-          transaction. This is done by duplicating a signature provided in an
-          unlocking script, and validating it with both <code>OP_CHECKSIG</code>{' '}
-          and <code>OP_CHECKDATASIG</code>, passing the expected signing
-          serialization as the message.
+          &ldquo;covenant&rdquo;-style scripts which validate properties of the
+          final transaction. This is done by duplicating a signature provided in
+          an unlocking script, and validating it with both{' '}
+          <code>OP_CHECKSIG</code> and <code>OP_CHECKDATASIG</code>, passing the
+          expected signing serialization as the message.
         </p>
         <p>
           With the guarantee that a signing serialization is complete and
-          correct, it's possible to perform much more complex validation, like
-          restricting output amounts and destinations.
+          correct, it&apos;s possible to perform much more complex validation,
+          like restricting output amounts and destinations.
         </p>
         <p>
           The following signing serialization operations provide access to
@@ -423,7 +425,7 @@ export const GuideDialog = ({
         </p>
         <ul>
           <li>
-            <code>signing_serialization.version</code>– The transaction's
+            <code>signing_serialization.version</code>– The transaction&apos;s
             version number.
           </li>
           <li>
@@ -491,7 +493,7 @@ export const GuideDialog = ({
             hash of all transaction outputs.
           </li>
           <li>
-            <code>signing_serialization.locktime</code>– The transaction's
+            <code>signing_serialization.locktime</code>– The transaction&apos;s
             locktime.
           </li>
         </ul>
@@ -562,11 +564,11 @@ export const GuideDialog = ({
         </ul>
         <h2>Developing Scenarios</h2>
         <p>
-          Scenarios provide control over the "test transaction" used internally
-          by Bitauth IDE to produce the live evaluation trace. Because the IDE
-          does not currently provide a GUI editor for scenarios, they must be
-          added or modified in the JSON template source using the template
-          import/export feature.
+          Scenarios provide control over the &ldquo;test transaction&rdquo; used
+          internally by Bitauth IDE to produce the live evaluation trace.
+          Because the IDE does not currently provide a GUI editor for scenarios,
+          they must be added or modified in the JSON template source using the
+          template import/export feature.
         </p>
         <p>
           To add a new scenario, add a <code>scenarios</code> property to the
@@ -579,7 +581,7 @@ export const GuideDialog = ({
           hotkey to activate autocomplete suggestions for available properties.
         </p>
         <p>
-          Once you've added some scenarios, you can reference them from
+          Once you&apos;ve added some scenarios, you can reference them from
           unlocking scripts and script tests. Add a <code>passes</code> and/or{' '}
           <code>fails</code> array of scenario IDs to each script or test to
           indicate which scenarios should cause them to pass or fail evaluation,
@@ -589,7 +591,7 @@ export const GuideDialog = ({
         <h2>Getting Started</h2>
         <p>
           The easiest way to get started working with Bitauth IDE is to review
-          the example templates. You'll find examples of both common wallet
+          the example templates. You&apos;ll find examples of both common wallet
           types and of complex, multi-entity authentication schemes.
         </p>
         <h3>Thanks for reading!</h3>

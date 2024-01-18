@@ -1,24 +1,25 @@
-import { AppState, ActiveDialog, IDESupportedVM } from './types';
-import { IDEMode } from './types';
-import { AuthenticationTemplate } from '@bitauth/libauth';
-import { ideImportAuthenticationTemplate } from './import-export';
+import { bitauthWalletTemplateSchema } from '../editor/constants';
 import { isImportRoute } from '../init/routing';
-import { bitauthAuthenticationTemplateSchema } from '../editor/constants';
+
+import { ideImportWalletTemplate } from './import-export';
+import { ActiveDialog, AppState, IDEMode, IDESupportedVM } from './types';
+
+import { WalletTemplate } from '@bitauth/libauth';
 
 // TODO: finish wallet mode, remove
-export const workingOnWalletMode = false;
+export const workingOnWalletMode = false as boolean;
 
-export const emptyTemplate: AuthenticationTemplate = {
-  $schema: bitauthAuthenticationTemplateSchema,
+export const emptyTemplate: WalletTemplate = {
+  $schema: bitauthWalletTemplateSchema,
   description: '',
   name: 'Untitled',
   entities: {},
   scripts: {},
-  supported: ['BCH_2022_05', 'BCH_SPEC'] as IDESupportedVM[],
-  version: 0 as 0,
+  supported: ['BCH_2023_05'] as IDESupportedVM[],
+  version: 0 as const,
 };
 
-const defaultTemplate = ideImportAuthenticationTemplate(emptyTemplate);
+const defaultTemplate = ideImportWalletTemplate(emptyTemplate);
 if (typeof defaultTemplate === 'string') {
   throw new Error(`Invalid empty template: ${defaultTemplate}`);
 }
@@ -33,7 +34,7 @@ export const defaultState: AppState = {
   currentScenarioInternalId: undefined,
   lastSelectedScenarioInternalId: undefined,
   currentTemplate: defaultTemplate,
-  currentVmId: 'BCH_2022_05',
+  currentVmId: 'BCH_2023_05',
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
     groupStackItemsDeeperThan: 3,
@@ -46,6 +47,7 @@ export const defaultState: AppState = {
   templateLoadTime: undefined,
   pendingTemplateImport: undefined,
   wallets: {
+    // cspell: disable
     walletsByInternalId: {
       '6aeeb5f3-7c96-4a57-bd4c-3c2775cdbc15': {
         name: 'IDE Wallet',
@@ -152,4 +154,5 @@ export const defaultState: AppState = {
     },
   },
   currentWalletInternalId: '6aeeb5f3-7c96-4a57-bd4c-3c2775cdbc15',
+  // cspell: enable
 };

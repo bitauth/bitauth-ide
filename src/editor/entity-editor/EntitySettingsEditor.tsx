@@ -1,37 +1,37 @@
-import React, { useState } from 'react';
-import './EntitySettingsEditor.scss';
+import './EntitySettingsEditor.css';
+import { ActionCreators } from '../../state/reducer';
+import { AppState, CurrentScripts, IDETemplateEntity } from '../../state/types';
+import { getCurrentScripts, toConventionalId } from '../common';
+
 import {
+  Alert,
+  Button,
+  Checkbox,
   EditableText,
   FormGroup,
   InputGroup,
-  RadioGroup,
-  Radio,
-  Checkbox,
-  Button,
-  Icon,
   Intent,
-  Alert,
+  Radio,
+  RadioGroup,
 } from '@blueprintjs/core';
-import { CurrentScripts, AppState, IDETemplateEntity } from '../../state/types';
-import { ActionCreators } from '../../state/reducer';
-import { toConventionalId, getCurrentScripts } from '../common';
+import { Trash } from '@blueprintjs/icons';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
-import { IconNames } from '@blueprintjs/icons';
 
-interface EntitySettingsProps {
+type EntitySettingsProps = {
   entityInternalId: string;
   entity: IDETemplateEntity;
   currentScripts: CurrentScripts;
-}
+};
 
-interface EntitySettingsDispatch {
+type EntitySettingsDispatch = {
   updateEntityDescription: typeof ActionCreators.updateEntityDescription;
   updateEntityId: typeof ActionCreators.updateEntityId;
   updateEntityName: typeof ActionCreators.updateEntityName;
   updateEntityScriptUsage: typeof ActionCreators.updateEntityScriptUsage;
   updateEntityScripts: typeof ActionCreators.updateEntityScripts;
   deleteEntity: typeof ActionCreators.deleteEntity;
-}
+};
 
 export const EntitySettingsEditor = connect(
   (state: AppState, { entityInternalId }: { entityInternalId: string }) => ({
@@ -46,14 +46,9 @@ export const EntitySettingsEditor = connect(
     updateEntityScriptUsage: ActionCreators.updateEntityScriptUsage,
     updateEntityScripts: ActionCreators.updateEntityScripts,
     deleteEntity: ActionCreators.deleteEntity,
-  }
+  },
 )((props: EntitySettingsProps & EntitySettingsDispatch) => {
   const [promptDelete, setPromptDelete] = useState(false);
-  const [fastEntityName, setFastEntityName] = useState(props.entity.name);
-  const [fastEntityDescription, setFastEntityDescription] = useState(
-    props.entity.description
-  );
-  const [fastEntityId, setFastEntityId] = useState(props.entity.id);
   return (
     <div className="EntitySettingsEditor EditorPane">
       <h2>Entity Settings</h2>
@@ -64,29 +59,32 @@ export const EntitySettingsEditor = connect(
             minWidth={300}
             placeholder="Entity Name"
             selectAllOnFocus={true}
-            value={fastEntityName}
-            onChange={(name) => setFastEntityName(name)}
-            onConfirm={(name) => {
+            value={props.entity.name}
+            onChange={(name) => {
               props.updateEntityName(props.entityInternalId, name);
+              // setFastEntityName(name);
+            }}
+            onConfirm={(name) => {
               const id = toConventionalId(name);
-              setFastEntityId(id);
+              // setFastEntityId(id);
               props.updateEntityId(props.entityInternalId, id);
             }}
           />
         </h3>
         <div className="description">
           <EditableText
-            key={props.entity.id}
             maxLength={1000}
             minLines={3}
             multiline={true}
             placeholder="A brief description of this entity..."
             selectAllOnFocus={true}
-            value={fastEntityDescription}
-            onChange={(description) => setFastEntityDescription(description)}
-            onConfirm={(description) =>
-              props.updateEntityDescription(props.entityInternalId, description)
-            }
+            value={props.entity.description}
+            onChange={(description) => {
+              props.updateEntityDescription(
+                props.entityInternalId,
+                description,
+              );
+            }}
           />
         </div>
         <FormGroup
@@ -111,15 +109,10 @@ export const EntitySettingsEditor = connect(
         >
           <InputGroup
             id="entity-id"
-            value={fastEntityId}
+            value={props.entity.id}
             autoComplete="off"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value;
-              setFastEntityId(value);
-            }}
-            onBlur={(e) => {
               const value = toConventionalId(e.target.value);
-              setFastEntityId(value);
               props.updateEntityId(props.entityInternalId, value);
             }}
           />
@@ -134,7 +127,7 @@ export const EntitySettingsEditor = connect(
               </p>
               <p>
                 This is not used in the IDE, but is required by wallets
-                importing the Authentication Template.
+                importing the wallet template.
               </p>
             </span>
           }
@@ -145,7 +138,7 @@ export const EntitySettingsEditor = connect(
             onChange={(e) => {
               props.updateEntityScriptUsage(
                 props.entityInternalId,
-                e.currentTarget.value === 'on'
+                e.currentTarget.value === 'on',
               );
             }}
             selectedValue={props.entity.usesAllScripts ? 'on' : 'off'}
@@ -168,19 +161,18 @@ export const EntitySettingsEditor = connect(
           <div>
             {props.currentScripts.map((script) => (
               <Checkbox
-                checked={
-                  props.entity.scriptInternalIds.indexOf(script.internalId) !==
-                  -1
-                }
+                checked={props.entity.scriptInternalIds.includes(
+                  script.internalId,
+                )}
                 key={script.internalId}
                 label={script.name}
                 value={script.internalId}
                 onChange={(_) => {
                   props.updateEntityScripts(props.entityInternalId, {
                     [script.internalId]:
-                      props.entity.scriptInternalIds.indexOf(
-                        script.internalId
-                      ) === -1,
+                      !props.entity.scriptInternalIds.includes(
+                        script.internalId,
+                      ),
                   });
                 }}
               />
@@ -189,9 +181,11 @@ export const EntitySettingsEditor = connect(
         </FormGroup>
         <Button
           className="ide-secondary-button delete-item-button"
-          onClick={() => setPromptDelete(true)}
+          onClick={() => {
+            setPromptDelete(true);
+          }}
         >
-          <Icon icon={IconNames.TRASH} iconSize={10} />
+          <Trash size={10} />
           Delete Entity
         </Button>
         <Alert
@@ -201,7 +195,9 @@ export const EntitySettingsEditor = connect(
           isOpen={promptDelete}
           canEscapeKeyCancel={true}
           canOutsideClickCancel={true}
-          onCancel={() => setPromptDelete(false)}
+          onCancel={() => {
+            setPromptDelete(false);
+          }}
           onConfirm={() => props.deleteEntity(props.entityInternalId)}
         >
           <p>

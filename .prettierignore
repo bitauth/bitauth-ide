@@ -1,0 +1,9 @@
+.yarn*
+.pnp*
+node_modules
+.nyc_output
+coverage
+dist
+playwright-report
+test-results
+libauth

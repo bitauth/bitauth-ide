@@ -1,0 +1,6 @@
+.WalletHistoryExplorer {
+  background-color: var(--stack-vis-background-color);
+  & h2 {
+    background: var(--editor-background-color);
+  }
+}

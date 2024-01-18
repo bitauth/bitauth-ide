@@ -1,7 +1,0 @@
-{
-  "baseUrl": "http://localhost:3000",
-  "projectId": "nsu3gr",
-  "viewportHeight": 1080,
-  "viewportWidth": 1920,
-  "experimentalFetchPolyfill": true
-}

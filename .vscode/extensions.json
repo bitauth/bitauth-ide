@@ -3,6 +3,9 @@
     "esbenp.prettier-vscode",
     "gruntfuggly.todo-tree",
     "wix.vscode-import-cost",
-    "streetsidesoftware.code-spell-checker"
+    "streetsidesoftware.code-spell-checker",
+    "arcanis.vscode-zipfs",
+    "dbaeumer.vscode-eslint",
+    "ms-playwright.playwright"
   ]
 }

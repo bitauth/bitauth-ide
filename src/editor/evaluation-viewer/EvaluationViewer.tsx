@@ -1,36 +1,52 @@
-import React, { useState } from 'react';
-import './EvaluationViewer.scss';
-import {
-  binToHex,
-  binToBinString,
-  Range,
-  stringify,
-  vmNumberToBigInt,
-  stringifyDebugTraceSummary,
-  summarizeDebugTrace,
-} from '@bitauth/libauth';
-import * as libauth from '@bitauth/libauth';
-import {
-  EvaluationViewerHighlight,
-  EvaluationViewerSpacer,
-  StackItemIdentifyFunction,
-  EvaluationViewerLine,
-  IDESupportedProgramState,
-  EvaluationViewerSettings,
-  EvaluationViewerComputedState,
-  ScriptEditorFrame,
-} from '../editor-types';
-import { Tooltip, Popover, Button, HTMLSelect, Icon } from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
+import './EvaluationViewer.css';
 import { ActionCreators } from '../../state/reducer';
-import { ScenarioDetails } from '../../state/types';
 import {
-  vmErrorAssistanceBCH,
+  EvaluationViewerSettings,
+  IDESupportedProgramState,
+  ScenarioDetails,
+} from '../../state/types';
+import { abbreviateStackItem } from '../common';
+import {
+  EvaluationViewerComputedState,
+  EvaluationViewerHighlight,
+  EvaluationViewerLine,
+  EvaluationViewerSpacer,
+  ScriptEditorFrame,
+  StackItemIdentifyFunction,
+} from '../editor-types';
+import {
   compilationErrorAssistance,
   renderSimpleMarkdown,
+  vmErrorAssistanceBCH,
 } from '../script-editor/error-assistance';
-import { abbreviateStackItem } from '../common';
 
+import * as libauth from '@bitauth/libauth';
+import {
+  binToBinString,
+  binToHex,
+  Range,
+  stringify,
+  stringifyDebugTraceSummary,
+  summarizeDebugTrace,
+  vmNumberToBigInt,
+} from '@bitauth/libauth';
+import { Button, HTMLSelect, Popover, Tooltip } from '@blueprintjs/core';
+import {
+  Cross,
+  Error,
+  GroupObjects,
+  Maximize,
+  Minimize,
+  Pin,
+  Redo,
+  Tick,
+  Undo,
+  UngroupObjects,
+  Unpin,
+} from '@blueprintjs/icons';
+import { useState } from 'react';
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
 (window as any).libauth = libauth;
 
 // cspell:ignore clibauth cwindow
@@ -53,13 +69,13 @@ You can click a line in the evaluation viewer to inspect the program state at th
   'color: #cb1b15; font-weight: bold; font-style: italic;',
   'color: #888; font-style: italic;',
   'color: #cb1b15; font-weight: bold; font-style: italic;',
-  'color: #888; font-style: italic;'
+  'color: #888; font-style: italic;',
 );
 
 const stackItem = (
   itemIndex: number,
   content: string,
-  element: JSX.Element
+  element: JSX.Element,
 ) => (
   <Popover
     key={`${itemIndex}:${content}`}
@@ -74,7 +90,7 @@ const stackItem = (
 const getStackItemDisplaySettings = (
   item: Uint8Array,
   settings: EvaluationViewerSettings,
-  lookup?: StackItemIdentifyFunction
+  lookup?: StackItemIdentifyFunction,
 ) => {
   const name =
     lookup !== undefined && settings.identifyStackItems ? lookup(item) : false;
@@ -111,10 +127,9 @@ const getStackItemDisplaySettings = (
 };
 
 const hasVmHelp = (
-  error?: string
+  error?: string,
 ): error is keyof typeof vmErrorAssistanceBCH =>
-  error !== undefined &&
-  (vmErrorAssistanceBCH as { [key: string]: any })[error] !== undefined;
+  error !== undefined && vmErrorAssistanceBCH[error] !== undefined;
 
 /**
  * Renders some common virtual machine errors with friendly help information.
@@ -147,7 +162,7 @@ const CompilationErrorLine = ({
   range: Range;
 }) => {
   const firstMatch = compilationErrorAssistance.find((item) =>
-    item.regex.test(error)
+    item.regex.test(error),
   );
   return (
     <li
@@ -162,8 +177,10 @@ const CompilationErrorLine = ({
               {firstMatch
                 .generateHints(error, frame)
                 .map(renderSimpleMarkdown)
-                .map((content) => (
-                  <div className="assistance-section">{content}</div>
+                .map((content, index) => (
+                  <div className="assistance-section" key={index}>
+                    {content}
+                  </div>
                 ))}
             </div>
           }
@@ -189,7 +206,7 @@ const EvaluationLine = ({
 }: {
   hasError: boolean;
   hasActiveCursor: boolean;
-  line: EvaluationViewerLine<IDESupportedProgramState>;
+  line: EvaluationViewerLine;
   lineNumber: number;
   lookup?: StackItemIdentifyFunction;
   settings: EvaluationViewerSettings;
@@ -198,7 +215,7 @@ const EvaluationLine = ({
     line.spacers === undefined
       ? undefined
       : line.spacers.findIndex(
-          (spacer) => spacer === EvaluationViewerSpacer.skippedConditional
+          (spacer) => spacer === EvaluationViewerSpacer.skippedConditional,
         );
   const sliceSpacersAtIndex =
     firstSkippedSpacer === undefined || firstSkippedSpacer === -1
@@ -219,13 +236,13 @@ const EvaluationLine = ({
         settings.groupStackItemsDeeperThan === undefined
           ? item
           : index > stack.length - (settings.groupStackItemsDeeperThan + 1)
-          ? item
-          : index === stack.length - (settings.groupStackItemsDeeperThan + 1)
-          ? stack.slice(
-              0,
-              stack.length - (settings.groupStackItemsDeeperThan + 1)
-            )
-          : undefined
+            ? item
+            : index === stack.length - (settings.groupStackItemsDeeperThan + 1)
+              ? stack.slice(
+                  0,
+                  stack.length - (settings.groupStackItemsDeeperThan + 1),
+                )
+              : undefined,
       )
       .filter((item): item is Uint8Array | Uint8Array[] => item !== undefined),
   ]
@@ -248,53 +265,51 @@ const EvaluationLine = ({
         console.dir(line.state);
       }}
     >
-      {line.spacers &&
-        line.spacers.slice(0, sliceSpacersAtIndex).map((type, index) => (
-          <span
-            key={index}
-            className={`spacer ${
-              type === EvaluationViewerSpacer.evaluation
-                ? 'spacer-evaluation'
-                : type === EvaluationViewerSpacer.executedConditional
+      {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) => (
+        <span
+          key={index}
+          className={`spacer ${
+            type === EvaluationViewerSpacer.evaluation
+              ? 'spacer-evaluation'
+              : type === EvaluationViewerSpacer.executedConditional
                 ? 'spacer-conditional-executed'
                 : 'spacer-conditional-skipped'
-            }`}
-          >
-            &nbsp;
-          </span>
-        ))}
+          }`}
+        >
+          &nbsp;
+        </span>
+      ))}
       {hasError ? (
-        <VmErrorLine
-          state={line.state as IDESupportedProgramState}
-        ></VmErrorLine>
+        <VmErrorLine state={line.state!}></VmErrorLine>
+      ) : lineNumber === 1 && line.state?.ip === 0 ? (
+        <span className="skip-comment" />
       ) : line.spacers &&
-        line.spacers.indexOf(EvaluationViewerSpacer.skippedConditional) !==
-          -1 ? (
+        line.spacers.includes(EvaluationViewerSpacer.skippedConditional) ? (
         <span className="unchanged" />
       ) : (
         stackItemsAndGroups.map((item, itemIndex) => {
           if (Array.isArray(item)) {
             const labels = item
               .map((innerItem) =>
-                getStackItemDisplaySettings(innerItem, settings, lookup)
+                getStackItemDisplaySettings(innerItem, settings, lookup),
               )
               .map((item) => item.label)
               .join(' ');
             return stackItem(
               itemIndex,
               labels,
-              <span className="stack-item group">&hellip;</span>
+              <span className="stack-item group">&hellip;</span>,
             );
           }
           const { hex, label, type } = getStackItemDisplaySettings(
             item,
             settings,
-            lookup
+            lookup,
           );
           return stackItem(
             itemIndex,
             hex,
-            <span className={`stack-item ${type}`}>{label}</span>
+            <span className={`stack-item ${type}`}>{label}</span>,
           );
         })
       )}
@@ -336,7 +351,7 @@ const ScenarioSwitcher = ({
   >
     <HTMLSelect
       className="scenario-switcher"
-      iconProps={{ iconSize: 12 }}
+      iconProps={{ size: 12 }}
       options={[
         ...(scenarioDetails.selectedScenario === undefined
           ? [
@@ -357,23 +372,26 @@ const ScenarioSwitcher = ({
       onChange={(e) => {
         if (
           e.currentTarget.value ===
-          ScenarioSwitcherSpecialValues.defaultScenario
+          (ScenarioSwitcherSpecialValues.defaultScenario as string)
         ) {
           /**
-           * If the default scenario is show, there are no
+           * If the default scenario is showing, there are no
            * other scenarios to switch to/from, so we can
            * just ignore this selection.
            */
           return;
         }
         if (
-          e.currentTarget.value === ScenarioSwitcherSpecialValues.editScenarios
+          e.currentTarget.value ===
+          (ScenarioSwitcherSpecialValues.editScenarios as string)
         ) {
           const flag = '_editScenariosWIPHasBeenExplained';
           const explanation = `Bitauth IDE does not yet have a simplified interface for editing scenarios, but scenarios can still be edited directly in the template. Add or make changes to the "scenarios" property in the template JSON, then import your changes to finish. See the guide for information about scenarios.`;
           console.log(explanation);
           importExport();
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
           if ((window as any)[flag] === undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
             (window as any)[flag] = true;
             setTimeout(() => {
               window.alert(explanation);
@@ -383,7 +401,7 @@ const ScenarioSwitcher = ({
         }
         const scenarioId = e.currentTarget.value;
         const nextScenario = scenarioDetails.availableScenarios.find(
-          (available) => available.id === scenarioId
+          (available) => available.id === scenarioId,
         );
         const internalId = nextScenario?.internalId;
         if (internalId !== undefined) {
@@ -436,7 +454,7 @@ export const ViewerControls = ({
         </Tooltip>
       ) : (
         <Tooltip
-          content="Currently showing the stack. Click to switch the alternate stack."
+          content="Currently showing the stack. Click to switch to the alternate stack."
           portalClassName="control-tooltip"
           position="bottom-left"
         >
@@ -467,10 +485,7 @@ export const ViewerControls = ({
           interactionKind="hover"
           position="bottom-right"
         >
-          <Icon
-            className="shrink scenario-detail-icon scenario-generation-error"
-            icon={IconNames.ERROR}
-          ></Icon>
+          <Error className="shrink scenario-detail-icon scenario-generation-error" />
         </Popover>
       ) : (
         /**
@@ -481,47 +496,50 @@ export const ViewerControls = ({
             <div>
               <p>
                 {scenarioDetails.selectedScenario === undefined
-                  ? 'This is the default scenario. To test for success or failure, add a scenario to this script.'
+                  ? 'This is the default scenario. To modify this scenario or test for failure, add a scenario to this script.'
                   : `This scenario is expected to ${
                       scenarioDetails.selectedScenario.expectedToPass
                         ? 'pass'
                         : 'fail'
-                    }. The scenario ${
-                      typeof scenarioDetails.selectedScenario?.verifyResult ===
-                      'string'
-                        ? `failed with the error: ${scenarioDetails.selectedScenario.verifyResult}`
-                        : 'passed.'
-                    }`}
+                    }.`}
+              </p>
+              <p>
+                {`The scenario ${
+                  typeof scenarioDetails.verifyResult === 'string'
+                    ? `failed with the error: ${scenarioDetails.verifyResult}`
+                    : 'passed.'
+                }`}
               </p>
               <p className="scenario-logging-options">
                 <button
                   onClick={() => {
-                    console.log(
-                      'Generated Scenario:',
-                      scenarioDetails.generatedScenario
-                    );
+                    console.log('Scenario Generation Debugging Result:');
+                    console.log(scenarioDetails.generatedScenario);
                   }}
                 >
-                  Log Scenario to Developer Console
+                  Log Scenario Generation Result to Developer Console
                 </button>
                 <button
                   onClick={() => {
                     if (debugTrace !== undefined) {
+                      console.log('Trace Summary:');
                       console.log(
-                        'Trace Summary:',
                         stringifyDebugTraceSummary(
-                          summarizeDebugTrace(debugTrace)
-                        )
+                          summarizeDebugTrace(debugTrace),
+                        ),
                       );
                     }
-                    console.log('Debug Trace:', debugTrace);
+                    console.log('Debug Trace:');
+                    console.log(debugTrace);
                   }}
                 >
                   Log Debug Trace to Developer Console
                 </button>
               </p>
               <code className="generated-scenario">
-                <pre>{stringify(scenarioDetails.generatedScenario)}</pre>
+                <pre>
+                  {stringify(scenarioDetails.generatedScenario.scenario)}
+                </pre>
               </code>
             </div>
           }
@@ -529,20 +547,14 @@ export const ViewerControls = ({
           interactionKind="hover"
           placement="auto"
         >
-          {scenarioDetails.selectedScenario === undefined ||
-          (scenarioDetails.selectedScenario?.verifyResult === true &&
-            scenarioDetails.selectedScenario.expectedToPass === true) ||
-          (typeof scenarioDetails.selectedScenario?.verifyResult === 'string' &&
-            scenarioDetails.selectedScenario.expectedToPass === false) ? (
-            <Icon
-              className="shrink scenario-detail-icon"
-              icon={IconNames.TICK}
-            ></Icon>
+          {(scenarioDetails.verifyResult === true &&
+            (scenarioDetails.selectedScenario === undefined ||
+              scenarioDetails.selectedScenario.expectedToPass)) ||
+          (typeof scenarioDetails.verifyResult === 'string' &&
+            scenarioDetails.selectedScenario?.expectedToPass === false) ? (
+            <Tick className="shrink scenario-detail-icon" />
           ) : (
-            <Icon
-              className="shrink scenario-detail-icon scenario-detail-icon-error"
-              icon={IconNames.CROSS}
-            ></Icon>
+            <Cross className="shrink scenario-detail-icon scenario-detail-icon-error" />
           )}
         </Popover>
       )}
@@ -608,7 +620,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.MAXIMIZE}
+            icon={<Maximize />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -625,7 +637,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.MINIMIZE}
+            icon={<Minimize />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -643,7 +655,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.PIN}
+            icon={<Pin />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -660,7 +672,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.UNPIN}
+            icon={<Unpin />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -678,7 +690,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.UNGROUP_OBJECTS}
+            icon={<UngroupObjects />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -695,7 +707,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.GROUP_OBJECTS}
+            icon={<GroupObjects />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -712,7 +724,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.GROUP_OBJECTS}
+            icon={<GroupObjects />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -730,7 +742,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.UNDO}
+            icon={<Undo />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -747,7 +759,7 @@ export const ViewerControls = ({
         >
           <Button
             className="shrink"
-            icon={IconNames.REDO}
+            icon={<Redo />}
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
@@ -794,7 +806,7 @@ export const EvaluationViewer = (props: {
   const cacheIsUpdated = cachedEvaluationSource === evaluationSource.join();
   if (!hasError && !cacheIsUpdated) {
     setCachedEvaluationSource(evaluationSource.join());
-    setCachedEvaluation(evaluationLines as EvaluationViewerLine[]);
+    setCachedEvaluation(evaluationLines);
     setCachedLookup({ lookup });
     return null;
   }
@@ -832,7 +844,7 @@ export const EvaluationViewer = (props: {
                   <EvaluationLine
                     hasError={false}
                     hasActiveCursor={false}
-                    line={evaluation[0]}
+                    line={evaluation[0]!}
                     lineNumber={0}
                     lookup={activeLookup}
                     settings={props.evaluationViewerSettings}
@@ -842,7 +854,7 @@ export const EvaluationViewer = (props: {
             </div>
 
             <div className="evaluation">
-              {evaluation.slice(1).map((line, lineIndex, lines) => (
+              {evaluation.slice(1).map((line, lineIndex) => (
                 <EvaluationLine
                   hasError={line.state?.error !== undefined}
                   hasActiveCursor={props.cursorLine === lineIndex + 1}
@@ -913,7 +925,7 @@ export const EvaluationViewer = (props: {
             </div>
             <ul className="list">
               {compilation.errors.map(({ error, range }) =>
-                CompilationErrorLine({ error, range, frame })
+                CompilationErrorLine({ error, range, frame }),
               )}
             </ul>
           </div>
