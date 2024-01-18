@@ -9,6 +9,8 @@ package-lock.json
 /coverage
 /test-results/
 /playwright-report/
+/all-blob-reports/
+/blob-report/
 /playwright/.cache/
 /tests/**/*darwin.png
 /tests/**/*win32.png

@@ -5,62 +5,186 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout without submodules
+        uses: actions/checkout@v4
+      - name: Restore .yarn if cached
+        id: restore-yarn
+        uses: actions/cache@v4
         with:
-          submodules: 'recursive'
-      - uses: actions/setup-node@v4
+          path: .yarn
+          key: yarn-${{ hashFiles('yarn.lock') }}
+      - name: Get Libauth version hash
+        id: libauth-version
+        run: echo "$(git submodule status libauth)" && echo "HASH=$(git submodule status libauth | awk '{ print $1 }')" >> $GITHUB_OUTPUT
+      - name: Restore libauth if cached
+        id: restore-libauth
+        uses: actions/cache@v4
+        with:
+          path: libauth
+          key: libauth-${{ steps.libauth-version.outputs.HASH }}
+      - name: Checkout submodules if uncached
+        if: steps.restore-yarn.outputs.cache-hit != 'true' || steps.restore-libauth.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies if uncached
+        if: steps.restore-yarn.outputs.cache-hit != 'true' || steps.restore-libauth.outputs.cache-hit != 'true'
+        run: yarn install --immutable --immutable-cache
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: yarn install --immutable --immutable-cache
       - run: yarn test:lint
 
-  prod-e2e:
+  e2e-tests:
+    # Only run e2e-tests if lint passes; this also saves running time by reusing cached submodules/dependencies
+    needs: [lint]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.41.0-jammy
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ['dev', 'prod']
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
+    name: e2e-tests (${{ matrix.environment }}, ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout without submodules
+        uses: actions/checkout@v4
+
+      # TODO: use caches from "lint" in "e2e-tests": https://github.com/actions/cache/issues/1300#issuecomment-1899893716
+      # - name: Restore Yarn cache
+      #   id: restore-yarn
+      #   uses: actions/cache/restore@v4
+      #   with:
+      #     path: .yarn
+      #     key: yarn-${{ hashFiles('yarn.lock') }}
+      #     fail-on-cache-miss: true
+      # - name: Get Libauth version hash
+      #   id: libauth-version
+      #   # Prevents: `fatal: detected dubious ownership in repository at '/__w/bitauth-ide/bitauth-ide'`. We can safely disable this check for CI.
+      #   run: git config --global --add safe.directory '*' && echo "HASH=$(git submodule status libauth | awk '{ print $1 }')" >> $GITHUB_OUTPUT
+      # - name: Restore Libauth build
+      #   id: restore-libauth
+      #   uses: actions/cache/restore@v4
+      #   with:
+      #     path: libauth
+      #     key: libauth-${{ steps.libauth-version.outputs.HASH }}
+      #     fail-on-cache-miss: true
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: 20
+      # begin: duplicated cache creation
+      - name: Restore .yarn if cached
+        id: restore-yarn
+        uses: actions/cache@v4
         with:
-          submodules: 'recursive'
-      - uses: actions/setup-node@v4
+          path: .yarn
+          key: yarn-${{ hashFiles('yarn.lock') }}
+      - name: Get Libauth version hash
+        id: libauth-version
+        # Prevents: `fatal: detected dubious ownership in repository at '/__w/bitauth-ide/bitauth-ide'`. We can safely disable this check for CI.
+        run: git config --global --add safe.directory '*' && echo "HASH=$(git submodule status libauth | awk '{ print $1 }')" >> $GITHUB_OUTPUT
+      - name: Restore libauth if cached
+        id: restore-libauth
+        uses: actions/cache@v4
+        with:
+          path: libauth
+          key: libauth-${{ steps.libauth-version.outputs.HASH }}
+      - name: Checkout submodules if uncached
+        if: steps.restore-yarn.outputs.cache-hit != 'true' || steps.restore-libauth.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      # The "preinstall" script runs "git submodule update --init --recursive"
-      # to avoid requiring users to understand this project's submodules
-      # configuration. Since the files are owned by a different user than the
-      # GitHub Action runner (a quirk of GitHub Actions), updating the
-      # submodules again would error: `fatal: detected dubious ownership in repository at '/__w/bitauth-ide/bitauth-ide'`
-      # We can safely disable this check for CI.
-      - run: git config --global --add safe.directory '*'
-      - run: yarn install --immutable --immutable-cache
-      - run: yarn build
-      - run: yarn test:e2e:prod
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - name: Install dependencies if uncached
+        if: steps.restore-yarn.outputs.cache-hit != 'true' || steps.restore-libauth.outputs.cache-hit != 'true'
+        run: yarn install --immutable --immutable-cache
+      # end: duplicated cache creation
+
+      - name: Test development build
+        run: yarn test:e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter blob,github
+        if: ${{ matrix.environment == 'dev' }}
+        env:
+          HOME: /root # https://github.com/microsoft/playwright/issues/6500
+      - name: Test production build
+        run: yarn build && yarn test:e2e:prod --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter blob,github
+        if: ${{ matrix.environment == 'prod' }}
+        env:
+          HOME: /root # https://github.com/microsoft/playwright/issues/6500
+      - name: Upload dist to artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.environment == 'prod' && matrix.shardIndex == 1 }}
         with:
           name: dist
           path: dist/
           retention-days: 90
-      - uses: codecov/codecov-action@v3
-
-  dev-e2e-and-coverage:
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.41.0-jammy
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: git config --global --add safe.directory '*'
-      - run: yarn install --immutable --immutable-cache
-      - run: yarn test:e2e
-      - uses: actions/upload-artifact@v4
+      - name: Upload blob-report to artifacts
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: blob-report-${{ matrix.environment }}-${{ matrix.shardIndex }}
+          path: blob-report
+          retention-days: 1
+      - name: Report code coverage
+        if: always()
+        run: yarn cov:lcov
+      - name: Send coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+
+  merge-reports:
+    # Merge reports after playwright-tests, even if some shards have failed
+    if: always()
+    needs: [e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout without submodules
+        uses: actions/checkout@v4
+      - name: Restore .yarn
+        id: restore-yarn
+        uses: actions/cache/restore@v4
+        with:
+          path: .yarn
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          fail-on-cache-miss: true
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Download production blob reports from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: prod-blob-reports
+          pattern: blob-report-prod-*
+          merge-multiple: true
+      - name: Merge production HTML report
+        run: yarn playwright merge-reports --reporter html ./prod-blob-reports
+        env:
+          PLAYWRIGHT_HTML_REPORT: prod-report
+      - name: Upload production HTML report to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report-prod--run-${{ github.run_attempt }}
+          path: prod-report
           retention-days: 90
-      - uses: codecov/codecov-action@v3
+      - name: Download development blob reports from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dev-blob-reports
+          pattern: blob-report-dev-*
+          merge-multiple: true
+      - name: Merge development HTML report
+        run: yarn playwright merge-reports --reporter html ./dev-blob-reports
+        env:
+          PLAYWRIGHT_HTML_REPORT: dev-report
+      - name: Upload development HTML report to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report-dev--run-${{ github.run_attempt }}
+          path: dev-report
+          retention-days: 90
