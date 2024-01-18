@@ -1,26 +1,38 @@
-import React from 'react';
 import {
   AppState,
-  CurrentScripts,
   CurrentEntities,
+  CurrentScenarios,
+  CurrentScripts,
   CurrentVariables,
   IDEVariable,
-  CurrentScenarios,
+  ScriptType,
 } from '../state/types';
-import { IconNames } from '@blueprintjs/icons';
 import { unknownValue } from '../utils';
-import { Tooltip } from '@blueprintjs/core';
+
 import { BuiltInVariables } from '@bitauth/libauth';
+import { Tooltip } from '@blueprintjs/core';
+import {
+  Confirm,
+  DiagramTree,
+  Document,
+  FlowBranch,
+  FlowLinear,
+  Key,
+  Lock,
+  Saved,
+} from '@blueprintjs/icons';
 
 /**
  * Disallow use of built-in IDs (if found, prefix them with an underscore)
  */
 const disallowBuiltInIdentifiers = (id: string) =>
-  [
-    BuiltInVariables.currentBlockHeight,
-    BuiltInVariables.currentBlockTime,
-    BuiltInVariables.signingSerialization,
-  ].includes(id as any)
+  (
+    [
+      BuiltInVariables.currentBlockHeight,
+      BuiltInVariables.currentBlockTime,
+      BuiltInVariables.signingSerialization,
+    ] as string[]
+  ).includes(id)
     ? `_${id}`
     : id;
 
@@ -36,7 +48,7 @@ export const toConventionalId = (input: string) =>
       .trim()
       .replace(/\s/g, '_')
       .replace(/^[^a-zA-Z_]/g, '')
-      .replace(/[^.a-zA-Z0-9_-]/g, '')
+      .replace(/[^.a-zA-Z0-9_-]/g, ''),
   );
 
 const abbreviationPrefixAndSuffixLength = 12;
@@ -45,10 +57,10 @@ export const abbreviateStackItem = (hex: string) =>
     ? hex
     : `${hex.substring(
         0,
-        abbreviationPrefixAndSuffixLength
+        abbreviationPrefixAndSuffixLength,
       )}\u2026${hex.substring(
         hex.length - abbreviationPrefixAndSuffixLength,
-        hex.length
+        hex.length,
       )}`;
 
 export const getCurrentScripts = (state: AppState) =>
@@ -58,41 +70,41 @@ export const getCurrentScripts = (state: AppState) =>
         ...prev,
         { internalId, id: obj.id, name: obj.name, type: obj.type },
       ],
-      []
+      [],
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
 export const getCurrentEntities = (state: AppState) =>
   Object.entries(
-    state.currentTemplate.entitiesByInternalId
+    state.currentTemplate.entitiesByInternalId,
   ).reduce<CurrentEntities>(
     (prev, [internalId, entity]) => [
       ...prev,
       { internalId, name: entity.name, id: entity.id },
     ],
-    []
+    [],
   );
 
 export const getCurrentVariables = (state: AppState) =>
   Object.entries(
-    state.currentTemplate.variablesByInternalId
+    state.currentTemplate.variablesByInternalId,
   ).reduce<CurrentVariables>(
     (prev, [internalId, variable]) => [
       ...prev,
       { internalId, name: variable.name, id: variable.id },
     ],
-    []
+    [],
   );
 
 export const getCurrentScenarios = (state: AppState) =>
   Object.entries(
-    state.currentTemplate.scenariosByInternalId
+    state.currentTemplate.scenariosByInternalId,
   ).reduce<CurrentScenarios>(
     (prev, [internalId, scenario]) => [
       ...prev,
       { internalId, name: scenario.name, id: scenario.id },
     ],
-    []
+    [],
   );
 
 export const getUsedIds = (state: AppState) => {
@@ -105,14 +117,13 @@ export const getUsedIds = (state: AppState) => {
 
 export const wrapInterfaceTooltip = (
   content?: JSX.Element,
-  tooltipValue?: string
+  tooltipValue?: string,
 ) => (
   <Tooltip
     content={tooltipValue}
     portalClassName="interface-tooltip"
-    targetClassName="interface-tooltip-target"
     position="bottom-left"
-    boundary="window"
+    boundary={document.body}
   >
     {content}
   </Tooltip>
@@ -121,14 +132,58 @@ export const wrapInterfaceTooltip = (
 export const variableIcon = (type: IDEVariable['type']) => {
   switch (type) {
     case 'HdKey':
-      return IconNames.DIAGRAM_TREE;
+      return <DiagramTree size={12} />;
     case 'Key':
-      return IconNames.KEY;
+      return <Key size={12} />;
     case 'AddressData':
-      return IconNames.FLOW_LINEAR;
+      return <FlowLinear size={12} />;
     case 'WalletData':
-      return IconNames.FLOW_BRANCH;
+      return <FlowBranch size={12} />;
     default:
+      /* istanbul ignore next */
       return unknownValue(type);
   }
 };
+
+const size = 10;
+const getIcon = (type: ScriptType) => {
+  switch (type) {
+    case 'isolated':
+      return <Document size={size} />;
+    case 'tested':
+      return <Saved size={size} />;
+    case 'locking':
+      return <Lock size={size} />;
+    case 'unlocking':
+      return <Key size={size} />;
+    case 'test-setup':
+    case 'test-check':
+      return <Confirm size={size} />;
+    default:
+      /* istanbul ignore next */
+      return unknownValue(type);
+  }
+};
+
+const getScriptTypeName = (type: ScriptType) => {
+  switch (type) {
+    case 'isolated':
+      return 'Isolated Script';
+    case 'tested':
+      return 'Tested Script';
+    case 'locking':
+      return 'Locking Script';
+    case 'unlocking':
+      return 'Unlocking Script';
+    case 'test-setup':
+      return 'Test Setup Script';
+    case 'test-check':
+      return 'Test Checking Script';
+    default:
+      /* istanbul ignore next */
+      return unknownValue(type);
+  }
+};
+
+export const getScriptTooltipIcon = (type: ScriptType) =>
+  wrapInterfaceTooltip(getIcon(type), getScriptTypeName(type));

@@ -1,54 +1,55 @@
+import { bitauthWalletTemplateSchema } from '../editor/constants';
+import { createInsecureUuidV4, unknownValue } from '../utils';
+
 import {
   AppState,
   IDETemplateEntity,
-  IDETemplateUnlockingScript,
+  IDETemplateIsolatedScript,
   IDETemplateLockingScript,
+  IDETemplateScenario,
   IDETemplateTestCheckScript,
   IDETemplateTestedScript,
   IDETemplateTestSetupScript,
-  IDETemplateIsolatedScript,
+  IDETemplateUnlockingScript,
   IDEVariable,
-  IDETemplateScenario,
 } from './types';
+
 import {
-  AuthenticationTemplate,
-  importAuthenticationTemplate,
-  AuthenticationTemplateEntity,
-  AuthenticationTemplateVariable,
-  AuthenticationTemplateScriptTested,
-  AuthenticationTemplateScriptLocking,
-  AuthenticationTemplateScriptUnlocking,
-  AuthenticationTemplateScript,
+  importWalletTemplate,
+  WalletTemplate,
+  WalletTemplateEntity,
+  WalletTemplateScript,
+  WalletTemplateScriptLocking,
+  WalletTemplateScriptTested,
+  WalletTemplateScriptUnlocking,
+  WalletTemplateVariable,
 } from '@bitauth/libauth';
-import { createInsecureUuidV4 } from './utils';
-import { bitauthAuthenticationTemplateSchema } from '../editor/constants';
-import { unknownValue } from '../utils';
 
 /**
- * Normalize an authentication template, giving every item a unique internal ID
+ * Normalize an wallet template, giving every item a unique internal ID
  * for use in the IDE.
  *
- * @param maybeTemplate -  the authentication template to import
+ * @param maybeTemplate -  the wallet template to import
  * @param generateId - an optional method which returns a new ID each time it's
  * called (defaults to `createInsecureUuidV4`, but can be modified to allow for
  * determinism in testing)
  */
-export const ideImportAuthenticationTemplate = (
+export const ideImportWalletTemplate = (
   maybeTemplate: unknown,
-  generateId = createInsecureUuidV4
+  generateId = createInsecureUuidV4,
 ): AppState['currentTemplate'] | string => {
-  const template = importAuthenticationTemplate(maybeTemplate);
+  const template = importWalletTemplate(maybeTemplate);
   if (typeof template === 'string') {
     return template;
   }
 
   const { locking, other, tested, unlocking } = Object.entries(
-    template.scripts
+    template.scripts,
   ).reduce<{
-    locking: [string, AuthenticationTemplateScriptLocking][];
-    other: [string, AuthenticationTemplateScript][];
-    tested: [string, AuthenticationTemplateScriptTested][];
-    unlocking: [string, AuthenticationTemplateScriptUnlocking][];
+    locking: [string, WalletTemplateScriptLocking][];
+    other: [string, WalletTemplateScript][];
+    tested: [string, WalletTemplateScriptTested][];
+    unlocking: [string, WalletTemplateScriptUnlocking][];
   }>(
     ({ locking, other, tested, unlocking }, [scriptId, scriptDefinition]) => {
       if ('lockingType' in scriptDefinition) {
@@ -82,7 +83,7 @@ export const ideImportAuthenticationTemplate = (
         unlocking,
       };
     },
-    { locking: [], other: [], tested: [], unlocking: [] }
+    { locking: [], other: [], tested: [], unlocking: [] },
   );
 
   const scriptsIds = Object.keys(template.scripts);
@@ -92,7 +93,7 @@ export const ideImportAuthenticationTemplate = (
       entity.variables === undefined
         ? all
         : [...all, ...Object.keys(entity.variables)],
-    []
+    [],
   );
   const scenarioIds =
     template.scenarios === undefined ? [] : Object.keys(template.scenarios);
@@ -119,25 +120,25 @@ export const ideImportAuthenticationTemplate = (
       failsInternalIds:
         script.fails === undefined
           ? []
-          : script.fails.map((id) => internalIdMap[id]),
+          : script.fails.map((id) => internalIdMap[id]!),
       id,
-      internalId: internalIdMap[id],
+      internalId: internalIdMap[id]!,
       name: script.name ?? 'Unnamed Unlock',
-      parentInternalId: internalIdMap[script.unlocks],
+      parentInternalId: internalIdMap[script.unlocks]!,
       passesInternalIds:
         script.passes === undefined
           ? []
-          : script.passes.map((id) => internalIdMap[id]),
+          : script.passes.map((id) => internalIdMap[id]!),
       script: script.script,
       timeLockType: script.timeLockType,
       type: 'unlocking',
-    })
+    }),
   );
 
   const lockingIdeScripts = locking.map<IDETemplateLockingScript>(
     ([id, script]) => ({
       id,
-      internalId: internalIdMap[id],
+      internalId: internalIdMap[id]!,
       name: script.name ?? 'Unnamed Lock',
       script: script.script,
       type: 'locking',
@@ -145,17 +146,17 @@ export const ideImportAuthenticationTemplate = (
       childInternalIds: Object.values(unlockingIdeScripts)
         .filter((script) => script.parentInternalId === internalIdMap[id])
         .map((script) => script.internalId),
-    })
+    }),
   );
 
   const otherIdeScripts = other.map<IDETemplateIsolatedScript>(
     ([id, script]) => ({
       id,
-      internalId: internalIdMap[id],
+      internalId: internalIdMap[id]!,
       name: script.name ?? 'Unnamed Script',
       script: script.script,
       type: 'isolated',
-    })
+    }),
   );
 
   const testedAndTestIdeScripts = tested.reduce<
@@ -166,7 +167,7 @@ export const ideImportAuthenticationTemplate = (
     )[]
   >((all, testedScriptEntries) => {
     const [testedScriptId, testedScript] = testedScriptEntries;
-    const testedInternalId = internalIdMap[testedScriptId];
+    const testedInternalId = internalIdMap[testedScriptId]!;
 
     const testScripts = Object.entries(testedScript.tests).reduce<
       (IDETemplateTestSetupScript | IDETemplateTestCheckScript)[]
@@ -184,11 +185,11 @@ export const ideImportAuthenticationTemplate = (
         failsInternalIds:
           test.fails === undefined
             ? []
-            : test.fails.map((id) => internalIdMap[id]),
+            : test.fails.map((id) => internalIdMap[id]!),
         passesInternalIds:
           test.passes === undefined
             ? []
-            : test.passes.map((id) => internalIdMap[id]),
+            : test.passes.map((id) => internalIdMap[id]!),
       };
       const check: IDETemplateTestCheckScript = {
         type: 'test-check',
@@ -231,22 +232,22 @@ export const ideImportAuthenticationTemplate = (
         ...all,
         [script.internalId]: script,
       }),
-      {}
+      {},
     );
 
   const entitiesByInternalId: AppState['currentTemplate']['entitiesByInternalId'] =
     Object.entries(template.entities).reduce((all, entityEntry) => {
       const [id, entity] = entityEntry;
-      const internalId = internalIdMap[id];
+      const internalId = internalIdMap[id]!;
       const scriptInternalIds =
         entity.scripts === undefined
           ? []
-          : entity.scripts.map((scriptId) => internalIdMap[scriptId]);
+          : entity.scripts.map((scriptId) => internalIdMap[scriptId]!);
       const variableInternalIds =
         entity.variables === undefined
           ? []
           : Object.keys(entity.variables).map(
-              (variableId) => internalIdMap[variableId]
+              (variableId) => internalIdMap[variableId]!,
             );
 
       const ideEntity: IDETemplateEntity = {
@@ -274,17 +275,17 @@ export const ideImportAuthenticationTemplate = (
                   ...entityVariables,
                   {
                     id: variableId,
-                    internalId: internalIdMap[variableId],
+                    internalId: internalIdMap[variableId]!,
                     ...variable,
                     description: variable.description ?? '',
                     name: variable.name ?? variableId,
                   },
                 ];
               },
-              []
+              [],
             ),
           ],
-    []
+    [],
   );
 
   const variablesByInternalId: AppState['currentTemplate']['variablesByInternalId'] =
@@ -293,7 +294,7 @@ export const ideImportAuthenticationTemplate = (
         ...all,
         [variable.internalId]: variable,
       }),
-      {}
+      {},
     );
 
   const scenariosByInternalId: AppState['currentTemplate']['scenariosByInternalId'] =
@@ -301,7 +302,7 @@ export const ideImportAuthenticationTemplate = (
       ? {}
       : Object.entries(template.scenarios).reduce((all, scenarioEntry) => {
           const [id, scenario] = scenarioEntry;
-          const internalId = internalIdMap[id];
+          const internalId = internalIdMap[id]!;
           const ideScenario: IDETemplateScenario = {
             data: scenario.data,
             description: scenario.description ?? '',
@@ -321,18 +322,19 @@ export const ideImportAuthenticationTemplate = (
     entitiesByInternalId,
     scenariosByInternalId,
     scriptsByInternalId,
-    supportedVirtualMachines: template.supported ?? [],
+    supportedVirtualMachines: template.supported,
     variablesByInternalId,
   };
 };
 
 // TODO: fix usesAllScripts everywhere
 
-export const exportAuthenticationTemplate = (
-  currentTemplate: AppState['currentTemplate']
-): AuthenticationTemplate => {
+export const exportWalletTemplate = (
+  currentTemplate: AppState['currentTemplate'],
+  forEvaluation = false,
+): WalletTemplate => {
   const entities = Object.values(currentTemplate.entitiesByInternalId).reduce<
-    AuthenticationTemplate['entities']
+    WalletTemplate['entities']
   >((allEntities, entity) => {
     const variables =
       entity.variableInternalIds.length === 0
@@ -340,11 +342,11 @@ export const exportAuthenticationTemplate = (
         : entity.variableInternalIds
             .map(
               (variableInternalId) =>
-                currentTemplate.variablesByInternalId[variableInternalId]
+                currentTemplate.variablesByInternalId[variableInternalId]!,
             )
-            .reduce<NonNullable<AuthenticationTemplateEntity['variables']>>(
+            .reduce<NonNullable<WalletTemplateEntity['variables']>>(
               (all, variable) => {
-                const nextVariable: AuthenticationTemplateVariable =
+                const nextVariable: WalletTemplateVariable =
                   variable.type === 'HdKey'
                     ? {
                         ...(variable.addressOffset === undefined
@@ -383,7 +385,7 @@ export const exportAuthenticationTemplate = (
                   [variable.id]: nextVariable,
                 };
               },
-              {}
+              {},
             );
 
     const scripts =
@@ -391,7 +393,7 @@ export const exportAuthenticationTemplate = (
         ? undefined
         : entity.scriptInternalIds.map(
             (scriptInternalId) =>
-              currentTemplate.scriptsByInternalId[scriptInternalId].id
+              currentTemplate.scriptsByInternalId[scriptInternalId]!.id,
           );
 
     const nextEntity = {
@@ -406,14 +408,14 @@ export const exportAuthenticationTemplate = (
   const hydrateAndSortScenariosByName = (internalIds: string[]) =>
     internalIds
       .map((internalId) => currentTemplate.scenariosByInternalId[internalId])
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((scenario) => scenario.id);
+      .sort((a, b) => a!.name.localeCompare(b!.name))
+      .map((scenario) => scenario!.id);
 
   const scripts = Object.values(currentTemplate.scriptsByInternalId).reduce<
-    AuthenticationTemplate['scripts']
+    WalletTemplate['scripts']
   >((allScripts, script) => {
     if (script.type === 'tested') {
-      const testedScript: AuthenticationTemplateScriptTested = {
+      const testedScript: WalletTemplateScriptTested = {
         name: script.name,
         ...(script.pushed ? { pushed: true } : {}),
         script: script.script,
@@ -422,7 +424,7 @@ export const exportAuthenticationTemplate = (
             (testSetupInternalId) =>
               currentTemplate.scriptsByInternalId[
                 testSetupInternalId
-              ] as IDETemplateTestSetupScript
+              ] as IDETemplateTestSetupScript,
           )
           .reduce(
             (tests, setupTest) => ({
@@ -432,14 +434,14 @@ export const exportAuthenticationTemplate = (
                   ? {}
                   : {
                       fails: hydrateAndSortScenariosByName(
-                        setupTest.failsInternalIds
+                        setupTest.failsInternalIds,
                       ),
                     }),
                 ...(setupTest.passesInternalIds.length === 0
                   ? {}
                   : {
                       passes: hydrateAndSortScenariosByName(
-                        setupTest.passesInternalIds
+                        setupTest.passesInternalIds,
                       ),
                     }),
                 check: (
@@ -453,7 +455,7 @@ export const exportAuthenticationTemplate = (
                   : { setup: setupTest.script }),
               },
             }),
-            {}
+            {},
           ),
       };
       return {
@@ -463,7 +465,7 @@ export const exportAuthenticationTemplate = (
     }
 
     if (script.type === 'locking') {
-      const lockingScript: AuthenticationTemplateScriptLocking = {
+      const lockingScript: WalletTemplateScriptLocking = {
         lockingType: script.lockingType,
         name: script.name,
         script: script.script,
@@ -475,7 +477,7 @@ export const exportAuthenticationTemplate = (
     }
 
     if (script.type === 'unlocking') {
-      const unlockingScript: AuthenticationTemplateScriptUnlocking = {
+      const unlockingScript: WalletTemplateScriptUnlocking = {
         ...(script.ageLock === undefined ? {} : { ageLock: script.ageLock }),
         ...(script.estimate === undefined ? {} : { estimate: script.estimate }),
         ...(script.failsInternalIds.length === 0
@@ -506,15 +508,25 @@ export const exportAuthenticationTemplate = (
     }
 
     if (script.type === 'isolated') {
-      const isolatedScript: AuthenticationTemplateScript = {
-        name: script.name,
-        script: script.script,
+      const isolatedScript: WalletTemplateScriptLocking | WalletTemplateScript =
+        {
+          ...(forEvaluation ? { lockingType: 'p2sh20' } : {}),
+          name: script.name,
+          script: script.script,
+        };
+      const isolatedScriptEmptyUnlock: WalletTemplateScriptUnlocking = {
+        script: '',
+        unlocks: script.id,
       };
       return {
         ...allScripts,
         [script.id]: isolatedScript,
+        ...(forEvaluation
+          ? { [`${script.id}.empty-unlock`]: isolatedScriptEmptyUnlock }
+          : {}),
       };
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (script.type === 'test-check' || script.type === 'test-setup')
       return allScripts;
     unknownValue(script);
@@ -522,7 +534,7 @@ export const exportAuthenticationTemplate = (
   }, {});
 
   const scenarios = Object.values(currentTemplate.scenariosByInternalId).reduce<
-    NonNullable<AuthenticationTemplate['scenarios']>
+    NonNullable<WalletTemplate['scenarios']>
   >(
     (allScenarios, scenario) => ({
       ...allScenarios,
@@ -541,18 +553,18 @@ export const exportAuthenticationTemplate = (
           : { sourceOutputs: scenario.sourceOutputs }),
       },
     }),
-    {}
+    {},
   );
 
   return {
-    $schema: bitauthAuthenticationTemplateSchema,
+    $schema: bitauthWalletTemplateSchema,
     description: currentTemplate.description,
     name: currentTemplate.name,
     entities,
     ...(Object.keys(scenarios).length === 0 ? {} : { scenarios }),
     scripts,
     supported: [...currentTemplate.supportedVirtualMachines].sort((a, b) =>
-      a.localeCompare(b)
+      a.localeCompare(b),
     ),
     version: 0,
   };

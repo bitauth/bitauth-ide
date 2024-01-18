@@ -1,9 +1,10 @@
-import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
-import { composeWithDevTools } from 'redux-devtools-extension';
-import LogRocket from 'logrocket';
-import { rootReducer } from './reducer';
 import { automaticallySaveTemplateToLocalStorage } from './local-storage';
+import { rootReducer } from './reducer';
+
+import LogRocket from 'logrocket';
+import { Provider } from 'react-redux';
+import { applyMiddleware, createStore } from 'redux';
+import { composeWithDevTools } from 'redux-devtools-extension';
 // TODO: async, use: https://github.com/redux-loop/redux-loop
 
 export { Provider };
@@ -13,22 +14,12 @@ export const configureStore = () => {
     rootReducer,
     composeWithDevTools(
       applyMiddleware(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         LogRocket.reduxMiddleware(),
-        automaticallySaveTemplateToLocalStorage
-      )
-    )
+        automaticallySaveTemplateToLocalStorage,
+      ),
+    ),
   );
 
-  /**
-   * TODO: something isn't working here – changes to the root reducer still
-   * cause a full page reload.
-   */
-  if (process.env.NODE_ENV === 'development') {
-    if (module.hot) {
-      module.hot.accept('./reducer', () => {
-        store.replaceReducer(rootReducer);
-      });
-    }
-  }
   return store;
 };

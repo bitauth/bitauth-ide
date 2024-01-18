@@ -1,0 +1,30 @@
+.EntitySettingsEditor {
+  background-color: var(--editor-background-color);
+  & h2 {
+    background: var(--interface-background-color);
+  }
+
+  .name {
+    margin: 0 0 12px;
+  }
+
+  & code {
+    background-color: var(--stack-vis-background-color);
+    border-radius: 2px;
+    margin: 0 2px;
+    padding: 0 2px;
+    border: 1px solid var(--interface-background-color);
+  }
+
+  .bp5-input {
+    background: var(--stack-vis-background-color);
+  }
+  .bp5-label {
+    width: 90px;
+    flex-shrink: 0;
+  }
+  .bp5-form-group .bp5-form-helper-text {
+    color: #fff6;
+    line-height: 18px;
+  }
+}

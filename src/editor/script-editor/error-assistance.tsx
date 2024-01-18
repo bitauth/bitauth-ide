@@ -1,12 +1,13 @@
+import { IDESupportedProgramState } from '../../state/types';
+import { abbreviateStackItem } from '../common';
+import { ScriptEditorFrame } from '../editor-types';
+
 import {
   AuthenticationErrorBCH2022,
   AuthenticationErrorCommon,
   binToHex,
 } from '@bitauth/libauth';
-import { IDESupportedProgramState, ScriptEditorFrame } from '../editor-types';
-import React from 'react';
 import { Popover } from '@blueprintjs/core';
-import { abbreviateStackItem } from '../common';
 
 export type PossibleErrors =
   | AuthenticationErrorCommon
@@ -19,14 +20,15 @@ export type PossibleErrors =
  */
 export const vmErrorAssistanceBCH: {
   [error in PossibleErrors]?: (
-    state: IDESupportedProgramState
+    state: IDESupportedProgramState,
   ) => string | JSX.Element;
 } = {
   [AuthenticationErrorCommon.unsatisfiedLocktime]: (state) => (
     <span>
-      This error occurs when the transaction's locktime hasn't reached the
-      locktime required by this operation. In this scenario, the transaction's
-      locktime is set to <code>{state.program.transaction.locktime}</code>.
+      This error occurs when the transaction&apos;s locktime has not reached the
+      locktime required by this operation. In this scenario, the
+      transaction&apos;s locktime is set to{' '}
+      <code>{state.program.transaction.locktime}</code>.
     </span>
   ),
   [AuthenticationErrorCommon.nonNullSignatureFailure]: (state) => {
@@ -40,10 +42,11 @@ export const vmErrorAssistanceBCH: {
           <li>
             <p>
               <em>Signing the wrong message</em> – this is especially likely if
-              you have copy/pasted a signature. It's important to recognize that{' '}
-              signatures must sign a specific message: it's not enough to copy a
-              signature and a public key, if the full transaction context isn't
-              also the same, signature checks will still fail.
+              you have copy/pasted a signature. It&apos;s important to recognize
+              that signatures must sign a specific message: it&apos;s not enough
+              to copy a signature and a public key, if the full transaction
+              context isn&apos;t also the same, signature checks will still
+              fail.
             </p>
             <details>
               <summary>Details</summary>
@@ -54,17 +57,25 @@ export const vmErrorAssistanceBCH: {
               </p>
               <ol>
                 {state.signedMessages.map((message, index) => {
-                  const hex = binToHex(message);
+                  const digest = binToHex(message.digest);
+                  const summary =
+                    'serialization' in message
+                      ? binToHex(message.serialization)
+                      : binToHex(message.message);
+                  const details =
+                    'serialization' in message
+                      ? `serialization: ${binToHex(message.serialization)}`
+                      : `message: ${binToHex(message.message)}`;
                   return (
                     <li key={index} className="error-signed-message-list-item">
                       <Popover
-                        content={hex}
+                        content={`${details} – digest: ${digest}`}
                         portalClassName="stack-popover"
                         interactionKind="hover"
                         position="left-bottom"
                       >
                         <span className="error-signed-message-hex">
-                          0x{abbreviateStackItem(hex)}
+                          0x{abbreviateStackItem(summary)}
                         </span>
                       </Popover>
                     </li>
@@ -81,10 +92,10 @@ export const vmErrorAssistanceBCH: {
               <p>
                 Please note, Bitauth template variables provide a built-in way
                 to automatically generate signatures which sign the correct
-                "message" (a signing serialization of the transaction). Precise
-                transaction contexts can also be modeled using template
-                scenarios. See the guide for information about creating and
-                using key variables and scenarios.
+                &ldquo;message&rdquo; (a signing serialization of the
+                transaction). Precise transaction contexts can also be modeled
+                using template scenarios. See the guide for information about
+                creating and using key variables and scenarios.
               </p>
             </details>
           </li>
@@ -95,9 +106,9 @@ export const vmErrorAssistanceBCH: {
             result of an <code>OP_CHECKSIG</code> by reading from the stack,
             then perform some additional validation if the result is a{' '}
             <code>0</code>. To prevent some types of transaction malleability,
-            these scripts <em>must</em> provide a "null signature" (a{' '}
-            <code>0</code> value) to the failing signature check, or the virtual
-            machine will return an error. See BIP146 for details.
+            these scripts <em>must</em> provide a &ldquo;null signature&rdquo;
+            (a <code>0</code> value) to the failing signature check, or the
+            virtual machine will return an error. See BIP146 for details.
           </li>
         </ul>
       </div>
@@ -106,38 +117,41 @@ export const vmErrorAssistanceBCH: {
 };
 
 export const renderSimpleMarkdown = (markdown: string) =>
-  markdown.split('`').reduce((all, segment, index) => {
-    const insideCodeBlock = index % 2 === 0;
-    const splitEmphasis = segment.split('**');
-    const hasEmphasis = insideCodeBlock && splitEmphasis.length > 2;
-    return insideCodeBlock ? (
-      <>
-        {all}
-        {hasEmphasis
-          ? splitEmphasis.reduce(
-              (emphasized, emSegment, emIndex) =>
-                emIndex % 2 === 0 ? (
-                  <>
-                    {emphasized}
-                    {emSegment}
-                  </>
-                ) : (
-                  <>
-                    {emphasized}
-                    <em>{emSegment}</em>
-                  </>
-                ),
-              <></>
-            )
-          : segment}
-      </>
-    ) : (
-      <>
-        {all}
-        <code>{segment}</code>
-      </>
-    );
-  }, <></>);
+  markdown.split('`').reduce(
+    (all, segment, index) => {
+      const insideCodeBlock = index % 2 === 0;
+      const splitEmphasis = segment.split('**');
+      const hasEmphasis = insideCodeBlock && splitEmphasis.length > 2;
+      return insideCodeBlock ? (
+        <>
+          {all}
+          {hasEmphasis
+            ? splitEmphasis.reduce(
+                (emphasized, emSegment, emIndex) =>
+                  emIndex % 2 === 0 ? (
+                    <>
+                      {emphasized}
+                      {emSegment}
+                    </>
+                  ) : (
+                    <>
+                      {emphasized}
+                      <em>{emSegment}</em>
+                    </>
+                  ),
+                <></>,
+              )
+            : segment}
+        </>
+      ) : (
+        <>
+          {all}
+          <code>{segment}</code>
+        </>
+      );
+    },
+    <></>,
+  );
 
 const extractGroupsOrLogError = (errorMessage: string, regex: RegExp) => {
   const result = errorMessage.match(regex);
@@ -145,7 +159,7 @@ const extractGroupsOrLogError = (errorMessage: string, regex: RegExp) => {
     result !== null ? (result.slice(1) as (string | undefined)[]) : [];
   if (groups.length === 0) {
     console.error(
-      `Unexpected error message: failed to extract groups using RegExp:/n ${regex}/nError message:/n ${errorMessage}`
+      `Unexpected error message: failed to extract groups using RegExp:/n ${regex}/nError message:/n ${errorMessage}`,
     );
   }
   return groups;
@@ -161,7 +175,7 @@ export const compilationErrorAssistance: {
    */
   generateHints: (
     errorMessage: string,
-    frame: ScriptEditorFrame<IDESupportedProgramState>
+    frame: ScriptEditorFrame<IDESupportedProgramState>,
   ) => string[];
 }[] = [
   {
@@ -169,15 +183,14 @@ export const compilationErrorAssistance: {
     generateHints: (error) => {
       const [identifier] = extractGroupsOrLogError(
         error,
-        /Unknown identifier "([^"]*)"/
+        /Unknown identifier "([^"]*)"/,
       );
       const hasNonHexCharacter = /[^a-fA-F0-9]/u;
       const usesOnlyHexCharacters =
         typeof identifier === 'string' && !hasNonHexCharacter.test(identifier);
 
-      const hasPeriodCharacter = /\./;
       const mightIncludeEntityId =
-        typeof identifier === 'string' && hasPeriodCharacter.test(identifier);
+        typeof identifier === 'string' && identifier.includes('.');
 
       return [
         ...(usesOnlyHexCharacters
@@ -199,7 +212,7 @@ export const compilationErrorAssistance: {
     generateHints: (error, frame) => {
       const [identifier] = extractGroupsOrLogError(
         error,
-        /Cannot resolve "([^"]*)" – the "bytecode" property was not provided in the compilation data/
+        /Cannot resolve "([^"]*)" – the "bytecode" property was not provided in the compilation data/,
       );
 
       return frame.scriptType === 'isolated'
@@ -217,7 +230,7 @@ export const compilationErrorAssistance: {
     generateHints: (error, frame) => {
       const [identifier] = extractGroupsOrLogError(
         error,
-        /Cannot resolve "([^"]*)" – the "transactionContext" property was not provided in the compilation data/
+        /Cannot resolve "([^"]*)" – the "transactionContext" property was not provided in the compilation data/,
       );
 
       return [

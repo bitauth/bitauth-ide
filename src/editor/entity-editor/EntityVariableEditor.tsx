@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
-import './EntityVariableEditor.scss';
-import { connect } from 'react-redux';
-import { AppState, IDETemplateEntity, IDEVariable } from '../../state/types';
-import { Card, Elevation, Icon } from '@blueprintjs/core';
-import { EditVariableDialog } from '../dialogs/edit-variable-dialog/EditVariableDialog';
-import { variableIcon, wrapInterfaceTooltip, getUsedIds } from '../common';
 import { ActionCreators } from '../../state/reducer';
+import { AppState, IDETemplateEntity, IDEVariable } from '../../state/types';
+import { getUsedIds, variableIcon, wrapInterfaceTooltip } from '../common';
+import { EditVariableDialog } from '../dialogs/edit-variable-dialog/EditVariableDialog';
 
-interface EntityVariablesProps {
+import { Card, Elevation } from '@blueprintjs/core';
+import { useState } from 'react';
+import './EntityVariableEditor.css';
+import { connect } from 'react-redux';
+
+type EntityVariablesProps = {
   entityInternalId: string;
   entity: IDETemplateEntity;
   variablesByInternalId: AppState['currentTemplate']['variablesByInternalId'];
   usedIds: string[];
-}
+};
 
-interface EntityVariablesDispatch {
+type EntityVariablesDispatch = {
   deleteVariable: typeof ActionCreators.deleteVariable;
   openGuide: typeof ActionCreators.openGuide;
   upsertVariable: typeof ActionCreators.upsertVariable;
-}
+};
 
 export const EntityVariableEditor = connect(
   (state: AppState, { entityInternalId }: { entityInternalId: string }) => ({
@@ -31,7 +32,7 @@ export const EntityVariableEditor = connect(
     deleteVariable: ActionCreators.deleteVariable,
     upsertVariable: ActionCreators.upsertVariable,
     openGuide: ActionCreators.openGuide,
-  }
+  },
 )((props: EntityVariablesProps & EntityVariablesDispatch) => {
   const [editingVariable, setEditingVariable] = useState(false);
   const [currentVariableInternalId, setCurrentVariableInternalId] = useState<
@@ -46,7 +47,7 @@ export const EntityVariableEditor = connect(
       <div className="entity-variables">
         {props.entity.variableInternalIds
           .map((internalId) => {
-            const variable = props.variablesByInternalId[internalId];
+            const variable = props.variablesByInternalId[internalId]!;
             const name = variable.name;
             return { internalId, variable, name };
           })
@@ -66,8 +67,8 @@ export const EntityVariableEditor = connect(
               <h4 className="variable-header">
                 <span>
                   {wrapInterfaceTooltip(
-                    <Icon icon={variableIcon(variable.type)} iconSize={12} />,
-                    variable.type
+                    variableIcon(variable.type),
+                    variable.type,
                   )}
                   {name}
                 </span>

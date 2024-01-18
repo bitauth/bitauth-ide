@@ -1,10 +1,23 @@
 {
-  "deno.enable": false,
+  "cSpell.enabled": true,
+  "cSpell.userWords": [], // only use words from .cspell.json
+  "editor.formatOnSave": true,
+  "editor.semanticHighlighting.enabled": true,
   "eslint.validate": [
     "javascript",
     "javascriptreact",
     "typescript",
     "typescriptreact"
   ],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": ".yarn/sdks/typescript/lib",
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true
+  },
+  "eslint.nodePath": ".yarn/sdks",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "prettier.prettierPath": ".yarn/sdks/prettier/index.js",
+  "playwright.env": {
+    "NODE_OPTIONS": "-r ./.pnp.cjs"
+  }
 }

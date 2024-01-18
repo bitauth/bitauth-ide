@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "description": "Render an example of deeply-nested spacers in the evaluation viewer.",
+  "name": "spacers.json",
+  "entities": {},
+  "scripts": {
+    "true": {
+      "name": "True",
+      "script": "<1>",
+      "unlocks": "spacers"
+    },
+    "false": {
+      "name": "False",
+      "script": "<0>",
+      "unlocks": "spacers"
+    },
+    "spacers": {
+      "lockingType": "p2sh20",
+      "name": "Spacers",
+      "script": "OP_IF\n  <1> OP_IF\n  <\n    $(<'eval_1'>      \n        <$(\n            <'eval_2'>\n            <1> OP_IF\n              OP_DROP\n              <'inner_if'>\n            OP_ENDIF\n        )>\n        OP_2DROP\n        <1> OP_IF\n          <'if_1'>\n          <1> OP_IF\n            <'if_2'>\n          OP_ENDIF \n        OP_DROP\n        OP_ENDIF\n    )\n  > // push happens after this line\n  OP_ELSE <'never'>\n  OP_ENDIF\nOP_ELSE\n  <0>\nOP_ELSE <'Multiple OP_ELSE quirk'> OP_DROP\nOP_ELSE OP_NOT\nOP_ENDIF \nOP_0NOTEQUAL"
+    }
+  },
+  "supported": ["BCH_2023_05"],
+  "version": 0
+}

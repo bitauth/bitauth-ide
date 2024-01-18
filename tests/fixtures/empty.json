@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "description": "An empty wallet template.\n",
+  "name": "empty.json",
+  "entities": {},
+  "scripts": {
+    "unlock": {
+      "name": "Unlock",
+      "script": "",
+      "unlocks": "lock"
+    },
+    "lock": {
+      "lockingType": "standard",
+      "name": "Lock",
+      "script": ""
+    }
+  },
+  "supported": ["BCH_2023_05"],
+  "version": 0
+}

@@ -1,24 +1,18 @@
 import {
+  IDESupportedProgramState,
+  IDETemplateScript,
+  ScenarioDetails,
+  ScriptDetails,
+  ScriptType,
+  VariableDetails,
+} from '../state/types';
+
+import {
   AuthenticationProgramCommon,
   CompilationResult,
   EvaluationSample,
-  AuthenticationTemplateScriptLocking,
-  AuthenticationProgramStateAlternateStack,
-  AuthenticationProgramStateControlStack,
-  AuthenticationProgramStateError,
-  AuthenticationProgramStateMinimum,
-  AuthenticationProgramStateStack,
-  AuthenticationProgramStateCodeSeparator,
-  AuthenticationProgramStateSignatureAnalysis,
-  AuthenticationProgramStateTransactionContext,
+  WalletTemplateScriptLocking,
 } from '@bitauth/libauth';
-import {
-  IDETemplateScript,
-  ScriptType,
-  VariableDetails,
-  ScriptDetails,
-  ScenarioDetails,
-} from '../state/types';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 export enum ProjectEditorMode {
@@ -47,7 +41,7 @@ export enum ProjectEditorMode {
   entityEditor = 'entityEditor',
   /**
    * Template settings view – view and modify the settings for the current
-   * authentication template.
+   * wallet template.
    */
   templateSettingsEditor = 'templateSettingsEditor',
   /**
@@ -98,17 +92,7 @@ export enum ScriptEvaluationViewerPane {
  */
 export type StackItemIdentifyFunction = (value: Uint8Array) => string | false;
 
-export type IDESupportedProgramState = AuthenticationProgramStateMinimum &
-  AuthenticationProgramStateStack &
-  AuthenticationProgramStateAlternateStack &
-  AuthenticationProgramStateControlStack<boolean | number> &
-  AuthenticationProgramStateError &
-  AuthenticationProgramStateCodeSeparator &
-  AuthenticationProgramStateSignatureAnalysis &
-  AuthenticationProgramStateTransactionContext;
-
-export interface IDESupportedAuthenticationProgram
-  extends AuthenticationProgramCommon {}
+export type IDESupportedAuthenticationProgram = AuthenticationProgramCommon;
 
 /**
  * Visual indicators which indicate nesting – the end of the line being
@@ -147,23 +131,21 @@ export enum EvaluationViewerHighlight {
   fail = 'fail',
 }
 
-export interface EvaluationViewerLine<
-  ProgramState extends IDESupportedProgramState = IDESupportedProgramState
-> {
+export type EvaluationViewerLine<
+  ProgramState extends IDESupportedProgramState = IDESupportedProgramState,
+> = {
   state?: ProgramState;
   spacers?: EvaluationViewerSpacer[];
   highlight?: EvaluationViewerHighlight;
-}
+};
 
-export interface ProjectExplorerTreeNode {
+export type ProjectExplorerTreeNode = {
   active: boolean;
   id: IDETemplateScript['id'];
   children?: ProjectExplorerTreeNode[];
-}
+};
 
-export interface ScriptEditorFrame<
-  ProgramState extends IDESupportedProgramState
-> {
+export type ScriptEditorFrame<ProgramState extends IDESupportedProgramState> = {
   monacoModel?: monacoEditor.editor.ITextModel;
   /**
    * `samples` is undefined if there are compilation errors.
@@ -182,17 +164,17 @@ export interface ScriptEditorFrame<
    * `evaluation` is undefined if there are compilation errors.
    */
   evaluationLines: EvaluationViewerLine<ProgramState>[] | undefined;
-}
+};
 
 /**
  * The computed state required by the EvaluationViewer.
  */
-export interface EvaluationViewerComputedState {
+export type EvaluationViewerComputedState = {
   frame: ScriptEditorFrame<IDESupportedProgramState>;
   evaluationTrace: string[];
   evaluationSource: string[];
   lookup?: StackItemIdentifyFunction;
-}
+};
 
 export type ComputedEditorState<ProgramState extends IDESupportedProgramState> =
 
@@ -203,29 +185,29 @@ export type ComputedEditorState<ProgramState extends IDESupportedProgramState> =
     | EditorStateImportingMode
     | EditorStateWalletMode;
 
-interface EditorStateEntityMode {
+type EditorStateEntityMode = {
   editorMode: ProjectEditorMode.entityEditor;
-}
+};
 
-interface EditorStateWalletMode {
+type EditorStateWalletMode = {
   editorMode: ProjectEditorMode.wallet;
-}
+};
 
-interface EditorStateWelcomeMode {
+type EditorStateWelcomeMode = {
   editorMode: ProjectEditorMode.welcome;
-}
+};
 
-interface EditorStateTemplateSettingsMode {
+type EditorStateTemplateSettingsMode = {
   editorMode: ProjectEditorMode.templateSettingsEditor;
-}
+};
 
-interface EditorStateImportingMode {
+type EditorStateImportingMode = {
   editorMode: ProjectEditorMode.importing;
-}
+};
 
-export interface EditorStateScriptMode<
-  ProgramState extends IDESupportedProgramState
-> {
+export type EditorStateScriptMode<
+  ProgramState extends IDESupportedProgramState,
+> = {
   debugTrace?: IDESupportedProgramState[];
   editorMode:
     | ProjectEditorMode.isolatedScriptEditor
@@ -243,7 +225,7 @@ export interface EditorStateScriptMode<
    * the EvaluationViewer to recognize viable updates to its cache.
    */
   scriptEditorEvaluationSource: string[];
-  lockingType: AuthenticationTemplateScriptLocking['lockingType'];
+  lockingType: WalletTemplateScriptLocking['lockingType'];
   isPushed: boolean;
   /**
    * Set to `undefined` if no compilations were successful (so the previous
@@ -253,47 +235,4 @@ export interface EditorStateScriptMode<
   variableDetails: VariableDetails;
   scriptDetails: ScriptDetails;
   scenarioDetails: ScenarioDetails;
-}
-
-/**
- * Object representing the current global settings for all evaluation viewers.
- */
-export interface EvaluationViewerSettings {
-  /**
-   * If `true`, the EvaluationViewer should aggressively attempt to replace
-   * valid Script Numbers on the stack with their numerical representation.
-   */
-  scriptNumbersDisplayFormat: 'hex' | 'integer' | 'binary';
-  /**
-   * If `true`, the EvaluationViewer should show the AlternativeStack rather
-   * than the normal stack.
-   */
-  showAlternateStack: boolean;
-  /**
-   * If `true`, the EvaluationViewer should shorten long stack items by only
-   * showing a few of their initial and final bytes. (E.g. `0x1234...7890`.)
-   */
-  abbreviateLongStackItems: boolean;
-
-  /**
-   * Items deeper than this value will be grouped into a single `...`
-   * item to prevent cluttering the view. 3 is the default value, as most
-   * operations use a maximum of 3 items. (Nearly all other operations only
-   * operate on a maximum of 6 items.) If `undefined`, grouping is disabled.
-   */
-  groupStackItemsDeeperThan: undefined | 3 | 6;
-
-  /**
-   * If `true`, reverse the direction of stack items so that new items are
-   * pushed from the left. This ensures that the most active part of the stack
-   * is displayed first.
-   */
-  reverseStack: boolean;
-
-  /**
-   * If `true`, the viewer will attempt to replace known stack item values with
-   * the source variable or script name which produced them (making it easier to
-   * follow the origin of specific byte sequences).
-   */
-  identifyStackItems: boolean;
-}
+};

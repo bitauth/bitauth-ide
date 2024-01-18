@@ -1,36 +1,40 @@
+import { samplesToEvaluationLines } from '../cash-assembly/editor-tooling';
+import { exportWalletTemplate } from '../state/import-export';
 import {
   AppState,
-  IDETemplateLockingScript,
   IDEActivatableScript,
-  IDETemplateTestedScript,
-  VariableDetails,
   IDEMode,
+  IDESupportedProgramState,
+  IDETemplateLockingScript,
+  IDETemplateTestedScript,
   ScenarioDetails,
   ScriptDetails,
+  VariableDetails,
 } from '../state/types';
+
 import {
-  createCompiler,
-  extractEvaluationSamplesRecursive,
+  ComputedEditorState,
+  EvaluationViewerHighlight,
+  EvaluationViewerLine,
+  ProjectEditorMode,
+  ScriptEditorFrame,
+  StackItemIdentifyFunction,
+} from './editor-types';
+
+import {
+  CompilationResultResolveError,
   CompilationResultSuccess,
+  createCompiler,
+  createVirtualMachineBCH2023,
+  createVirtualMachineBCHCHIPs,
+  encodeDataPush,
   EvaluationSample,
   extractBytecodeResolutions,
-  encodeDataPush,
+  extractEvaluationSamplesRecursive,
+  ResolvedSegmentScriptBytecode,
   ScriptReductionTraceScriptNode,
-  authenticationTemplateToCompilerConfiguration,
-  createVirtualMachineBCH2022,
-  createVirtualMachineBCHCHIPs,
+  walletTemplateToCompilerConfiguration,
 } from '@bitauth/libauth';
-import {
-  StackItemIdentifyFunction,
-  ProjectEditorMode,
-  IDESupportedProgramState,
-  ComputedEditorState,
-  ScriptEditorFrame,
-  EvaluationViewerLine,
-  EvaluationViewerHighlight,
-} from './editor-types';
-import { exportAuthenticationTemplate } from '../state/import-export';
-import { samplesToEvaluationLines } from '../btl-utils/editor-tooling';
 
 /**
  * This method lets us pretend that the provided script was wrapped in a push
@@ -38,7 +42,7 @@ import { samplesToEvaluationLines } from '../btl-utils/editor-tooling';
  * allows sample generation to work as expected for "pushed" tested scripts.
  */
 const wrapScriptReductionInPush = <ProgramState>(
-  node: ScriptReductionTraceScriptNode<ProgramState>
+  node: ScriptReductionTraceScriptNode<ProgramState>,
 ) => {
   const wrappedBytecode = encodeDataPush(node.bytecode);
   return {
@@ -69,9 +73,9 @@ const wrapScriptReductionInPush = <ProgramState>(
 };
 
 export const computeEditorState = <
-  ProgramState extends IDESupportedProgramState
+  ProgramState extends IDESupportedProgramState,
 >(
-  state: AppState
+  state: AppState,
 ): ComputedEditorState<ProgramState> => {
   const {
     ideMode,
@@ -97,33 +101,35 @@ export const computeEditorState = <
   if (currentlyEditingInternalId === undefined) {
     return { editorMode: ProjectEditorMode.templateSettingsEditor };
   }
-  const template = exportAuthenticationTemplate(state.currentTemplate);
-  const configuration = authenticationTemplateToCompilerConfiguration(template);
+  const template = exportWalletTemplate(state.currentTemplate, true);
+  const configuration = walletTemplateToCompilerConfiguration(template);
   const vm =
-    state.currentVmId === 'BCH_2022_05'
-      ? createVirtualMachineBCH2022()
+    state.currentVmId === 'BCH_2023_05'
+      ? createVirtualMachineBCH2023()
       : createVirtualMachineBCHCHIPs();
   const compiler = createCompiler(configuration);
 
   /**
    * Map variable InternalIds to entity InternalIds
    */
-  const variableOwnership: {
-    [variableInternalId: string]: string;
-  } = Object.entries(state.currentTemplate.entitiesByInternalId).reduce(
+  const variableOwnership: { [key: string]: string } = Object.entries(
+    state.currentTemplate.entitiesByInternalId,
+  ).reduce(
     (previous, [entityInternalId, content]) =>
       content.variableInternalIds
         .map((variableInternalId) => ({
           [variableInternalId]: entityInternalId,
         }))
         .reduce((done, next) => ({ ...done, ...next }), { ...previous }),
-    {}
+    {},
   );
   const variableDetails: VariableDetails = Object.entries(
-    state.currentTemplate.variablesByInternalId
+    state.currentTemplate.variablesByInternalId,
   ).reduce((variables, [internalId, variable]) => {
     const entity =
-      state.currentTemplate.entitiesByInternalId[variableOwnership[internalId]];
+      state.currentTemplate.entitiesByInternalId[
+        variableOwnership[internalId]!
+      ]!;
     return {
       ...variables,
       [variable.id]: {
@@ -134,15 +140,15 @@ export const computeEditorState = <
   }, {});
 
   const scriptDetails: ScriptDetails = Object.values(
-    state.currentTemplate.scriptsByInternalId
+    state.currentTemplate.scriptsByInternalId,
   )
     .filter(
       (ideScript) =>
-        ideScript.type !== 'test-setup' && ideScript.type !== 'test-check'
+        ideScript.type !== 'test-setup' && ideScript.type !== 'test-check',
     )
     .reduce(
       (scripts, ideScript) => ({ ...scripts, [ideScript.id]: ideScript }),
-      {}
+      {},
     );
 
   const templateScenario =
@@ -163,18 +169,21 @@ export const computeEditorState = <
    * scripts but isolated scripts (which have no verifiable result).
    */
   const scenarioIsExpectedToPass =
-    currentScript.type === 'isolated' || currentScenarioInternalId === undefined
+    currentScript.type === 'isolated'
       ? undefined
-      : currentScript.passesInternalIds.includes(currentScenarioInternalId)
-      ? true
-      : currentScript.failsInternalIds.includes(currentScenarioInternalId)
-      ? false
-      : (() => {
-          console.error(
-            "Invalid application state: it shouldn't be possible to compile a script with a scenario it doesn't support. There's a problem with the reducer."
-          );
-          return undefined;
-        })();
+      : currentScenarioInternalId === undefined
+        ? true
+        : currentScript.passesInternalIds.includes(currentScenarioInternalId)
+          ? true
+          : currentScript.failsInternalIds.includes(currentScenarioInternalId)
+            ? false
+            : // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+              (() => {
+                console.error(
+                  "Invalid application state: it shouldn't be possible to compile a script with a scenario it doesn't support. There's a problem with the reducer.",
+                );
+                return undefined;
+              })();
 
   /**
    * All available scenarios, sorted by `name`.
@@ -185,13 +194,13 @@ export const computeEditorState = <
       : [...currentScript.passesInternalIds, ...currentScript.failsInternalIds]
           .map(
             (internalId) =>
-              state.currentTemplate.scenariosByInternalId[internalId]
+              state.currentTemplate.scenariosByInternalId[internalId],
           )
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => a!.name.localeCompare(b!.name))
           .map((scenario) => ({
-            id: scenario.id,
-            name: scenario.name,
-            internalId: scenario.internalId,
+            id: scenario!.id,
+            name: scenario!.name,
+            internalId: scenario!.internalId,
           }));
 
   const {
@@ -218,55 +227,56 @@ export const computeEditorState = <
       ? {
           editorMode: ProjectEditorMode.isolatedScriptEditor,
           isPushed: false,
-          lockingType: 'standard' as const,
+          lockingType: 'p2sh20' as const,
           scriptEditorEvaluationTrace: [currentScript.internalId],
-          lockingScriptId: currentScript.id,
-          unlockingScriptId: undefined,
+          lockingScriptId: undefined,
+          unlockingScriptId: `${currentScript.id}.empty-unlock`,
         }
       : currentScript.type === 'unlocking'
-      ? {
-          editorMode: ProjectEditorMode.scriptPairEditor,
-          isPushed: false,
-          lockingType: (
-            state.currentTemplate.scriptsByInternalId[
-              currentScript.parentInternalId
-            ] as IDETemplateLockingScript
-          ).lockingType,
-          scriptEditorEvaluationTrace: [
-            currentScript.internalId,
-            currentScript.parentInternalId,
-          ],
-          lockingScriptId: undefined,
-          unlockingScriptId: currentScript.id,
-        }
-      : {
-          editorMode: ProjectEditorMode.testedScriptEditor,
-          isPushed: (
-            state.currentTemplate.scriptsByInternalId[
-              currentScript.parentInternalId
-            ] as IDETemplateTestedScript
-          ).pushed,
-          lockingType: 'standard' as const,
-          scriptEditorEvaluationTrace: [
-            currentScript.internalId,
-            currentScript.parentInternalId,
-            currentScript.testCheckInternalId,
-          ],
-          lockingScriptId: undefined,
-          unlockingScriptId: `${
-            (
+        ? {
+            editorMode: ProjectEditorMode.scriptPairEditor,
+            isPushed: false,
+            lockingType: (
+              state.currentTemplate.scriptsByInternalId[
+                currentScript.parentInternalId
+              ] as IDETemplateLockingScript
+            ).lockingType,
+            scriptEditorEvaluationTrace: [
+              currentScript.internalId,
+              currentScript.parentInternalId,
+            ],
+            lockingScriptId: undefined,
+            unlockingScriptId: currentScript.id,
+          }
+        : {
+            editorMode: ProjectEditorMode.testedScriptEditor,
+            isPushed: (
               state.currentTemplate.scriptsByInternalId[
                 currentScript.parentInternalId
               ] as IDETemplateTestedScript
-            ).id
-          }.${currentScript.id}.unlock`,
-        };
+            ).pushed,
+            lockingType: 'p2sh20' as const,
+            scriptEditorEvaluationTrace: [
+              currentScript.internalId,
+              currentScript.parentInternalId,
+              currentScript.testCheckInternalId,
+            ],
+            lockingScriptId: undefined,
+            unlockingScriptId: `${
+              (
+                state.currentTemplate.scriptsByInternalId[
+                  currentScript.parentInternalId
+                ] as IDETemplateTestedScript
+              ).id
+            }.${currentScript.id}.unlock`,
+          };
 
   /**
    * The id of each source script in use.
    */
   const scriptEditorEvaluationSource = scriptEditorEvaluationTrace.map(
-    (internalId) => state.currentTemplate.scriptsByInternalId[internalId].script
+    (internalId) =>
+      state.currentTemplate.scriptsByInternalId[internalId]!.script,
   );
 
   const scenarioGeneration = compiler.generateScenario({
@@ -299,41 +309,39 @@ export const computeEditorState = <
   const resolvedIdentifiers = [
     lockingScriptCompilation,
     unlockingScriptCompilation,
-  ].reduce<{
-    [fullIdentifier: string]: Uint8Array;
-  }>(
+  ].reduce<{ [key: string]: Uint8Array }>(
     (vars, result) =>
       result !== undefined && 'resolve' in result
         ? {
             ...vars,
             ...extractBytecodeResolutions(result.resolve).reduce<{
-              [fullIdentifier: string]: Uint8Array;
+              [key: string]: Uint8Array;
             }>(
               (all, resolution) =>
                 ['variable', 'script', 'UTF8Literal'].includes(resolution.type)
                   ? { ...all, [resolution.text]: resolution.bytecode }
                   : all,
-              {}
+              {},
             ),
           }
         : vars,
-    {}
+    {},
   );
 
   const bytecodeToIdentifierMap = Object.entries(resolvedIdentifiers).reduce<{
-    [stringifiedArray: string]: string;
+    [key: string]: string;
   }>(
     (all, [identifier, bytecode]) => ({
       ...all,
       [bytecode.toString()]: identifier,
     }),
-    {}
+    {},
   );
 
   const stackItemIdentifyIgnoreList = ['0', '1'];
   const identifyStackItems: StackItemIdentifyFunction = (item) =>
-    (stackItemIdentifyIgnoreList.indexOf(item.toString()) === -1 &&
-      bytecodeToIdentifierMap[item.toString()]) ||
+    (!stackItemIdentifyIgnoreList.includes(item.toString()) &&
+      bytecodeToIdentifierMap[item.toString()]) ??
     false;
 
   /**
@@ -345,13 +353,25 @@ export const computeEditorState = <
   const scriptEditorFrames = scriptEditorEvaluationTrace.map<
     ScriptEditorFrame<ProgramState>
   >((internalId) => {
-    const script = state.currentTemplate.scriptsByInternalId[internalId];
-    const { used, compilation } =
-      script.type === 'test-setup' || script.type === 'unlocking'
-        ? { used: 'unlocking', compilation: unlockingScriptCompilation }
-        : script.type === 'test-check'
-        ? { used: 'check', compilation: lockingScriptCompilation }
-        : { used: 'locking', compilation: lockingScriptCompilation };
+    const script = state.currentTemplate.scriptsByInternalId[internalId]!;
+    const compilation =
+      script.type === 'unlocking'
+        ? unlockingScriptCompilation
+        : script.type === 'test-setup'
+          ? unlockingScriptCompilation
+          : script.type === 'tested'
+            ? (
+                (
+                  lockingScriptCompilation as CompilationResultResolveError<ProgramState>
+                ).resolve[0] as ResolvedSegmentScriptBytecode<ProgramState>
+              ).source
+            : script.type === 'test-check'
+              ? (
+                  (
+                    lockingScriptCompilation as CompilationResultResolveError<ProgramState>
+                  ).resolve[1] as ResolvedSegmentScriptBytecode<ProgramState>
+                ).source
+              : lockingScriptCompilation;
 
     let frameSamples: EvaluationSample<ProgramState>[] | undefined;
     let evaluationLines: EvaluationViewerLine<ProgramState>[] | undefined;
@@ -360,18 +380,24 @@ export const computeEditorState = <
         compilation as CompilationResultSuccess<ProgramState>;
       const lastSourceLine = successfulCompilation.parse.end.line;
       const reduction = successfulCompilation.reduce;
-      if (lockingType === 'p2sh20' && used === 'locking') {
+      if (
+        lockingType !== 'standard' &&
+        (script.type === 'locking' ||
+          script.type === 'tested' ||
+          script.type === 'isolated')
+      ) {
+        if (script.type === 'isolated') {
+          /**
+           * Trim off state from virtualized (empty) unlocking script.
+           */
+          remainingStates = remainingStates!.slice(1);
+        }
         const p2shStates = 5;
         /**
          * Trim off P2SH states – we don't show that part in the IDE. (It's always
          * the same, and the compiler should never mess it up.)
          */
-        remainingStates = (remainingStates as ProgramState[]).slice(p2shStates);
-      } else if (script.type === 'isolated') {
-        /**
-         * Trim off state from virtualized (empty) unlocking script.
-         */
-        remainingStates = (remainingStates as ProgramState[]).slice(1);
+        remainingStates = remainingStates!.slice(p2shStates);
       } else if (script.type === 'test-check' && !isPushed) {
         /**
          * Since the actual locking script and test-check script are
@@ -383,10 +409,11 @@ export const computeEditorState = <
          * However, if a tested script is "pushed" for testing, this effect is
          * offset by the pushed sample, so duplication can be skipped.
          */
-        remainingStates =
+        remainingStates = (
           remainingStates === undefined || remainingStates.length === 0
             ? []
-            : [remainingStates[0], ...remainingStates];
+            : [remainingStates[0], ...remainingStates]
+        ) as ProgramState[];
       }
       const nodes =
         isPushed && script.type === 'tested'
@@ -396,7 +423,7 @@ export const computeEditorState = <
       const { samples, unmatchedStates } = extractEvaluationSamplesRecursive({
         evaluationRange,
         nodes,
-        trace: remainingStates as ProgramState[],
+        trace: remainingStates!,
       });
       remainingStates = unmatchedStates;
       frameSamples = samples;
@@ -406,7 +433,7 @@ export const computeEditorState = <
 
     const scriptName =
       script.type === 'test-check'
-        ? state.currentTemplate.scriptsByInternalId[script.testSetupInternalId]
+        ? state.currentTemplate.scriptsByInternalId[script.testSetupInternalId]!
             .name
         : script.name;
 
@@ -423,8 +450,7 @@ export const computeEditorState = <
       monacoModel: script.monacoModel,
     };
   });
-
-  const lastFrame = scriptEditorFrames[scriptEditorFrames.length - 1];
+  const lastFrame = scriptEditorFrames[scriptEditorFrames.length - 1]!;
   if (
     scenarioIsExpectedToPass &&
     verifyResult === true &&
@@ -442,10 +468,7 @@ export const computeEditorState = <
 
   const scenarioDetails: ScenarioDetails = {
     availableScenarios,
-    generatedScenario:
-      typeof scenarioGeneration === 'string'
-        ? scenarioGeneration
-        : scenarioGeneration.scenario,
+    generatedScenario: scenarioGeneration,
     selectedScenario:
       templateScenario === undefined
         ? undefined
@@ -455,11 +478,11 @@ export const computeEditorState = <
              * If templateScenario is defined, we should always know whether the
              * selected scenario is expected to pass.
              */
-            expectedToPass: scenarioIsExpectedToPass as boolean,
+            expectedToPass: scenarioIsExpectedToPass!,
             id: templateScenario.id,
             name: templateScenario.name,
-            verifyResult,
           },
+    verifyResult,
   };
 
   return {

@@ -1,0 +1,60 @@
+name: Lint, Build, and Test Bitauth IDE
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: yarn install --immutable --immutable-cache
+      - run: yarn test:lint
+
+  prod-e2e:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.41.0-jammy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: yarn install --immutable --immutable-cache
+      - run: yarn build
+      - run: yarn test:e2e:prod
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dist
+          path: dist/
+          retention-days: 90
+      - uses: codecov/codecov-action@v3
+
+  dev-e2e-and-coverage:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.41.0-jammy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: yarn install --immutable --immutable-cache
+      - run: yarn test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 90
+      - uses: codecov/codecov-action@v3

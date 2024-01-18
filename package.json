@@ -2,89 +2,94 @@
   "name": "bitauth-ide",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@bitauth/libauth": "2.0.0-alpha.6",
-    "@bitauth/react-scripts-bitauth-ide": "^5.0.1-patch2",
-    "@blueprintjs/core": "^4.3.1",
-    "@blueprintjs/select": "^4.2.1",
-    "@cypress/code-coverage": "^3.9.12",
-    "@percy/cypress": "^3.1.1",
-    "@types/jest": "^27.5.1",
-    "@types/node": "17.0.33",
-    "@types/pako": "^2.0.0",
-    "@types/react": "18.0.9",
-    "@types/react-dom": "18.0.4",
-    "@types/react-redux": "^7.1.24",
-    "@types/webpack-env": "^1.16.4",
-    "codecov": "^3.8.3",
-    "cypress": "^9.6.1",
-    "cz-conventional-changelog": "^3.3.0",
-    "eslint-plugin-cypress": "^2.12.1",
+  "devDependencies": {
+    "@bitauth/libauth": "2.0.0",
+    "@blueprintjs/core": "^5.8.2",
+    "@blueprintjs/icons": "^5.7.0",
+    "@blueprintjs/select": "^5.0.23",
+    "@monaco-editor/react": "^4.6.0",
+    "@playwright/test": "^1.41.0",
+    "@types/node": "^20.11.4",
+    "@types/pako": "^2.0.3",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/react-redux": "^7.1.33",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vite-pwa/assets-generator": "^0.2.3",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "cspell": "^8.3.2",
+    "eslint": "^8.56.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
     "immer-reducer": "^0.7.13",
-    "istanbul-lib-coverage": "^3.2.0",
-    "logrocket": "^3.0.0",
-    "monaco-editor": "^0.33.0",
+    "istanbul-lib-coverage": "^3.2.2",
+    "lightningcss": "^1.23.0",
+    "logrocket": "^5.0.1",
+    "monaco-editor": "^0.45.0",
+    "normalize.css": "^8.0.1",
     "nyc": "^15.1.0",
-    "pako": "^2.0.4",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
-    "react-mosaic-component": "^5.1.0",
-    "react-redux": "^8.0.1",
-    "redux": "^4.2.0",
+    "pako": "^2.1.0",
+    "prettier": "^3.2.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-mosaic-component": "^6.1.0",
+    "react-redux": "^8.1.3",
+    "redux": "^4.2.1",
     "redux-devtools-extension": "^2.13.9",
-    "sass": "^1.51.0",
-    "start-server-and-test": "^1.14.0",
-    "typescript": "4.6.4"
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vite-bundle-visualizer": "^1.0.0",
+    "vite-plugin-istanbul": "^5.0.0",
+    "vite-plugin-pwa": "^0.17.4",
+    "workbox-window": "^7.0.0"
   },
   "scripts": {
-    "start": "HOST=localhost PORT=3000 react-scripts start",
-    "build": "react-scripts build",
-    "test:unit": "react-scripts test --coverage --coverageDirectory=.nyc_output",
-    "test:e2e": "cypress run",
-    "cypress": "CYPRESS_REMOTE_DEBUGGING_PORT=9222 DEBUG=cypress:server:protocol cypress open",
-    "test": "node -e \"console.log('\\nPlease run \\`yarn test:unit\\` and \\`yarn test:e2e\\` separately. For E2E tests, \\`yarn start\\` must also be running.\\n')\"",
-    "ci:serve-and-test": "start-server-and-test start http-get://localhost:3000 ci:e2e",
-    "ci:e2e": "yarn percy exec yarn test:e2e --record --parallel",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "fix": "yarn fix:eslint && yarn fix:prettier",
+    "fix:prettier": "prettier . --write",
+    "fix:eslint": "yarn test:eslint --fix",
+    "gen:assets:install": "yarn_enable_scripts=true yarn add -D @vite-pwa/assets-generator",
+    "gen:assets": "pwa-assets-generator --preset minimal public/favicon.svg",
+    "test": "yarn test:lint && yarn test:e2e",
+    "test:lint": "yarn test:prettier && yarn test:eslint && yarn test:spelling",
+    "test:eslint": "eslint . -c .eslintrc.cjs --max-warnings 0",
+    "test:prettier": "prettier . --list-different",
+    "test:spelling": "cspell .",
+    "test:e2e": "playwright test",
+    "test:e2e:prod": "NODE_ENV=production PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 playwright test",
+    "e2e": "playwright test --ui",
+    "e2e:report": "playwright show-report",
+    "e2e:docker:bash": "docker run --rm -p 9323:9323 -v $(pwd):/work/ -w /work/ -it mcr.microsoft.com/playwright:v1.41.0-jammy /bin/bash",
+    "e2e:docker": "node -e \"fetch('http://localhost:3000').then(res => res.status === 200 ? console.log('Running e2e tests in Docker using base URL: http://localhost:3000') : (console.error(`No server is listening at: http://localhost:3000. Run 'yarn start --host' in another tab and try again.`) && process.exit(1)));\" && yarn e2e:docker:bash -c 'DOCKER=1 yarn test:e2e'",
+    "e2e:docker:prod": "node -e \"fetch('http://localhost:31313').then(res => res.status === 200 ? console.log('Running e2e tests in Docker using base URL: http://localhost:31313') : (console.error(`No server is listening at: http://localhost:31313. Run 'yarn preview --host' in another tab and try again.`) && process.exit(1)));\" && yarn e2e:docker:bash -c 'DOCKER=1 yarn test:e2e:prod'",
+    "e2e:update-har": "UPDATE_HAR=1 yarn test:e2e --project=chromium tests/routing.spec.ts",
+    "cov": "rm -rf .nyc_output && yarn test:e2e; yarn cov:html && open coverage/index.html",
+    "cov:both": "rm -rf .nyc_output && yarn test:e2e && yarn test:e2e:prod; yarn cov:html && open coverage/index.html",
+    "cov:html": "nyc report --reporter=html",
+    "cov:lcov": "nyc report --reporter=lcov",
+    "bundle": "vite-bundle-visualizer",
+    "bundle:sunburst": "vite-bundle-visualizer -t sunburst",
+    "bundle:network": "vite-bundle-visualizer -t network"
   },
-  "eslintConfig": {
-    "extends": "react-app"
+  "packageManager": "yarn@4.0.2",
+  "prettier": {
+    "singleQuote": true
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "babel": {
-    "presets": [
-      "react-app"
-    ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
+  "dependenciesMeta": {
+    "@vite-pwa/assets-generator@0.0.10": {
+      "unplugged": true
+    },
+    "vite-bundle-visualizer@0.10.0": {
+      "unplugged": true
     }
   },
-  "nyc": {
-    "all": true,
-    "exclude": "src/serviceWorker.ts"
-  },
-  "percy": {
-    "version": 1,
-    "snapshot": {
-      "min-height": 1080,
-      "widths": [
-        1920
-      ],
-      "percy-css": ".monaco-editor .minimap .percy-canvas-image { display: none; }"
-    }
-  },
-  "cypressWebpackConfigPath": "./node_modules/@bitauth/react-scripts-bitauth-ide/config/webpack.config.js"
+  "resolutions": {
+    "@bitauth/libauth": "portal:./libauth"
+  }
 }

@@ -1,37 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import './HeaderBar.scss';
-import {
-  Button,
-  MenuItem,
-  Icon,
-  Popover,
-  PopoverInteractionKind,
-} from '@blueprintjs/core';
-import { ItemRenderer, Select } from '@blueprintjs/select';
-import {
-  IDEMode,
-  AppState,
-  ActiveDialog,
-  IDESupportedVM,
-} from '../state/types';
-import GitHubLogo from './github-logo.svg';
-import { IconNames } from '@blueprintjs/icons';
+import './HeaderBar.css';
 import { wrapInterfaceTooltip } from '../editor/common';
-import { connect } from 'react-redux';
-import { ActionCreators } from '../state/reducer';
 import { GuideDialog } from '../editor/dialogs/guide-dialog/GuideDialog';
+import { workingOnWalletMode } from '../state/defaults';
 import {
   localStorageEventHasNeverHappened,
   LocalStorageEvents,
 } from '../state/local-storage';
-import { workingOnWalletMode } from '../state/defaults';
-import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
+import { ActionCreators } from '../state/reducer';
+import {
+  ActiveDialog,
+  AppState,
+  IDEMode,
+  IDESupportedVM,
+} from '../state/types';
 
-interface IDESupportedModes {
+import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
+import {
+  Button,
+  MenuItem,
+  Popover,
+  PopoverInteractionKind,
+} from '@blueprintjs/core';
+import { Chat, Manual, Notifications } from '@blueprintjs/icons';
+import { ItemRenderer, Select } from '@blueprintjs/select';
+import { useEffect, useState } from 'react';
+import { connect } from 'react-redux';
+
+type IDESupportedModes = {
   id: IDEMode;
   name: string;
   disabled: boolean;
-}
+};
 
 type IDESupportedVirtualMachine =
   | {
@@ -51,19 +50,16 @@ const ideModes: IDESupportedModes[] = [
 ];
 
 const vms: IDESupportedVirtualMachine[] = [
-  { id: 'BCH_SPEC', name: 'BCH CHIPs VM', disabled: false },
-  { id: 'BCH_2022_05', name: 'BCH 2022 VM', disabled: false },
+  { id: 'BCH_2023_05', name: 'BCH 2023 VM', disabled: false },
+  // { id: 'BCH_SPEC', name: 'BCH CHIPs VM', disabled: false },
   { id: 'BTC_2017_08', name: 'BTC 2017 VM', disabled: true },
   { id: 'BSV_2020_02', name: 'BSV 2020 VM', disabled: true },
   { id: 'XEC_2020_05', name: 'XEC 2020 VM', disabled: true },
 ];
 
-const ModeSelect = Select.ofType<IDESupportedModes>();
-const VirtualMachineSelect = Select.ofType<IDESupportedVirtualMachine>();
-
 const renderMode: ItemRenderer<IDESupportedModes> = (
   ideMode,
-  { handleClick, modifiers }
+  { handleClick, modifiers },
 ) => {
   return (
     <MenuItem
@@ -79,7 +75,7 @@ const renderMode: ItemRenderer<IDESupportedModes> = (
 
 const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
   vm,
-  { handleClick, modifiers }
+  { handleClick, modifiers },
 ) => {
   return (
     <MenuItem
@@ -93,21 +89,21 @@ const renderVm: ItemRenderer<IDESupportedVirtualMachine> = (
   );
 };
 
-interface HeaderDispatch {
+type HeaderDispatch = {
   activateVm: typeof ActionCreators.activateVm;
   closeDialog: typeof ActionCreators.closeDialog;
   openGuide: typeof ActionCreators.openGuide;
   setIDEMode: typeof ActionCreators.setIDEMode;
-}
-interface HeaderProps extends HeaderDispatch {
+};
+type HeaderProps = {
   activeDialog: ActiveDialog;
   currentVmId: IDESupportedVM;
   ideMode: IDEMode;
   supportedVirtualMachines: AuthenticationVirtualMachineIdentifier[];
-}
+} & HeaderDispatch;
 
 const selectVm = (vmId: IDESupportedVM) =>
-  vms.find((vm) => vm.id === vmId) ?? vms[0];
+  vms.find((vm) => vm.id === vmId) ?? vms[0]!;
 
 export const HeaderBar = connect(
   (state: AppState) => ({
@@ -121,7 +117,7 @@ export const HeaderBar = connect(
     closeDialog: ActionCreators.closeDialog,
     openGuide: ActionCreators.openGuide,
     setIDEMode: ActionCreators.setIDEMode,
-  }
+  },
 )((props: HeaderProps) => {
   const [introPopoverVisible, setIntroPopoverVisible] = useState(false);
   const currentIDEMode = ideModes.find((mode) => mode.id === props.ideMode);
@@ -131,7 +127,7 @@ export const HeaderBar = connect(
   useEffect(() => {
     if (
       localStorageEventHasNeverHappened(
-        LocalStorageEvents.GuidePopoverDismissed
+        LocalStorageEvents.GuidePopoverDismissed,
       )
     ) {
       setTimeout(() => {
@@ -153,7 +149,7 @@ export const HeaderBar = connect(
           interactionKind={PopoverInteractionKind.CLICK}
           isOpen={introPopoverVisible}
           onInteraction={(state) => {
-            if (state === false) {
+            if (!state) {
               setIntroPopoverVisible(false);
             }
           }}
@@ -164,9 +160,9 @@ export const HeaderBar = connect(
               onClick={() => props.openGuide()}
               tabIndex={1}
             >
-              <Icon icon={IconNames.MANUAL} iconSize={12} /> Guide
+              <Manual size={12} /> Guide
             </button>,
-            'Open the Bitauth IDE guide.'
+            'Open the Bitauth IDE guide.',
           )}
         </Popover>
         {wrapInterfaceTooltip(
@@ -177,9 +173,9 @@ export const HeaderBar = connect(
             rel="noopener noreferrer"
             tabIndex={2}
           >
-            <Icon icon={IconNames.CHAT} iconSize={12} /> Join Chat
+            <Chat size={12} /> Join Chat
           </a>,
-          'Get help or share feedback in the community Telegram group →'
+          'Get help or share feedback in the community Telegram group →',
         )}
         {wrapInterfaceTooltip(
           <a
@@ -189,10 +185,18 @@ export const HeaderBar = connect(
             rel="noopener noreferrer"
             tabIndex={3}
           >
-            <img src={GitHubLogo} alt="logo" />
+            {/* Icon from: https://simpleicons.org/ */}
+            <svg
+              role="img"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <title>GitHub</title>
+              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+            </svg>
             Report a bug
           </a>,
-          'Please report bugs in our GitHub issue tracker →'
+          'Please report bugs in our GitHub issue tracker →',
         )}
         {wrapInterfaceTooltip(
           <a
@@ -202,14 +206,14 @@ export const HeaderBar = connect(
             rel="noopener noreferrer"
             tabIndex={4}
           >
-            <Icon icon={IconNames.NOTIFICATIONS} iconSize={12} /> Get updates
+            <Notifications size={12} /> Get updates
           </a>,
-          'Get updates about Bitauth IDE on Twitter →'
+          'Get updates about Bitauth IDE on Twitter →',
         )}
       </div>
       <div className="right-section">
         <div className="ide-mode-select">
-          <ModeSelect
+          <Select<IDESupportedModes>
             itemRenderer={renderMode}
             items={ideModes}
             onItemSelect={(e) => props.setIDEMode(e.id)}
@@ -217,10 +221,10 @@ export const HeaderBar = connect(
             filterable={false}
           >
             <Button text={currentIDEMode.name} rightIcon="caret-down" />
-          </ModeSelect>
+          </Select>
         </div>
         <div className="vm-select">
-          <VirtualMachineSelect
+          <Select<IDESupportedVirtualMachine>
             itemRenderer={renderVm}
             items={vms}
             onItemSelect={(item) => {
@@ -229,7 +233,7 @@ export const HeaderBar = connect(
                 props.activateVm(vmId);
               } else {
                 window.alert(
-                  `This template is not configured to support the ${item.name}. To switch to this VM, first enable support for it in the template settings.`
+                  `This template is not configured to support the ${item.name}. To switch to this VM, first enable support for it in the template settings.`,
                 );
               }
             }}
@@ -240,7 +244,7 @@ export const HeaderBar = connect(
               text={selectVm(props.currentVmId).name}
               rightIcon="caret-down"
             />
-          </VirtualMachineSelect>
+          </Select>
         </div>
       </div>
       <GuideDialog

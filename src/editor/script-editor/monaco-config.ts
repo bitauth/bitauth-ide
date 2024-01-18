@@ -1,9 +1,33 @@
-import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { languageBCH } from './bch-language';
-import schemaJson from './authentication-template-v0.schema.json';
-import { bitauthAuthenticationTemplateSchema } from '../constants';
+// eslint-disable-next-line import/no-unresolved
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// eslint-disable-next-line import/no-unresolved
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 
-export const bitauthTemplatingLanguage = 'bitauth-templating-language';
+import { bitauthWalletTemplateSchema } from '../constants';
+
+import { languageBCH } from './bch-language';
+import schemaJson from './wallet-template.schema.json';
+
+import { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
+
+self.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === 'json') {
+      return new jsonWorker();
+    }
+    return new editorWorker();
+  },
+};
+loader.config({ monaco });
+/**
+ * TODO: pull in only the JSON language to reduce bundle size
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+await loader.init().then((monaco) => ((window as any).monaco = monaco));
+
+export const cashAssemblyLanguageId = 'cash-assembly';
 export const bitauthDark = 'bitauth-dark';
 
 export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
@@ -29,11 +53,13 @@ export const monacoOptions: Monaco.editor.IEditorConstructionOptions = {
 const vibrantYellow = 'ffd700';
 const subtleGray = '666677';
 const salmon = 'd68d72';
+// cspell: disable-next-line
 const lightBlue = '8addff';
 const blue = '3c9dda';
 const fuchsia = 'd081c4';
 const oak = 'd9daa2';
 const red = 'ff0000';
+// cspell: disable-next-line
 const mistBlue = 'a8bcce';
 const lightOlive = 'b5cea8';
 const darkOlive = '5bb498';
@@ -64,8 +90,8 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
   },
 };
 
-export const bitauthTemplatingLanguageMonarchLanguageConfiguration = (
-  monacoLanguages: typeof Monaco.languages
+export const cashAssemblyMonarchLanguageConfiguration = (
+  monacoLanguages: typeof Monaco.languages,
 ): Monaco.languages.LanguageConfiguration => ({
   autoClosingPairs: [
     { open: '<', close: '>' },
@@ -131,7 +157,7 @@ export const bitauthTemplatingLanguageMonarchLanguageConfiguration = (
   ],
 });
 
-export const bitauthTemplatingLanguageMonarchLanguage = {
+export const cashAssemblyMonarchLanguage = {
   // defaultToken: 'invalid', // set to 'invalid' to debug tokenization problems
   tokenPostfix: '.bitauth',
   brackets: [
@@ -200,22 +226,22 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
   },
 } as Monaco.languages.IMonarchLanguage;
 
-export const registerBitauthTemplatingLanguage = (monaco: typeof Monaco) => {
-  monaco.languages.register({ id: bitauthTemplatingLanguage });
+export const registerCashAssembly = (monaco: typeof Monaco) => {
+  monaco.languages.register({ id: cashAssemblyLanguageId });
   monaco.languages.setMonarchTokensProvider(
-    bitauthTemplatingLanguage,
-    bitauthTemplatingLanguageMonarchLanguage
+    cashAssemblyLanguageId,
+    cashAssemblyMonarchLanguage,
   );
   monaco.languages.setLanguageConfiguration(
-    bitauthTemplatingLanguage,
-    bitauthTemplatingLanguageMonarchLanguageConfiguration(monaco.languages)
+    cashAssemblyLanguageId,
+    cashAssemblyMonarchLanguageConfiguration(monaco.languages),
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);
   monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
     validate: true,
     schemas: [
       {
-        uri: bitauthAuthenticationTemplateSchema,
+        uri: bitauthWalletTemplateSchema,
         schema: schemaJson,
       },
     ],
@@ -223,7 +249,11 @@ export const registerBitauthTemplatingLanguage = (monaco: typeof Monaco) => {
 };
 
 export const prepMonaco = (monaco: typeof Monaco) => {
-  if (monaco.languages.getLanguages().length < 3) {
-    registerBitauthTemplatingLanguage(monaco);
+  if (
+    monaco.languages
+      .getLanguages()
+      .findIndex((language) => language.id === cashAssemblyLanguageId) === -1
+  ) {
+    registerCashAssembly(monaco);
   }
 };

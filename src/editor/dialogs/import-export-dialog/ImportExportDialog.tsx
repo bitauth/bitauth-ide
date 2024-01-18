@@ -1,53 +1,53 @@
-import '../editor-dialog.scss';
-import './ImportExportDialog.scss';
-import React, { SetStateAction, useState } from 'react';
-import { ActionCreators } from '../../../state/reducer';
-import {
-  Classes,
-  Dialog,
-  Button,
-  Icon,
-  FileInput,
-  Alert,
-  Intent,
-  HTMLSelect,
-  Popover,
-} from '@blueprintjs/core';
-import { IconNames } from '@blueprintjs/icons';
-import { ActiveDialog, AppState } from '../../../state/types';
-import MonacoEditor from 'react-monaco-editor';
-import {
-  monacoOptions,
-  bitauthDark,
-  prepMonaco,
-} from '../../script-editor/monaco-config';
-import { connect } from 'react-redux';
-import {
-  stringify,
-  utf8ToBin,
-  binToBase64,
-  AuthenticationTemplate,
-} from '@bitauth/libauth';
-import {
-  exportAuthenticationTemplate,
-  ideImportAuthenticationTemplate,
-} from '../../../state/import-export';
+import '../editor-dialog.css';
+import './ImportExportDialog.css';
 import { emptyTemplate } from '../../../state/defaults';
 import {
-  localStorageBackupPrefix,
+  exportWalletTemplate,
+  ideImportWalletTemplate,
+} from '../../../state/import-export';
+import { ActionCreators } from '../../../state/reducer';
+import { ActiveDialog, AppState } from '../../../state/types';
+import { stringToUriPayload } from '../../../utils';
+import {
   backupWarningLimit,
   ideURI,
+  localStorageBackupPrefix,
   localStorageCorruptedBackupPrefix,
 } from '../../constants';
-import { deflate } from 'pako';
+import {
+  bitauthDark,
+  monacoOptions,
+  prepMonaco,
+} from '../../script-editor/monaco-config';
+
+import {
+  binToBase64,
+  stringify,
+  utf8ToBin,
+  WalletTemplate,
+} from '@bitauth/libauth';
+import {
+  Alert,
+  Button,
+  Classes,
+  Dialog,
+  FileInput,
+  HTMLSelect,
+  Intent,
+  Popover,
+} from '@blueprintjs/core';
+import { WarningSign } from '@blueprintjs/icons';
+import { Editor } from '@monaco-editor/react';
+import { SetStateAction, useState } from 'react';
+import { connect } from 'react-redux';
 
 const beginDownload = (filename: string, content: string) => {
   const e = document.createElement('a');
   e.setAttribute(
     'href',
     `data:application/octet-stream;charset=utf-8;base64,${binToBase64(
-      utf8ToBin(content)
-    )}`
+      utf8ToBin(content),
+    )}`,
   );
   e.setAttribute('download', filename);
   e.style.display = 'none';
@@ -56,53 +56,54 @@ const beginDownload = (filename: string, content: string) => {
   document.body.removeChild(e);
 };
 
-interface ImportExportDialogProps {
+type ImportExportDialogProps = {
   name: string;
-  authenticationTemplate: string;
+  WalletTemplate: string;
   isEmptyTemplate: boolean;
   backups: IDEBackup[];
   restoreOptions: BackupOption[];
   activeDialog: ActiveDialog;
-  closeDialog: () => any;
-}
+  closeDialog: () => void;
+};
 
-interface ImportExportDialogDispatch {
+type ImportExportDialogDispatch = {
   importTemplate: typeof ActionCreators.importTemplate;
-}
+};
 
 type IDEBackup = {
   date: Date;
-  template: AuthenticationTemplate;
+  template: WalletTemplate;
 };
 
 type BackupOption = { label: string; value: number };
 
 export const ImportExportDialog = connect(
   (state: AppState) => {
-    const template = exportAuthenticationTemplate(state.currentTemplate);
+    const template = exportWalletTemplate(state.currentTemplate);
     const templateAsString = stringify(template);
     const emptyTemplateAsString = stringify(emptyTemplate);
     const backups = Object.entries(localStorage)
-      .filter(([key, _]) => key.indexOf(localStorageBackupPrefix) === 0)
+      .filter(([key]) => key.startsWith(localStorageBackupPrefix))
       .map(([key, value]) => {
         const date = new Date(key.replace(localStorageBackupPrefix, ''));
         try {
-          const template = JSON.parse(value);
-          const attemptedParse = ideImportAuthenticationTemplate(template);
+          const template = JSON.parse(value as string) as unknown;
+          const attemptedParse = ideImportWalletTemplate(template);
           if (typeof attemptedParse === 'string') {
+            // eslint-disable-next-line @typescript-eslint/no-throw-literal
             throw attemptedParse;
           }
           return { date, template };
         } catch (e) {
           const newKey = key.replace(
             localStorageBackupPrefix,
-            localStorageCorruptedBackupPrefix
+            localStorageCorruptedBackupPrefix,
           );
-          localStorage.setItem(newKey, value);
+          localStorage.setItem(newKey, value as string);
           localStorage.removeItem(key);
           console.error(
-            `There seems to be a corrupted backup value in local storage: '${newKey}'. If you need this backup, try manually editing it to ensure it is a valid Bitauth Authentication Template. Parse error:`,
-            e
+            `There seems to be a corrupted backup value in local storage: '${newKey}'. If you need this backup, try manually editing it to ensure it is a valid wallet template. Parse error:`,
+            e,
           );
           return undefined;
         }
@@ -111,7 +112,7 @@ export const ImportExportDialog = connect(
       .sort((a, b) => b.date.getTime() - a.date.getTime()); // new to old
     if (backups.length > backupWarningLimit) {
       console.warn(
-        `Looks like you've been using Bitauth IDE a lot! Just a heads up – you have over ${backupWarningLimit} auto-saved backups stored in local storage. That can slow down template imports and exports. Once you've exported everything you need, we recommend you clean things up by clearing your local storage:\nlocalStorage.clear();`
+        `Looks like you've been using Bitauth IDE a lot! Just a heads up – you have over ${backupWarningLimit} auto-saved backups stored in local storage. That can slow down template imports and exports. Once you've exported everything you need, we recommend you clean things up by clearing your local storage:\nlocalStorage.clear();`,
       );
     }
     const restoreOptions: BackupOption[] = backups.map((backup, i) => ({
@@ -119,11 +120,8 @@ export const ImportExportDialog = connect(
       value: i,
     }));
     return {
-      name: template.name || 'unnamed',
-      authenticationTemplate:
-        state.pendingTemplateImport === undefined
-          ? templateAsString
-          : state.pendingTemplateImport,
+      name: template.name ?? 'unnamed',
+      WalletTemplate: state.pendingTemplateImport ?? templateAsString,
       isEmptyTemplate: templateAsString === emptyTemplateAsString,
       backups,
       restoreOptions,
@@ -131,34 +129,34 @@ export const ImportExportDialog = connect(
   },
   {
     importTemplate: ActionCreators.importTemplate,
-  }
+  },
 )((props: ImportExportDialogProps & ImportExportDialogDispatch) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [fileName, updateFileName] = useState('');
-  const [template, updateTemplate] = useState(props.authenticationTemplate);
+  const [template, updateTemplate] = useState(props.WalletTemplate);
   const [isViewingSharingLink, setIsViewingSharingLink] = useState(false);
   const [sharingLink, setSharingLink] = useState('');
   const [restoringFromBackup, setRestoringFromBackup] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
   const [showNextProblem, setShowNextProblem] = useState(
-    undefined as { run: () => void } | undefined
+    undefined as { run: () => void } | undefined,
   );
   const [promptForImportOfTemplate, setPromptForImportOfTemplate] = useState<
     AppState['currentTemplate'] | undefined
   >(undefined);
   return (
     <Dialog
-      className="bp4-dark editor-dialog ImportExportDialog"
+      className="bp5-dark editor-dialog ImportExportDialog"
       onOpening={() => {
         setErrorMessage('');
         updateFileName('');
-        updateTemplate(props.authenticationTemplate);
+        updateTemplate(props.WalletTemplate);
       }}
       onClose={() => {
         props.closeDialog();
       }}
-      title={'Import/Export Authentication Template'}
+      title={'Import/Export Wallet Template'}
       isOpen={props.activeDialog === ActiveDialog.importExport}
       canOutsideClickClose={false}
     >
@@ -170,15 +168,15 @@ export const ImportExportDialog = connect(
             <div>
               <Button
                 className="action"
-                disabled={template !== props.authenticationTemplate}
+                disabled={template !== props.WalletTemplate}
                 onClick={() => {
                   beginDownload(
                     `${props.name
                       .toLowerCase()
                       .trim()
                       .replace(/\s/g, '_')
-                      .replace(/[^.a-zA-Z0-9_-]/g, '')}.bitauth-template.json`,
-                    props.authenticationTemplate
+                      .replace(/[^.a-zA-Z0-9_-]/g, '')}.wallet-template.json`,
+                    props.WalletTemplate,
                   );
                 }}
               >
@@ -186,20 +184,10 @@ export const ImportExportDialog = connect(
               </Button>
               <Button
                 className="action"
-                disabled={template !== props.authenticationTemplate}
+                disabled={template !== props.WalletTemplate}
                 onClick={() => {
-                  const base64toBase64Url = (base64: string) =>
-                    base64.replace(/\+/g, '-').replace(/\//g, '_');
-                  const payload = base64toBase64Url(
-                    binToBase64(
-                      deflate(
-                        utf8ToBin(
-                          JSON.stringify(
-                            JSON.parse(props.authenticationTemplate)
-                          )
-                        )
-                      )
-                    )
+                  const payload = stringToUriPayload(
+                    JSON.stringify(JSON.parse(props.WalletTemplate)),
                   );
                   setSharingLink(`${ideURI}/import-template/${payload}`);
                   setIsViewingSharingLink(true);
@@ -227,7 +215,7 @@ export const ImportExportDialog = connect(
                 if (!input.files) {
                   return;
                 }
-                const file = input.files[0];
+                const file = input.files[0]!;
                 updateFileName(file.name);
                 const reader = new FileReader();
                 reader.onload = () => {
@@ -236,6 +224,7 @@ export const ImportExportDialog = connect(
                     return;
                   }
                   try {
+                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
                     updateTemplate(reader.result.toString());
                   } catch (e) {
                     setErrorMessage(e as SetStateAction<string>);
@@ -247,12 +236,13 @@ export const ImportExportDialog = connect(
           </div>
         </div>
         <div className="import-export-editor">
-          <MonacoEditor
-            editorWillMount={prepMonaco}
-            editorDidMount={(editor, monaco) => {
+          <Editor
+            beforeMount={prepMonaco}
+            onMount={(editor, monaco) => {
+              editor.layout();
               setShowNextProblem({
                 run: () => {
-                  editor.getAction('editor.action.marker.next').run();
+                  void editor.getAction('editor.action.marker.next')?.run();
                 },
               });
               const model = editor.getModel();
@@ -268,7 +258,7 @@ export const ImportExportDialog = connect(
                */
               setTimeout(checkMarkers, 1000);
               setTimeout(checkMarkers, 10000);
-              model.onDidChangeContent((e) => {
+              model.onDidChangeContent(() => {
                 /**
                  * Fast and slow ongoing checks:
                  */
@@ -281,7 +271,7 @@ export const ImportExportDialog = connect(
             theme={bitauthDark}
             value={template}
             onChange={(value) => {
-              updateTemplate(value);
+              updateTemplate(value ?? '');
               setErrorMessage('');
             }}
           />
@@ -292,7 +282,7 @@ export const ImportExportDialog = connect(
           <div className="error">
             {showNextProblem !== undefined && errorCount !== 0 ? (
               <>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 {errorCount === 1
                   ? `There is an unresolved issue.`
                   : `There are ${errorCount} unresolved issues.`}
@@ -309,25 +299,25 @@ export const ImportExportDialog = connect(
               <span />
             ) : (
               <>
-                <Icon icon={IconNames.WARNING_SIGN} iconSize={12} />
+                <WarningSign size={12} />
                 <code>{errorMessage}</code>
               </>
             )}
           </div>
           <Button
-            disabled={template === props.authenticationTemplate}
+            disabled={template === props.WalletTemplate}
             className={
               errorCount !== 0 ||
               errorMessage !== '' ||
-              template === props.authenticationTemplate
-                ? 'bp4-disabled'
+              template === props.WalletTemplate
+                ? 'bp5-disabled'
                 : ''
             }
             onClick={() => {
-              let parsed;
+              let parsed: unknown;
               try {
                 parsed = JSON.parse(template);
-                const result = ideImportAuthenticationTemplate(parsed);
+                const result = ideImportWalletTemplate(parsed);
                 if (typeof result === 'string') {
                   throw new Error(result);
                 }
@@ -356,9 +346,11 @@ export const ImportExportDialog = connect(
         isOpen={restoringFromBackup}
         canEscapeKeyCancel={true}
         canOutsideClickCancel={true}
-        onCancel={() => setRestoringFromBackup(false)}
+        onCancel={() => {
+          setRestoringFromBackup(false);
+        }}
         onConfirm={() => {
-          const template = props.backups[selectedBackup].template;
+          const template = props.backups[selectedBackup]!.template;
           updateTemplate(stringify(template));
           setRestoringFromBackup(false);
         }}
@@ -369,7 +361,7 @@ export const ImportExportDialog = connect(
         </p>
         <HTMLSelect
           id="backups"
-          className="bp4-fill"
+          className="bp5-fill"
           options={props.restoreOptions}
           value={selectedBackup}
           onChange={(e) => {
@@ -384,7 +376,9 @@ export const ImportExportDialog = connect(
         isOpen={isViewingSharingLink}
         canEscapeKeyCancel={true}
         canOutsideClickCancel={true}
-        onClose={() => setIsViewingSharingLink(false)}
+        onClose={() => {
+          setIsViewingSharingLink(false);
+        }}
       >
         <p>
           Use the link below to import this template in a different browser:
@@ -393,19 +387,18 @@ export const ImportExportDialog = connect(
           <Popover
             portalClassName="sharing-link-popover"
             content={<div>URL Copied</div>}
-            target={
-              <input
-                type="text"
-                className="sharing-link"
-                value={sharingLink}
-                readOnly
-                onFocus={(e) => {
-                  e.target.select();
-                  document.execCommand('copy');
-                }}
-              />
-            }
-          />
+          >
+            <input
+              type="text"
+              className="sharing-link"
+              value={sharingLink}
+              readOnly
+              onFocus={(e) => {
+                e.target.select();
+                document.execCommand('copy');
+              }}
+            />
+          </Popover>
         </p>
         <p>
           <small>
@@ -435,7 +428,9 @@ export const ImportExportDialog = connect(
         isOpen={promptForImportOfTemplate !== undefined}
         canEscapeKeyCancel={true}
         canOutsideClickCancel={true}
-        onCancel={() => setPromptForImportOfTemplate(undefined)}
+        onCancel={() => {
+          setPromptForImportOfTemplate(undefined);
+        }}
         onConfirm={() => {
           props.importTemplate(promptForImportOfTemplate!);
           setPromptForImportOfTemplate(undefined);
@@ -444,7 +439,7 @@ export const ImportExportDialog = connect(
       >
         <p>
           Are you sure you want to overwrite the current project by importing
-          this authentication template?
+          this wallet template?
         </p>
         <p>
           While this template can be restored from its autosave, consider

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "description": "This contract demonstrates a simple Merkle tree leaf replacement within a covenant. Leaves can be used to maintain any kind of state that a covenant must manage internally like sealed ballots (e.g. shareholder votes), deposit receipts (e.g. for issuing refunds), an order book, etc.\n\nThis demonstration uses a 3-level Merkle tree for which each leaf has been initialized to OP_0:\n \n                    rt\n                 /      \\\n             z0           z1\n            /  \\         /  \\\n          y0    y1     y2    y3\n          /\\    /\\     /\\     /\\\n        x0 x1  x2 x3  x4 x5  x6 x7\n        |  |   |  |   |  |   |  |\n        a0 a1  a2 a3  a4 a5  a6 a7\n\nIn this demo, both \"before\" and \"after\" Merkle trees are simultaneously built/validated for each tree level, optimizing contract size.\n\nYou can explore scripts on the left sidebar:\n\n- See the \"Replace Empty Leaf\" script for a full demo.\n- See the \"Left Sibling\" and \"Right Sibling\" scripts for unit tests of a single tree level.\n\nNote: Merkle trees are typically less efficient for state management than token commitments. Before choosing a Merkle tree, verify that the intended use case cannot be served by placing state in token commitments issued either to certain participants or to covenants designed for this purpose.",
+  "name": "Experimenting with Contract State Merkle Trees",
+  "entities": {},
+  "scenarios": {
+    "empty_leaf_replacement": {
+      "description": "",
+      "name": "Replace Empty Leaf",
+      "transaction": {
+        "outputs": [
+          {
+            "lockingBytecode": "a9145c6edb9c58ce136af7ed1e836c3778654c87983e87",
+            "valueSatoshis": 10000
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 10000,
+          "lockingBytecode": ["slot"]
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "replace_empty_leaf": {
+      "passes": ["empty_leaf_replacement"],
+      "name": "Replace Empty Leaf",
+      "script": "/**\n * This spending path proves that a5 has been properly replaced\n * with a new leaf value. (See description in locking script.)\n * \n * Spender must provide:\n * 1) The new leaf value.\n * 2) The path from the replaced leaf to the root node\n *    with the opposite node at each level.\n * \n * The value of the current root node is already part\n * of the contract, and the new root node will also be\n * computed by the contract (verifying that the respective \n * transaction output is correct).\n * \n * Proving: a5\n * Siblings required for proof: rt, z0, y3, x4\n **/\n\n<node_z0>\n<0> // sibling (z0) is left\n<node_y3>\n<1> // sibling (y3) is right\n<node_x4>\n<0> // sibling (x4) is left\n\n<0> // current leaf value\n<node_a5_filled> // new leaf value",
+      "unlocks": "verify_leaf_replacement"
+    },
+    "verify_leaf_replacement": {
+      "lockingType": "p2sh20",
+      "name": "Verify Leaf Replacement",
+      "script": "/**\n * This contract demonstrates a simple merkle tree leaf\n * replacement within a covenant. Leaves can be used to\n * maintain any kind of state that a covenant must manage\n * internally like sealed ballots (e.g. shareholder votes),\n * deposit receipts (e.g. for issuing refunds), an \n * orderbook, etc.\n * \n * This demonstration uses a 3-level merkle tree for \n * which each leaf has been initialized to OP_0:\n * \n *                  rt\n *               /      \\\n *           z0           z1\n *          /  \\         /  \\\n *        y0    y1     y2    y3\n *        /\\    /\\     /\\     /\\\n *      x0 x1  x2 x3  x4 x5  x6 x7\n *      |  |   |  |   |  |   |  |\n *      a0 a1  a2 a3  a4 a5  a6 a7\n */\n\n/**\n * By placing the current merkle root at the beginning of the\n * contract, we simplify the steps required to later reconstruct\n * the next covenant output (using OP_ACTIVEBYTECODE).\n */\n<node_rt_empty> // (covenant is created with an empty merkle root)\nOP_TOALTSTACK\n\n/**\n * Perform any necessary validation on each leaf:\n */\n// E.g. replaced leaf must be this particular literal:\nOP_DUP <0x00deadbeef> OP_EQUALVERIFY // verify leaf_after (a#)\nOP_HASH256 // node_after (x#)\nOP_SWAP\n// E.g. replaced leaf must be empty:\nOP_DUP <0> OP_EQUALVERIFY // verify leaf_before (a#)\nOP_HASH256 // node_before (x#)\n\n/**\n * Now we verify both merkle proofs at the same time:\n */\nbuild_tree_level // level: x\nbuild_tree_level // level: y\nbuild_tree_level // level: z\n\n/**\n * The stack now contains the expected \"before\" and \"after\"\n * merkle roots. (Before and after the leaf replacement.)\n * \n * On top is the \"before\" merkle root – it must match\n * the root pushed at the beginning of this contract.\n */\n\n// Confirm proof began with covenant's current merkle root\nOP_FROMALTSTACK OP_EQUALVERIFY \n\n/**\n * The final stack item is the \"after\" expected merkle root\n * for the next covenant UTXO. We use it to build the\n * expected UTXO bytecode and enforce the covenant:\n */\nbuild_next_utxo_bytecode\n<0> OP_OUTPUTBYTECODE // covenant must be at output index 0\nOP_EQUALVERIFY\n\n// Finally, we confirm the covenant's balance is maintained:\n OP_INPUTINDEX OP_UTXOVALUE\n<0> OP_OUTPUTVALUE OP_EQUAL\n"
+    },
+    "node_rt_empty": {
+      "name": "node rt empty",
+      "script": "$(\n    OP_0 tree_proof // rt, z0, y3, x4\n    OP_DROP\n    OP_DROP\n    OP_DROP\n)"
+    },
+    "node_z0": {
+      "name": "node z0",
+      "script": "$(\n    OP_0 tree_proof // rt, z0, y3, x4\n    OP_DROP\n    OP_DROP\n    OP_NIP\n)"
+    },
+    "node_y3": {
+      "name": "node y3",
+      "script": "$(\n    OP_0 tree_proof // rt, z0, y3, x4\n    OP_DROP\n    OP_NIP\n    OP_NIP\n)"
+    },
+    "node_x4": {
+      "name": "node x4",
+      "script": "$(\n    OP_0 tree_proof // rt, z0, y3, x4\n    OP_NIP\n    OP_NIP\n    OP_NIP\n)"
+    },
+    "node_a5_filled": {
+      "name": "node a5 filled",
+      "script": "0x00deadbeef"
+    },
+    "node_rt_filled": {
+      "name": "node rt filled",
+      "script": "$(\n    <node_a5_filled> tree_proof // rt, z0, y3, x4\n    OP_DROP\n    OP_DROP\n    OP_DROP\n)"
+    },
+    "tree_proof": {
+      "name": "Tree Proof (a5)",
+      "script": "/**\n * 3-level merkle tree, each leaf is OP_0\n * \n *                  rt\n *               /      \\\n *           z0           z1\n *          /  \\         /  \\\n *        y0    y1     y2    y3\n *        /\\    /\\     /\\     /\\\n *      x0 x1  x2 x3  x4 x5  x6 x7\n *      |  |   |  |   |  |   |  |\n *      a0 a1  a2 a3  a4 a5  a6 a7\n * \n * Creating a proof for a5: rt, z0, y3, x4\n */\n\nOP_HASH256 // x5\nOP_TOALTSTACK\n\nOP_0 OP_HASH256 OP_DUP OP_CAT OP_HASH256 // y0/y1/y3\nOP_DUP OP_DUP OP_CAT OP_HASH256 // y3, z0\nOP_SWAP // z0, y3\n\nOP_FROMALTSTACK // z0, y3, x5\n\nOP_0 // z0, y3, x5, a4\nOP_HASH256 // z0, y3, x5, x4\nOP_DUP OP_TOALTSTACK // save x4\n\nOP_SWAP // z0, y3, x4, x5\n\nOP_CAT OP_HASH256 // z0, y3, y2\nOP_SWAP // z0, y2, y3\n\nOP_DUP OP_TOALTSTACK // save y3\n\nOP_CAT OP_HASH256 // z0, z1\n\nOP_SWAP OP_DUP OP_TOALTSTACK // save z0\nOP_SWAP // z0, z1\n\nOP_CAT OP_HASH256 // rt\n\nOP_FROMALTSTACK // rt, z0\nOP_FROMALTSTACK // rt, z0, y3\nOP_FROMALTSTACK // rt, z0, y3, x4\n\n",
+      "tests": {
+        "empty_leaf": {
+          "check": "<0x5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456> OP_EQUALVERIFY\n<0x352b71f195e85adbaefdcd6d7380d87067865d9a17c44d38982bb8a40bd0b393> OP_EQUALVERIFY\n<0x647fedb4d19e11915076dd60fa72a8e03eb33f6dec87a4f0662b0c1f378a81cb> OP_EQUALVERIFY\n<0x510865e5c8fe73981db61ce09caa4bb61e995f3ec67d6ea24f58d014f92bb89a> OP_EQUAL\n",
+          "name": "Empty Leaf",
+          "setup": "OP_0 // a5"
+        },
+        "filled_leaf": {
+          "check": "<0x5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456> OP_EQUALVERIFY\n<0x352b71f195e85adbaefdcd6d7380d87067865d9a17c44d38982bb8a40bd0b393> OP_EQUALVERIFY\n<0x647fedb4d19e11915076dd60fa72a8e03eb33f6dec87a4f0662b0c1f378a81cb> OP_EQUALVERIFY\n<0x71e98c21a9fe329c8eb1305b4a9f5731e3f0be035770689c9a43933c734f843b> OP_EQUAL\n",
+          "name": "Filled Leaf",
+          "setup": "<node_a5_filled>  // a5"
+        }
+      }
+    },
+    "build_tree_level": {
+      "name": "Build Tree Level",
+      "script": "/**\n *  Tree:\n *                  rt\n *               /      \\\n *           z0           z1\n *          /  \\         /  \\\n *        y0    y1     y2    y3\n *        /\\    /\\     /\\     /\\\n *      x0 x1  x2 x3  x4 x5  x6 x7\n *      |  |   |  |   |  |   |  |\n *      a0 a1  a2 a3  a4 a5  a6 a7\n */\n\nOP_ROT // sibling, node_after, node_before, sibling_is_a_right_node\n\nOP_DUP OP_SIZE OP_EQUALVERIFY // malleability protection\nOP_IF // sibling is a right node\nOP_ROT OP_TUCK // node_after, sibling, node_before, sibling\nOP_ELSE // sibling is a left node\n<2> OP_PICK OP_SWAP // sibling, node_after, sibling, node_before\nOP_ENDIF\nOP_CAT OP_HASH256 // node_before\nOP_TOALTSTACK\nOP_CAT OP_HASH256 // node_after\nOP_FROMALTSTACK // node_after, node_before\n",
+      "tests": {
+        "left_sibling": {
+          "check": "<node_y3> OP_EQUALVERIFY\n<$(<0> OP_HASH256 <node_a5_filled> OP_HASH256 OP_CAT OP_HASH256)> OP_EQUAL",
+          "name": "Left Sibling",
+          "setup": "<node_x4> // sibling\n<0> // x4 is a left sibling (of x5)\n<$(<node_a5_filled> OP_HASH256)> // node_after (the replacing node)\n<$(<0> OP_HASH256)> // node_before (the replaced node)\n"
+        },
+        "right_sibling": {
+          "check": "<node_z0> OP_EQUALVERIFY\n<$(\n    <0> OP_HASH256 \n    <node_a5_filled> OP_HASH256\n    OP_CAT OP_HASH256 // y2\n    <node_y3>\n    OP_CAT OP_HASH256 // y3\n)> // z1\nOP_EQUAL\n",
+          "name": "Right Sibling",
+          "setup": "<node_y3> // sibling\n<1> // y3 is a right sibling (of y2)\n<$( // y2 node_after (the replacing node)\n    <0> OP_HASH256\n    <node_a5_filled> OP_HASH256\n    OP_CAT OP_HASH256\n)> \n<$( // y2 node_before (the replaced node)\n    <0> OP_HASH256\n    <0> OP_HASH256\n    OP_CAT OP_HASH256\n)>"
+        }
+      }
+    },
+    "build_next_utxo_bytecode": {
+      "name": "Build Next UTXO Bytecode",
+      "script": "/**\n * Given the expected merkle root, build the next covenant UTXO bytecode.\n */\n<OP_HASH160 OP_PUSHBYTES_20> // first part of P2SH bytecode\n<OP_PUSHBYTES_32> // encode push of new merkle tree root\nOP_ROT // new merkle tree root\n< OP_PUSHBYTES_32 node_rt_empty 0xc0dec0dec0de > // simulate \"OP_ACTIVEBYTECODE\"\n<33> OP_SPLIT OP_NIP // remove old merkle tree root\nOP_CAT OP_CAT // redeem bytecode\nOP_HASH160 // redeem bytecode hash\n<OP_EQUAL> // second part of P2SH bytecode\nOP_CAT OP_CAT\n",
+      "tests": {
+        "new_merkle_root": {
+          "check": "<0xa9145c6edb9c58ce136af7ed1e836c3778654c87983e87> OP_EQUAL",
+          "name": "New Merkle Root",
+          "setup": "// Start with new merkle root on top of stack:\n<0x71e98c21a9fe329c8eb1305b4a9f5731e3f0be035770689c9a43933c734f843b>"
+        }
+      }
+    }
+  },
+  "supported": ["BCH_2022_05"],
+  "version": 0
+}

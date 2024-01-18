@@ -1,8 +1,10 @@
-import { Middleware } from 'redux';
-import { exportAuthenticationTemplate } from './import-export';
-import { AppState } from './types';
-import { emptyTemplate } from './defaults';
 import { localStorageBackupPrefix } from '../editor/constants';
+
+import { emptyTemplate } from './defaults';
+import { exportWalletTemplate } from './import-export';
+import { AppState } from './types';
+
+import { Middleware } from 'redux';
 
 let hasLogged = false;
 const emptyTemplateString = JSON.stringify(emptyTemplate);
@@ -12,30 +14,31 @@ export enum LocalStorageEvents {
 }
 
 export const automaticallySaveTemplateToLocalStorage: Middleware<
-  {},
+  object,
   AppState
 > = (store) => (next) => (action) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const result = next(action);
   const state = store.getState();
   if (state.templateLoadTime === undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result;
   }
   const saveKey = `${localStorageBackupPrefix}${state.templateLoadTime.toISOString()}`;
   if (!hasLogged) {
     hasLogged = true;
     console.log(
-      `Automatically saving work to local storage key: ${saveKey} – if something goes wrong, you can reload the app and import the saved JSON template from there.`
+      `Automatically saving work to local storage key: ${saveKey} – if something goes wrong, you can reload the app and import the saved JSON template from there.`,
     );
   }
-  const template = JSON.stringify(
-    exportAuthenticationTemplate(state.currentTemplate)
-  );
+  const template = JSON.stringify(exportWalletTemplate(state.currentTemplate));
   /**
    * Avoid polluting local storage if the user doesn't touch anything.
    */
   if (template !== emptyTemplateString) {
     localStorage.setItem(saveKey, template);
   }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return result;
 };
 
