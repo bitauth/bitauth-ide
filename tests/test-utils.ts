@@ -59,6 +59,9 @@ export const test = preFixturesTest.extend({
     await page.evaluate(
       `window.localStorage.setItem('BITAUTH_IDE_GUIDE_POPOVER_DISMISSED', Date.now());`,
     );
+    await page.evaluate(
+      `window.localStorage.setItem('BITAUTH_IDE_E2E_TESTING_DISABLE_NOTIFIER', 'true');`,
+    );
     await use(page);
   },
 });

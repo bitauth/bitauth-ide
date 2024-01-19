@@ -2,6 +2,7 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 import { Alert } from '@blueprintjs/core';
+import { useEffect } from 'react';
 
 export const Notifier = () => {
   const {
@@ -19,11 +20,23 @@ export const Notifier = () => {
     },
   });
 
+  useEffect(() => {
+    const setKey = (value: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      (window as any)._IDE_E2E_TESTING_NOTIFIER = value;
+    };
+    setKey({ setNeedRefresh });
+    return () => {
+      setKey(undefined);
+    };
+  }, [setNeedRefresh]);
+
   const close = () => {
     setNeedRefresh(false);
   };
 
   const reload = () => {
+    console.log('Notifier triggered reload.');
     updateServiceWorker().catch((error) => {
       console.error('Failed to update service worker:', error);
     });
@@ -32,7 +45,11 @@ export const Notifier = () => {
   return (
     <Alert
       confirmButtonText="Reload"
-      isOpen={needRefresh}
+      isOpen={
+        needRefresh &&
+        localStorage.getItem('BITAUTH_IDE_E2E_TESTING_DISABLE_NOTIFIER') !==
+          'true'
+      }
       onClose={close}
       canEscapeKeyCancel={true}
       canOutsideClickCancel={true}

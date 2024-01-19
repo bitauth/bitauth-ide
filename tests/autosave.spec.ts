@@ -1,7 +1,6 @@
 import { expect, test } from './test-utils';
 
 test('autosaves after every action', async ({ page, isMobile }) => {
-  await page.goto('/');
   let logs = '';
   page.on('console', (msg) => {
     logs += msg.text();

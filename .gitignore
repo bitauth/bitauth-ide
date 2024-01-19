@@ -9,6 +9,7 @@ package-lock.json
 /coverage
 /test-results/
 /playwright-report/
+/playwright-report-*/
 /all-blob-reports/
 /blob-report/
 /playwright/.cache/

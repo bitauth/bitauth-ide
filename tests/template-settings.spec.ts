@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { expect, loadTemplate, test } from './test-utils';
 
 test('can modify template settings', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Single Signature (P2PKH) → Transactions are signed by only a single key.',
@@ -45,7 +44,6 @@ test('can modify template settings', async ({ page }) => {
 });
 
 test('can reset template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Single Signature (P2PKH) → Transactions are signed by only a single key.',
@@ -72,7 +70,6 @@ test('can reset template', async ({ page }) => {
 });
 
 test('can download and re-import template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Single Signature (P2PKH) → Transactions are signed by only a single key.',
