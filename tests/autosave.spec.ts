@@ -46,6 +46,7 @@ test('autosaves after every action', async ({ page, isMobile }) => {
   await page.getByRole('button', { name: 'Restore', exact: true }).click();
   await page.getByText('Paste a template below to import.').click();
   await expect(page.locator('.detected-link').first()).toBeVisible();
+  await page.getByText('Paste a template below to import.').click();
   await expect(page).toHaveScreenshot();
   await page.getByRole('button', { name: 'Import Template' }).click();
   await expect(page.locator('h1 .title')).toHaveText('Untitled');
