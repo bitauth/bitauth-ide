@@ -22,8 +22,8 @@
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true
+    "noPropertyAccessFromIndexSignature": true,
   },
   "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tests" }]
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tests" }],
 }

@@ -25,7 +25,7 @@ module.exports = {
     'coverage',
     'dist',
     'libauth',
-    'playwright-report',
+    'playwright-report*',
     '.eslintrc.cjs',
   ],
   parser: '@typescript-eslint/parser',

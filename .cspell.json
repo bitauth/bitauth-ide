@@ -92,7 +92,7 @@
     "dist",
     "libauth",
     "node_modules",
-    "playwright-report",
+    "playwright-report*",
     "test-results",
     "tests/fixtures"
   ]

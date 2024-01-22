@@ -29,7 +29,7 @@ jobs:
           submodules: recursive
       - name: Install dependencies if uncached
         if: steps.restore-yarn.outputs.cache-hit != 'true' || steps.restore-libauth.outputs.cache-hit != 'true'
-        run: yarn install --immutable --immutable-cache
+        run: yarn install --immutable --immutable-cache --check-cache
       - name: Setup node
         uses: actions/setup-node@v4
         with:
