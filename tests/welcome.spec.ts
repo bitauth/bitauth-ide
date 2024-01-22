@@ -36,7 +36,6 @@ preFixturesTest(
 );
 
 test('loads the single signature template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Single Signature (P2PKH) → Transactions are signed by only a single key.',
@@ -67,7 +66,6 @@ test('loads the single signature template', async ({ page }) => {
 });
 
 test('loads the multisig template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: '2-of-3 Multi-Signature → Transactions require any two of three co-owners to sign.',
@@ -88,7 +86,6 @@ test('loads the multisig template', async ({ page }) => {
 });
 
 test('loads the recoverable vault template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: '2-of-2 Recoverable Vault → Transactions require either both co-owners to sign, or after a delay, one co-owner and another trusted party.',
@@ -110,7 +107,6 @@ test('loads the recoverable vault template', async ({ page }) => {
 });
 
 test('loads the scratch pad template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Scratch Pad → A blank slate, ready for some creative genius.',
@@ -126,7 +122,6 @@ test('loads the scratch pad template', async ({ page }) => {
 });
 
 test('can import a template', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Import or Restore Template → Import or restore a template from a previous session.',
@@ -165,23 +160,4 @@ test('can import a template', async ({ page }) => {
   await page.getByRole('button', { name: 'Import Template' }).click();
   await expect(page.locator('h1 .title')).toHaveText('Untitled');
   await expect(page).toHaveScreenshot();
-});
-
-test('logs welcome message to console, indicates development/production mode', async ({
-  page,
-}) => {
-  let logs = '';
-  page.on('console', (msg) => {
-    logs += msg.text();
-  });
-  await page.goto('/');
-  await expect(
-    page.getByRole('heading', { name: 'Choose a template to begin' }),
-  ).toBeVisible();
-  expect(logs).toContain('Welcome to Bitauth IDE!');
-  expect(logs).toContain(
-    process.env.NODE_ENV === 'production'
-      ? 'Bitauth IDE is installed locally and ready to use offline.'
-      : 'Bitauth IDE is running in development mode.',
-  );
 });

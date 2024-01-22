@@ -49,6 +49,7 @@ test('allows single entity deletion and recreation', async ({ page }) => {
     .getByRole('dialog')
     .getByRole('button', { name: 'Delete Entity' })
     .click();
+  await page.getByText('IDE', { exact: true }).hover();
   await expect(page).toHaveScreenshot();
   await page
     .getByRole('heading', { name: 'Entities' })
@@ -95,7 +96,6 @@ test('warns about duplicate entity IDs', async ({ page }) => {
 });
 
 test('can switch between entities', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: '2-of-3 Multi-Signature → Transactions require any two of three co-owners to sign.',
@@ -131,7 +131,6 @@ test('can switch between entities', async ({ page }) => {
 });
 
 test('can modify all entity settings', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: '2-of-3 Multi-Signature → Transactions require any two of three co-owners to sign.',

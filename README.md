@@ -1,8 +1,8 @@
-[TODO: test results]
-
+[![CI](https://img.shields.io/github/actions/workflow/status/bitauth/bitauth-ide/ci.yml?branch=master)](https://github.com/bitauth/bitauth-ide/actions/workflows/ci.yaml)
 [![Codecov](https://img.shields.io/codecov/c/github/bitauth/bitauth-ide/master.svg)](https://codecov.io/gh/bitauth/bitauth-ide)
-[![GitHub stars](https://img.shields.io/github/stars/bitauth/bitauth-ide.svg?style=social&logo=github&label=Stars)](https://github.com/bitauth/bitauth-ide)
+[![Join Chat on Telegram](https://img.shields.io/badge/chat-Bitauth%20IDE-0088CC?logo=telegram)](https://t.me/bitauth_ide)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/BitauthIDE)](https://x.com/BitauthIDE)
+[![GitHub stars](https://img.shields.io/github/stars/bitauth/bitauth-ide.svg?style=social&logo=github&label=Stars)](https://github.com/bitauth/bitauth-ide)
 
 # bitauth-ide
 

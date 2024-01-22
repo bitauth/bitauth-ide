@@ -125,15 +125,15 @@ export const HeaderBar = connect(
     throw new Error('Invalid IDE Mode');
   }
   useEffect(() => {
-    if (
-      localStorageEventHasNeverHappened(
-        LocalStorageEvents.GuidePopoverDismissed,
-      )
-    ) {
-      setTimeout(() => {
+    setTimeout(() => {
+      if (
+        localStorageEventHasNeverHappened(
+          LocalStorageEvents.GuidePopoverDismissed,
+        )
+      ) {
         setIntroPopoverVisible(true);
-      }, 3000);
-    }
+      }
+    }, 3000);
   }, []);
 
   return (

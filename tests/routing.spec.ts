@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from './test-utils';
 
 test('opens the guide at /guide and /guide/', async ({ page }) => {
-  await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome!' })).toBeHidden();
   await expect(
     page.getByRole('heading', { name: 'Bitauth Templates' }),

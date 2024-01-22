@@ -157,7 +157,6 @@ export const Editor = connect(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
       (window as any)._IDE_E2E_TESTING_VIEW_CONFIG = value;
     };
-
     setKey({
       setProjectExplorerWidth,
       setScriptEditorWidths,
@@ -168,11 +167,19 @@ export const Editor = connect(
       setWalletEditorWidth,
       setWalletHistoryHeight,
     });
-
     return () => {
       setKey(undefined);
     };
-  }, []);
+  }, [
+    setProjectExplorerWidth,
+    setScriptEditorWidths,
+    setSettingsWidth,
+    setFrames2SplitHeight,
+    setFrames3TopSplitHeight,
+    setFrames3BottomSplitHeight,
+    setWalletEditorWidth,
+    setWalletHistoryHeight,
+  ]);
 
   const renderScriptEditor = (
     computed: EditorStateScriptMode<IDESupportedProgramState>,

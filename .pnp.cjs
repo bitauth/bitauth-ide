@@ -51,7 +51,6 @@ const RAW_RUNTIME_STATE =
           ["immer-reducer", "npm:0.7.13"],\
           ["istanbul-lib-coverage", "npm:3.2.2"],\
           ["lightningcss", "npm:1.23.0"],\
-          ["logrocket", "npm:5.0.1"],\
           ["monaco-editor", "npm:0.45.0"],\
           ["normalize.css", "npm:8.0.1"],\
           ["nyc", "npm:15.1.0"],\
@@ -4880,7 +4879,6 @@ const RAW_RUNTIME_STATE =
           ["immer-reducer", "npm:0.7.13"],\
           ["istanbul-lib-coverage", "npm:3.2.2"],\
           ["lightningcss", "npm:1.23.0"],\
-          ["logrocket", "npm:5.0.1"],\
           ["monaco-editor", "npm:0.45.0"],\
           ["normalize.css", "npm:8.0.1"],\
           ["nyc", "npm:15.1.0"],\
@@ -8374,15 +8372,6 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/lodash.sortby-npm-4.7.0-fda8ab950d-fc48fb54ff.zip/node_modules/lodash.sortby/",\
         "packageDependencies": [\
           ["lodash.sortby", "npm:4.7.0"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
-    ["logrocket", [\
-      ["npm:5.0.1", {\
-        "packageLocation": "./.yarn/cache/logrocket-npm-5.0.1-36d9dc30a7-05b1cf345f.zip/node_modules/logrocket/",\
-        "packageDependencies": [\
-          ["logrocket", "npm:5.0.1"]\
         ],\
         "linkType": "HARD"\
       }]\

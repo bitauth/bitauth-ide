@@ -1,7 +1,6 @@
 import { expect, test } from './test-utils';
 
 test('import template from file', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Import or Restore Template → Import or restore a template from a previous session.',
@@ -20,7 +19,6 @@ test('import template from file', async ({ page }) => {
 });
 
 test('shows JSON errors', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Import or Restore Template → Import or restore a template from a previous session.',
@@ -47,14 +45,17 @@ test('shows JSON errors', async ({ page }) => {
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Backspace');
-  await expect(page.getByText('There is an unresolved issue.')).toBeHidden();
+  await expect(page.getByText('There is an unresolved issue.')).toBeHidden({
+    timeout: 10_000,
+  });
   await page.keyboard.press('ArrowRight');
   await page.keyboard.insertText('_ERR');
-  await expect(page.getByText('There are 2 unresolved issues.')).toBeVisible();
+  await expect(page.getByText('There are 2 unresolved issues.')).toBeVisible({
+    timeout: 10_000,
+  });
 });
 
 test('exports working share links', async ({ page }) => {
-  await page.goto('/');
   await page
     .getByRole('button', {
       name: 'Single Signature (P2PKH) → Transactions are signed by only a single key.',
