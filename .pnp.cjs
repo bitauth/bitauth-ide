@@ -63,7 +63,7 @@ const RAW_RUNTIME_STATE =
           ["redux", "npm:4.2.1"],\
           ["redux-devtools-extension", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:2.13.9"],\
           ["typescript", "patch:typescript@npm%3A5.3.3#optional!builtin<compat/typescript>::version=5.3.3&hash=e012d7"],\
-          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11"],\
+          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"],\
           ["vite-bundle-visualizer", "npm:1.0.0"],\
           ["vite-plugin-istanbul", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.0"],\
           ["vite-plugin-pwa", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:0.17.4"],\
@@ -4392,7 +4392,7 @@ const RAW_RUNTIME_STATE =
           ["@vitejs/plugin-react-swc", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:3.5.0"],\
           ["@swc/core", "virtual:e0cb0ddbccc492c71cc638a5bd2d9d5ae3147f559ea90a71eb4ef86341529ac81781cb353d856cef199900a5896560697f1b1a33071e836518fc299f2711e4ba#npm:1.3.100"],\
           ["@types/vite", null],\
-          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11"]\
+          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"]\
         ],\
         "packagePeers": [\
           "@types/vite",\
@@ -4891,7 +4891,7 @@ const RAW_RUNTIME_STATE =
           ["redux", "npm:4.2.1"],\
           ["redux-devtools-extension", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:2.13.9"],\
           ["typescript", "patch:typescript@npm%3A5.3.3#optional!builtin<compat/typescript>::version=5.3.3&hash=e012d7"],\
-          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11"],\
+          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"],\
           ["vite-bundle-visualizer", "npm:1.0.0"],\
           ["vite-plugin-istanbul", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.0"],\
           ["vite-plugin-pwa", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:0.17.4"],\
@@ -11285,17 +11285,17 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["vite", [\
-      ["npm:5.0.11", {\
-        "packageLocation": "./.yarn/cache/vite-npm-5.0.11-d5457a8b86-74a3ddc6d4.zip/node_modules/vite/",\
+      ["npm:5.0.12", {\
+        "packageLocation": "./.yarn/cache/vite-npm-5.0.12-37f95c18d1-c51b8e4588.zip/node_modules/vite/",\
         "packageDependencies": [\
-          ["vite", "npm:5.0.11"]\
+          ["vite", "npm:5.0.12"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11", {\
-        "packageLocation": "./.yarn/__virtual__/vite-virtual-8040776175/0/cache/vite-npm-5.0.11-d5457a8b86-74a3ddc6d4.zip/node_modules/vite/",\
+      ["virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12", {\
+        "packageLocation": "./.yarn/__virtual__/vite-virtual-393618c2f9/0/cache/vite-npm-5.0.12-37f95c18d1-c51b8e4588.zip/node_modules/vite/",\
         "packageDependencies": [\
-          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11"],\
+          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"],\
           ["@types/less", null],\
           ["@types/lightningcss", null],\
           ["@types/node", "npm:20.11.4"],\
@@ -11363,7 +11363,7 @@ const RAW_RUNTIME_STATE =
           ["istanbul-lib-instrument", "npm:5.2.1"],\
           ["picocolors", "npm:1.0.0"],\
           ["test-exclude", "npm:6.0.0"],\
-          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11"]\
+          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"]\
         ],\
         "packagePeers": [\
           "@types/vite",\
@@ -11390,7 +11390,7 @@ const RAW_RUNTIME_STATE =
           ["debug", "virtual:428f325a939c2653ad822eb3d75efb02ac311523dd0d4f9645afc39ea00bd86eceac35a9d59c9b6977d76b670a4ef0ae057ea572338a44729aa592711a8c05a3#npm:4.3.4"],\
           ["fast-glob", "npm:3.3.2"],\
           ["pretty-bytes", "npm:6.1.1"],\
-          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.11"],\
+          ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"],\
           ["workbox-build", "npm:7.0.0"],\
           ["workbox-window", "npm:7.0.0"]\
         ],\
