@@ -5,11 +5,11 @@
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/BitauthIDE)](https://x.com/BitauthIDE)
 [![GitHub stars](https://img.shields.io/github/stars/bitauth/bitauth-ide.svg?style=social&logo=github&label=Stars)](https://github.com/bitauth/bitauth-ide)
 
-# bitauth-ide
+# Bitauth IDE
 
-**[Bitauth IDE](https://ide.bitauth.com/)** is an integrated development environment for bitcoin authentication. You can [find a walk-through and video in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).
+**[Bitauth IDE](https://ide.bitauth.com/)** is an online, integrated development environment for bitcoin (cash) contracts. 
 
-To get started, check out the [built-in guide](https://ide.bitauth.com/guide). You can also get help or share feedback in the [Bitauth IDE Telegram group](https://t.me/bitauth_ide).
+To get started, check out the [built-in guide](https://ide.bitauth.com/guide). An introductory video is also available [in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44), and you can also get help or share feedback in the [Bitauth IDE Telegram group](https://t.me/bitauth_ide).
 
 ### Debug Unlocking and Locking Scripts Together
 
