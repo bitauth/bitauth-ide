@@ -1,3 +1,4 @@
+[![read the guide](https://img.shields.io/badge/read_the_guide-blue)](https://ide.bitauth.com/guide)
 [![CI](https://img.shields.io/github/actions/workflow/status/bitauth/bitauth-ide/ci.yml?branch=master)](https://github.com/bitauth/bitauth-ide/actions/workflows/ci.yaml)
 [![Codecov](https://img.shields.io/codecov/c/github/bitauth/bitauth-ide/master.svg)](https://codecov.io/gh/bitauth/bitauth-ide)
 [![Join Chat on Telegram](https://img.shields.io/badge/chat-Bitauth%20IDE-0088CC?logo=telegram)](https://t.me/bitauth_ide)
@@ -6,33 +7,39 @@
 
 # bitauth-ide
 
-**[Bitauth IDE](https://bitauth.com/ide)** is an integrated development environment for bitcoin authentication. You can [find a full walk-through and video about it in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).
+**[Bitauth IDE](https://ide.bitauth.com/)** is an integrated development environment for bitcoin authentication. You can [find a walk-through and video in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).
 
-Get help or share feedback in the [Bitauth IDE Telegram group](https://t.me/bitauth_ide).
-
-![bitauth-ide-dark](https://user-images.githubusercontent.com/904007/53257400-021e9b80-3698-11e9-86ca-c87f3b8f0bf1.png)
+To get started, check out the [built-in guide](https://ide.bitauth.com/guide). You can also get help or share feedback in the [Bitauth IDE Telegram group](https://t.me/bitauth_ide).
 
 ### Debug Unlocking and Locking Scripts Together
 
-![unlocking-and-locking-script](https://user-images.githubusercontent.com/904007/53257569-7eb17a00-3698-11e9-8fc8-3f55942d0325.png)
+Unlocking scripts can be edited alongside the locking scripts they unlock. The interactive evaluation viewer is constantly updated to display every step of the resulting evaluation as you type.
+
+![Debugging the combined evaluation of an unlocking script followed by a locking script](tests/screenshots.spec.ts-snapshots/script-editor-chromium-hd-linux.png)
 
 ### Inspect the Evaluation in DevTools
 
-![unlocking-and-locking-script](https://user-images.githubusercontent.com/904007/53257628-a7d20a80-3698-11e9-851a-ae17bd675de4.png)
+Click on any stack item to log the program state at that step to the JavaScript developer console. The [Libauth](https://libauth.org/) library is available at `window.libauth` to make debugging easier.
+
+![A screenshot of the JavaScript developer console after clicking on line 3 in the evaluation viewer](./public/console.png)
 
 ### Create and Manage Entities and Variables
 
-![entities-and-variables](https://user-images.githubusercontent.com/904007/53257756-eb2c7900-3698-11e9-836c-e84fa753ae4b.png)
+Create and modify the templates entities and the variables they contribute to wallets and evaluations.
 
-### Describe and Document Bitauth Templates
+![The entity settings editor](tests/screenshots.spec.ts-snapshots/entity-settings-chromium-hd-linux.png)
 
-![template-settings](https://user-images.githubusercontent.com/904007/53258105-ca185800-3699-11e9-9fe3-09ef0a937e1c.png)
+### Describe and Document Wallet Templates
 
-### Import and Export JSON Bitauth Templates
+Review and modify the documentation included in the active template.
 
-![import-export](https://user-images.githubusercontent.com/904007/53257997-858cbc80-3699-11e9-9361-1db9a57d12e9.png)
+![The template settings editor](tests/screenshots.spec.ts-snapshots/template-settings-chromium-hd-linux.png)
 
-Read more about it in [the blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44).
+### Import and Export JSON Wallet Templates
+
+Projects can be shared and re-imported in JSON format via files, sharable links, or plain text.
+
+![JSON import and export dialog](tests/screenshots.spec.ts-snapshots/template-import-export-chromium-hd-linux.png)
 
 ## Contributing
 

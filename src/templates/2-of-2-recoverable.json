@@ -95,6 +95,6 @@
       "unlocks": "lock"
     }
   },
-  "supported": ["BCH_2021_05", "BCH_2022_05"],
+  "supported": ["BCH_2023_05", "BCH_SPEC", "BSV_2020_02", "BTC_2017_08"],
   "version": 0
 }
