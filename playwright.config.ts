@@ -26,22 +26,33 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'chromium-hd',
+      use: {
+        ...devices['Desktop Chrome HiDPI'],
+      },
+      testMatch: /screenshots.spec.ts/,
+    },
+    {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
       },
+      testIgnore: /screenshots.spec.ts/,
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: /screenshots.spec.ts/,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: /screenshots.spec.ts/,
     },
     {
       name: 'mobile-webkit',
       use: { ...devices['iPad Mini landscape'] },
+      testIgnore: /screenshots.spec.ts/,
     },
   ],
   ...(docker
