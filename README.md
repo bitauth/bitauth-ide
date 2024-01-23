@@ -7,7 +7,7 @@
 
 # Bitauth IDE
 
-**[Bitauth IDE](https://ide.bitauth.com/)** is an online, integrated development environment for bitcoin (cash) contracts. 
+**[Bitauth IDE](https://ide.bitauth.com/)** is an online, integrated development environment for bitcoin (cash) contracts.
 
 To get started, check out the [built-in guide](https://ide.bitauth.com/guide). An introductory video is also available [in this blog post](https://blog.bitjson.com/bitauth-ide-write-and-debug-custom-bitcoin-scripts-aad51f6e3f44), and you can also get help or share feedback in the [Bitauth IDE Telegram group](https://t.me/bitauth_ide).
 
