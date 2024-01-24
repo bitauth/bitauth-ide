@@ -1,9 +1,31 @@
 import { expect, fixFontFlakiness, preFixturesTest, test } from './test-utils';
 
 preFixturesTest(
+  'logs welcome message to console, indicates development/production mode',
+  async ({ page }) => {
+    let logs = '';
+    page.on('console', (msg) => {
+      logs += msg.text();
+    });
+    await page.goto('/');
+    await expect(() => {
+      expect(logs).toContain('Welcome to Bitauth IDE!');
+      expect(logs).toContain(
+        process.env.NODE_ENV === 'production'
+          ? 'Bitauth IDE is installed locally and ready to use offline.'
+          : 'Bitauth IDE is running in development mode.',
+      );
+    }).toPass();
+  },
+);
+
+preFixturesTest(
   'loads the welcome screen and guide',
   async ({ page, browserName }) => {
     await page.goto('/');
+    await page.evaluate(
+      `window.localStorage.setItem('BITAUTH_IDE_E2E_TESTING_DISABLE_NOTIFIER', 'true');`,
+    );
     await fixFontFlakiness(page, browserName === 'webkit');
     await expect(
       page.getByRole('heading', { name: 'Choose a template to begin' }),
@@ -11,7 +33,7 @@ preFixturesTest(
     await expect(page).toHaveScreenshot();
     await expect(
       page.getByText('New to Bitauth IDE? Check out the guide!'),
-    ).toBeVisible(); /* Approx. 3 second delay */
+    ).toBeVisible({ timeout: 10_000 }); /* Approx. 3 second delay */
     await expect(page).toHaveScreenshot();
     await page.getByText('bitauth', { exact: true }).click();
     await page

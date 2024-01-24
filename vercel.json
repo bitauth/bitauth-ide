@@ -1,6 +1,9 @@
 {
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "status": 200, "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/ingest/:path(.*)",
+      "destination": "https://app.posthog.com/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

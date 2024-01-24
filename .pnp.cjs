@@ -39,6 +39,7 @@ const RAW_RUNTIME_STATE =
           ["@types/react-redux", "npm:7.1.33"],\
           ["@typescript-eslint/eslint-plugin", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:6.19.1"],\
           ["@typescript-eslint/parser", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:6.19.1"],\
+          ["@vercel/analytics", "npm:1.1.2"],\
           ["@vite-pwa/assets-generator", "npm:0.2.3"],\
           ["@vitejs/plugin-react-swc", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:3.5.0"],\
           ["cspell", "npm:8.3.2"],\
@@ -55,6 +56,7 @@ const RAW_RUNTIME_STATE =
           ["normalize.css", "npm:8.0.1"],\
           ["nyc", "npm:15.1.0"],\
           ["pako", "npm:2.1.0"],\
+          ["posthog-js", "npm:1.101.0"],\
           ["prettier", "npm:3.2.4"],\
           ["react", "npm:18.2.0"],\
           ["react-dom", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:18.2.0"],\
@@ -64,7 +66,7 @@ const RAW_RUNTIME_STATE =
           ["redux-devtools-extension", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:2.13.9"],\
           ["typescript", "patch:typescript@npm%3A5.3.3#optional!builtin<compat/typescript>::version=5.3.3&hash=e012d7"],\
           ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"],\
-          ["vite-bundle-visualizer", "npm:1.0.0"],\
+          ["vite-bundle-visualizer", "npm:0.11.0"],\
           ["vite-plugin-istanbul", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.0"],\
           ["vite-plugin-pwa", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:0.17.4"],\
           ["workbox-window", "npm:7.0.0"]\
@@ -4527,9 +4529,19 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["@vercel/analytics", [\
+      ["npm:1.1.2", {\
+        "packageLocation": "./.yarn/cache/@vercel-analytics-npm-1.1.2-cdbea53b32-01d2d4b9a1.zip/node_modules/@vercel/analytics/",\
+        "packageDependencies": [\
+          ["@vercel/analytics", "npm:1.1.2"],\
+          ["server-only", "npm:0.0.1"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["@vite-pwa/assets-generator", [\
       ["npm:0.2.3", {\
-        "packageLocation": "./.yarn/cache/@vite-pwa-assets-generator-npm-0.2.3-135901c0a1-f3ebe1ebac.zip/node_modules/@vite-pwa/assets-generator/",\
+        "packageLocation": "./.yarn/unplugged/@vite-pwa-assets-generator-npm-0.2.3-135901c0a1/node_modules/@vite-pwa/assets-generator/",\
         "packageDependencies": [\
           ["@vite-pwa/assets-generator", "npm:0.2.3"],\
           ["cac", "npm:6.7.14"],\
@@ -5031,6 +5043,7 @@ const RAW_RUNTIME_STATE =
           ["@types/react-redux", "npm:7.1.33"],\
           ["@typescript-eslint/eslint-plugin", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:6.19.1"],\
           ["@typescript-eslint/parser", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:6.19.1"],\
+          ["@vercel/analytics", "npm:1.1.2"],\
           ["@vite-pwa/assets-generator", "npm:0.2.3"],\
           ["@vitejs/plugin-react-swc", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:3.5.0"],\
           ["cspell", "npm:8.3.2"],\
@@ -5047,6 +5060,7 @@ const RAW_RUNTIME_STATE =
           ["normalize.css", "npm:8.0.1"],\
           ["nyc", "npm:15.1.0"],\
           ["pako", "npm:2.1.0"],\
+          ["posthog-js", "npm:1.101.0"],\
           ["prettier", "npm:3.2.4"],\
           ["react", "npm:18.2.0"],\
           ["react-dom", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:18.2.0"],\
@@ -5056,7 +5070,7 @@ const RAW_RUNTIME_STATE =
           ["redux-devtools-extension", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:2.13.9"],\
           ["typescript", "patch:typescript@npm%3A5.3.3#optional!builtin<compat/typescript>::version=5.3.3&hash=e012d7"],\
           ["vite", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.12"],\
-          ["vite-bundle-visualizer", "npm:1.0.0"],\
+          ["vite-bundle-visualizer", "npm:0.11.0"],\
           ["vite-plugin-istanbul", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:5.0.0"],\
           ["vite-plugin-pwa", "virtual:57e49a228e4f69875db681dddaec2e006cf6676c311b4ad30fe336086d7e10f88b1f726b5ceb9ca085d4e12f644bdf4827fd576f77963ccae6ba92cde2ed0dd9#npm:0.17.4"],\
           ["workbox-window", "npm:7.0.0"]\
@@ -6807,6 +6821,15 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["fflate", [\
+      ["npm:0.4.8", {\
+        "packageLocation": "./.yarn/cache/fflate-npm-0.4.8-4dd4e91e29-29d1eddaaa.zip/node_modules/fflate/",\
+        "packageDependencies": [\
+          ["fflate", "npm:0.4.8"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["file-entry-cache", [\
       ["npm:6.0.1", {\
         "packageLocation": "./.yarn/cache/file-entry-cache-npm-6.0.1-31965cf0af-58473e8a82.zip/node_modules/file-entry-cache/",\
@@ -7577,17 +7600,6 @@ const RAW_RUNTIME_STATE =
           ["import-fresh", "npm:3.3.0"],\
           ["parent-module", "npm:1.0.1"],\
           ["resolve-from", "npm:4.0.0"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
-    ["import-from-esm", [\
-      ["npm:1.3.3", {\
-        "packageLocation": "./.yarn/cache/import-from-esm-npm-1.3.3-4c64f297d5-4287ff7e7b.zip/node_modules/import-from-esm/",\
-        "packageDependencies": [\
-          ["import-from-esm", "npm:1.3.3"],\
-          ["debug", "virtual:428f325a939c2653ad822eb3d75efb02ac311523dd0d4f9645afc39ea00bd86eceac35a9d59c9b6977d76b670a4ef0ae057ea572338a44729aa592711a8c05a3#npm:4.3.4"],\
-          ["import-meta-resolve", "npm:4.0.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -9502,6 +9514,26 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["posthog-js", [\
+      ["npm:1.101.0", {\
+        "packageLocation": "./.yarn/cache/posthog-js-npm-1.101.0-253a66caa0-c6a49b72b0.zip/node_modules/posthog-js/",\
+        "packageDependencies": [\
+          ["posthog-js", "npm:1.101.0"],\
+          ["fflate", "npm:0.4.8"],\
+          ["preact", "npm:10.19.3"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["preact", [\
+      ["npm:10.19.3", {\
+        "packageLocation": "./.yarn/cache/preact-npm-10.19.3-b92ab92c70-251b237cc6.zip/node_modules/preact/",\
+        "packageDependencies": [\
+          ["preact", "npm:10.19.3"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["prebuild-install", [\
       ["npm:7.1.1", {\
         "packageLocation": "./.yarn/cache/prebuild-install-npm-7.1.1-cb9fc9d341-6dc70f36b0.zip/node_modules/prebuild-install/",\
@@ -10297,10 +10329,10 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:aad67201df635741b9e2cd69a78241898e9a336df35f31c699c048ceac020f935ae563020d7e68903946e4f644d21f59dc46de557cc8916fa9cf4591bea8c0a6#npm:5.12.0", {\
-        "packageLocation": "./.yarn/__virtual__/rollup-plugin-visualizer-virtual-a47f9efdd0/0/cache/rollup-plugin-visualizer-npm-5.12.0-a9cce23360-0e44a64122.zip/node_modules/rollup-plugin-visualizer/",\
+      ["virtual:5f316f6a6265401595d20729c36db4e2f680b93ebd1a896857531b937ace938bfe96deefe16a560278e71b1457a14699f7e52ddc5ef1d2a0052986bd0a3b7d49#npm:5.12.0", {\
+        "packageLocation": "./.yarn/__virtual__/rollup-plugin-visualizer-virtual-e9bc2c9ac8/0/cache/rollup-plugin-visualizer-npm-5.12.0-a9cce23360-0e44a64122.zip/node_modules/rollup-plugin-visualizer/",\
         "packageDependencies": [\
-          ["rollup-plugin-visualizer", "virtual:aad67201df635741b9e2cd69a78241898e9a336df35f31c699c048ceac020f935ae563020d7e68903946e4f644d21f59dc46de557cc8916fa9cf4591bea8c0a6#npm:5.12.0"],\
+          ["rollup-plugin-visualizer", "virtual:5f316f6a6265401595d20729c36db4e2f680b93ebd1a896857531b937ace938bfe96deefe16a560278e71b1457a14699f7e52ddc5ef1d2a0052986bd0a3b7d49#npm:5.12.0"],\
           ["@types/rollup", null],\
           ["open", "npm:8.4.2"],\
           ["picomatch", "npm:2.3.1"],\
@@ -10413,6 +10445,15 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["serialize-javascript", "npm:4.0.0"],\
           ["randombytes", "npm:2.1.0"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["server-only", [\
+      ["npm:0.0.1", {\
+        "packageLocation": "./.yarn/cache/server-only-npm-0.0.1-24bf42bde2-4704f0ef85.zip/node_modules/server-only/",\
+        "packageDependencies": [\
+          ["server-only", "npm:0.0.1"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -11551,13 +11592,12 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["vite-bundle-visualizer", [\
-      ["npm:1.0.0", {\
-        "packageLocation": "./.yarn/cache/vite-bundle-visualizer-npm-1.0.0-aad67201df-9113c78bf4.zip/node_modules/vite-bundle-visualizer/",\
+      ["npm:0.11.0", {\
+        "packageLocation": "./.yarn/unplugged/vite-bundle-visualizer-npm-0.11.0-5f316f6a62/node_modules/vite-bundle-visualizer/",\
         "packageDependencies": [\
-          ["vite-bundle-visualizer", "npm:1.0.0"],\
+          ["vite-bundle-visualizer", "npm:0.11.0"],\
           ["cac", "npm:6.7.14"],\
-          ["import-from-esm", "npm:1.3.3"],\
-          ["rollup-plugin-visualizer", "virtual:aad67201df635741b9e2cd69a78241898e9a336df35f31c699c048ceac020f935ae563020d7e68903946e4f644d21f59dc46de557cc8916fa9cf4591bea8c0a6#npm:5.12.0"],\
+          ["rollup-plugin-visualizer", "virtual:5f316f6a6265401595d20729c36db4e2f680b93ebd1a896857531b937ace938bfe96deefe16a560278e71b1457a14699f7e52ddc5ef1d2a0052986bd0a3b7d49#npm:5.12.0"],\
           ["tmp", "npm:0.2.1"]\
         ],\
         "linkType": "HARD"\

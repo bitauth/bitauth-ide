@@ -262,7 +262,7 @@ const EvaluationLine = ({
       }`}
       onClick={() => {
         console.log(`ProgramState after line #${lineNumber}:`);
-        console.dir(line.state);
+        console.log(stringify(line.state));
       }}
     >
       {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) => (

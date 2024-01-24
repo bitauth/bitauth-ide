@@ -51,16 +51,14 @@ export const preFixturesTest = baseTest.extend({
 /**
  * Playwright `test` extended to:
  * - collect code coverage
- * - dismiss the guide popover before each test
+ * - dismiss the guide and notification popovers before each test
  */
 export const test = preFixturesTest.extend({
   page: async ({ page }, use) => {
     await page.goto('/');
     await page.evaluate(
-      `window.localStorage.setItem('BITAUTH_IDE_GUIDE_POPOVER_DISMISSED', Date.now());`,
-    );
-    await page.evaluate(
-      `window.localStorage.setItem('BITAUTH_IDE_E2E_TESTING_DISABLE_NOTIFIER', 'true');`,
+      `window.localStorage.setItem('BITAUTH_IDE_GUIDE_POPOVER_DISMISSED', Date.now());
+  window.localStorage.setItem('BITAUTH_IDE_E2E_TESTING_DISABLE_NOTIFIER', 'true');`,
     );
     await use(page);
   },

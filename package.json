@@ -16,6 +16,7 @@
     "@types/react-redux": "^7.1.33",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
+    "@vercel/analytics": "^1.1.2",
     "@vite-pwa/assets-generator": "^0.2.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "cspell": "^8.3.2",
@@ -32,6 +33,7 @@
     "normalize.css": "^8.0.1",
     "nyc": "^15.1.0",
     "pako": "^2.1.0",
+    "posthog-js": "^1.101.0",
     "prettier": "^3.2.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -41,7 +43,7 @@
     "redux-devtools-extension": "^2.13.9",
     "typescript": "^5.3.3",
     "vite": "^5.0.12",
-    "vite-bundle-visualizer": "^1.0.0",
+    "vite-bundle-visualizer": "0.11.0",
     "vite-plugin-istanbul": "^5.0.0",
     "vite-plugin-pwa": "^0.17.4",
     "workbox-window": "^7.0.0"
@@ -51,7 +53,7 @@
     "start": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "preview:prod": "yarn build && yarn preview --host",
+    "preview:prod": "NODE_ENV=production yarn build && yarn preview --host",
     "fix": "yarn fix:eslint && yarn fix:prettier",
     "fix:prettier": "prettier . --write",
     "fix:eslint": "yarn test:eslint --fix",
@@ -85,10 +87,10 @@
     "singleQuote": true
   },
   "dependenciesMeta": {
-    "@vite-pwa/assets-generator@0.0.10": {
+    "@vite-pwa/assets-generator@0.2.3": {
       "unplugged": true
     },
-    "vite-bundle-visualizer@0.10.0": {
+    "vite-bundle-visualizer@0.11.0": {
       "unplugged": true
     }
   },

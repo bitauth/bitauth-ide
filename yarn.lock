@@ -3004,6 +3004,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vercel/analytics@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@vercel/analytics@npm:1.1.2"
+  dependencies:
+    server-only: "npm:^0.0.1"
+  checksum: 01d2d4b9a178d33b913ea94a872ca3d0fd98ba951fc4002d2f5e722a367af0188c81a42a133de472125279dcb5b8eb7cf953682e2b0bf34ebdb0563ba890553e
+  languageName: node
+  linkType: hard
+
 "@vite-pwa/assets-generator@npm:^0.2.3":
   version: 0.2.3
   resolution: "@vite-pwa/assets-generator@npm:0.2.3"
@@ -3411,6 +3420,7 @@ __metadata:
     "@types/react-redux": "npm:^7.1.33"
     "@typescript-eslint/eslint-plugin": "npm:^6.19.1"
     "@typescript-eslint/parser": "npm:^6.19.1"
+    "@vercel/analytics": "npm:^1.1.2"
     "@vite-pwa/assets-generator": "npm:^0.2.3"
     "@vitejs/plugin-react-swc": "npm:^3.5.0"
     cspell: "npm:^8.3.2"
@@ -3427,6 +3437,7 @@ __metadata:
     normalize.css: "npm:^8.0.1"
     nyc: "npm:^15.1.0"
     pako: "npm:^2.1.0"
+    posthog-js: "npm:^1.101.0"
     prettier: "npm:^3.2.4"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -3436,14 +3447,14 @@ __metadata:
     redux-devtools-extension: "npm:^2.13.9"
     typescript: "npm:^5.3.3"
     vite: "npm:^5.0.12"
-    vite-bundle-visualizer: "npm:^1.0.0"
+    vite-bundle-visualizer: "npm:0.11.0"
     vite-plugin-istanbul: "npm:^5.0.0"
     vite-plugin-pwa: "npm:^0.17.4"
     workbox-window: "npm:^7.0.0"
   dependenciesMeta:
-    "@vite-pwa/assets-generator@0.0.10":
+    "@vite-pwa/assets-generator@0.2.3":
       unplugged: true
-    vite-bundle-visualizer@0.10.0:
+    vite-bundle-visualizer@0.11.0:
       unplugged: true
   languageName: unknown
   linkType: soft
@@ -4944,6 +4955,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fflate@npm:^0.4.1":
+  version: 0.4.8
+  resolution: "fflate@npm:0.4.8"
+  checksum: 29d1eddaaa5deab61b1c6b0d21282adacadbc4d2c01e94d8b1ee784398151673b9c563e53f97a801bc410a1ae55e8de5378114a743430e643e7a0644ba8e5a42
+  languageName: node
+  linkType: hard
+
 "file-entry-cache@npm:^6.0.1":
   version: 6.0.1
   resolution: "file-entry-cache@npm:6.0.1"
@@ -5652,16 +5670,6 @@ __metadata:
     parent-module: "npm:^1.0.0"
     resolve-from: "npm:^4.0.0"
   checksum: 7f882953aa6b740d1f0e384d0547158bc86efbf2eea0f1483b8900a6f65c5a5123c2cf09b0d542cc419d0b98a759ecaeb394237e97ea427f2da221dc3cd80cc3
-  languageName: node
-  linkType: hard
-
-"import-from-esm@npm:^1.3.3":
-  version: 1.3.3
-  resolution: "import-from-esm@npm:1.3.3"
-  dependencies:
-    debug: "npm:^4.3.4"
-    import-meta-resolve: "npm:^4.0.0"
-  checksum: 4287ff7e7b8ba52f4547a03be44105ad2cdad1d4bf15ba4f629649ece587633b1c1f14784f1e0f5441d5ac8967f59a64d7017d88d09d34624ebf81af9c48b55e
   languageName: node
   linkType: hard
 
@@ -7416,6 +7424,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"posthog-js@npm:^1.101.0":
+  version: 1.101.0
+  resolution: "posthog-js@npm:1.101.0"
+  dependencies:
+    fflate: "npm:^0.4.1"
+    preact: "npm:^10.19.3"
+  checksum: c6a49b72b099b81385ab35e515751c7d3a84cc36df3715f24f505d907aafc4cffccd3d1e75ef4a130638dd88995edd84da6508ee4c54277624d12e11dd69ab6e
+  languageName: node
+  linkType: hard
+
+"preact@npm:^10.19.3":
+  version: 10.19.3
+  resolution: "preact@npm:10.19.3"
+  checksum: 251b237cc6fc8c39e4dc6cd65df1964b9622ec6005ccdaa57ea43171ba3e1e0f1e3386bbade370b2ce26ea480ceb73ea36b40e635e35e017e2d8614a233e1bed
+  languageName: node
+  linkType: hard
+
 "prebuild-install@npm:^7.1.1":
   version: 7.1.1
   resolution: "prebuild-install@npm:7.1.1"
@@ -8026,7 +8051,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup-plugin-visualizer@npm:^5.11.0":
+"rollup-plugin-visualizer@npm:^5.9.2":
   version: 5.12.0
   resolution: "rollup-plugin-visualizer@npm:5.12.0"
   dependencies:
@@ -8201,6 +8226,13 @@ __metadata:
   dependencies:
     randombytes: "npm:^2.1.0"
   checksum: 510dfe7f0311c0b2f7ab06311afa1668ba2969ab2f1faaac0a4924ede76b7f22ba85cfdeaa0052ec5a047bca42c8cd8ac8df8f0efe52f9bd290b3a39ae69fe9d
+  languageName: node
+  linkType: hard
+
+"server-only@npm:^0.0.1":
+  version: 0.0.1
+  resolution: "server-only@npm:0.0.1"
+  checksum: 4704f0ef85da0be981af6d4ed8e739d39bcfd265b9c246a684060acda5642d0fdc6daffc2308e71e2682c5f508090978802eae0a77623c9b90a49f9ae68048d6
   languageName: node
   linkType: hard
 
@@ -9138,17 +9170,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-bundle-visualizer@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "vite-bundle-visualizer@npm:1.0.0"
+"vite-bundle-visualizer@npm:0.11.0":
+  version: 0.11.0
+  resolution: "vite-bundle-visualizer@npm:0.11.0"
   dependencies:
     cac: "npm:^6.7.14"
-    import-from-esm: "npm:^1.3.3"
-    rollup-plugin-visualizer: "npm:^5.11.0"
+    rollup-plugin-visualizer: "npm:^5.9.2"
     tmp: "npm:^0.2.1"
   bin:
     vite-bundle-visualizer: bin.js
-  checksum: 9113c78bf47bcc673cdf8487c2023a2679d8ec78c4fff2a4c6be83bbe0f3596b1fa5c7fdf4fe7b9abd487cf8b4cf10dbd956183da019de4b72ce9a94385225a6
+  checksum: e028c312d3bf68cc204de4187e6436af555627eca3e3ec90e57410500d4c86448fd8a4b1faeec791c46451a9f8be07cb8649405cb32cd9b657e5c3f06d7982cf
   languageName: node
   linkType: hard
 
