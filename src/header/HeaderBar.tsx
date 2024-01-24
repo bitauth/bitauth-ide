@@ -2,10 +2,6 @@ import './HeaderBar.css';
 import { wrapInterfaceTooltip } from '../editor/common';
 import { GuideDialog } from '../editor/dialogs/guide-dialog/GuideDialog';
 import { workingOnWalletMode } from '../state/defaults';
-import {
-  localStorageEventHasNeverHappened,
-  LocalStorageEvents,
-} from '../state/local-storage';
 import { ActionCreators } from '../state/reducer';
 import {
   ActiveDialog,
@@ -23,7 +19,7 @@ import {
 } from '@blueprintjs/core';
 import { Chat, Manual, Notifications } from '@blueprintjs/icons';
 import { ItemRenderer, Select } from '@blueprintjs/select';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { connect } from 'react-redux';
 
 type IDESupportedModes = {
@@ -120,22 +116,13 @@ export const HeaderBar = connect(
   },
 )((props: HeaderProps) => {
   const [introPopoverVisible, setIntroPopoverVisible] = useState(false);
+  // TODO: hack to give Notifier control
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+  (window as any).setIntroPopoverVisible = setIntroPopoverVisible;
   const currentIDEMode = ideModes.find((mode) => mode.id === props.ideMode);
   if (currentIDEMode === undefined) {
     throw new Error('Invalid IDE Mode');
   }
-  useEffect(() => {
-    setTimeout(() => {
-      if (
-        localStorageEventHasNeverHappened(
-          LocalStorageEvents.GuidePopoverDismissed,
-        )
-      ) {
-        setIntroPopoverVisible(true);
-      }
-    }, 3000);
-  }, []);
-
   return (
     <div className="HeaderBar">
       <div className="left-section">
@@ -201,7 +188,7 @@ export const HeaderBar = connect(
         {wrapInterfaceTooltip(
           <a
             className="link"
-            href="https://twitter.com/bitauth"
+            href="https://twitter.com/BitauthIDE"
             target="_blank"
             rel="noopener noreferrer"
             tabIndex={4}

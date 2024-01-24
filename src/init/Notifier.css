@@ -1,0 +1,23 @@
+.notifier-request-source {
+  bottom: 1em;
+  left: 1em;
+  position: absolute;
+}
+
+.bp5-popover-content .notifier-request {
+  width: 350px;
+  padding: 1em;
+  background: var(--interface-background-color) !important;
+  line-height: 1.5em;
+
+  .button-group {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1em;
+  }
+  .subtle {
+    margin-right: 10px;
+    background-color: var(--interface-background-color) !important;
+    color: #fffb;
+  }
+}
