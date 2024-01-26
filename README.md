@@ -1,5 +1,5 @@
 [![read the guide](https://img.shields.io/badge/read_the_guide-blue)](https://ide.bitauth.com/guide)
-[![CI](https://img.shields.io/github/actions/workflow/status/bitauth/bitauth-ide/ci.yml?branch=master)](https://github.com/bitauth/bitauth-ide/actions/workflows/ci.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/bitauth/bitauth-ide/ci.yml?branch=master)](https://github.com/bitauth/bitauth-ide/actions/workflows/ci.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/bitauth/bitauth-ide/master.svg)](https://codecov.io/gh/bitauth/bitauth-ide)
 [![Join Chat on Telegram](https://img.shields.io/badge/chat-Bitauth%20IDE-0088CC?logo=telegram)](https://t.me/bitauth_ide)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/BitauthIDE)](https://x.com/BitauthIDE)
