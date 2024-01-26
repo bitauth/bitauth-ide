@@ -55,6 +55,10 @@ export const preFixturesTest = baseTest.extend({
  */
 export const test = preFixturesTest.extend({
   page: async ({ page }, use) => {
+    /* Mocked to avoid flakiness from the logged 404 error */
+    await page.route('/_vercel/insights/script.js', async (route) => {
+      await route.fulfill({});
+    });
     await page.goto('/');
     await page.evaluate(
       `window.localStorage.setItem('BITAUTH_IDE_GUIDE_POPOVER_DISMISSED', Date.now());
