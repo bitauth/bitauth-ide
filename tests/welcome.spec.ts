@@ -1,23 +1,22 @@
 import { expect, fixFontFlakiness, preFixturesTest, test } from './test-utils';
 
-preFixturesTest(
-  'logs welcome message to console, indicates development/production mode',
-  async ({ page }) => {
-    let logs = '';
-    page.on('console', (msg) => {
-      logs += msg.text();
-    });
-    await page.goto('/');
-    await expect(() => {
-      expect(logs).toContain('Welcome to Bitauth IDE!');
-      expect(logs).toContain(
-        process.env.NODE_ENV === 'production'
-          ? 'Bitauth IDE is installed locally and ready to use offline.'
-          : 'Bitauth IDE is running in development mode.',
-      );
-    }).toPass();
-  },
-);
+test('logs welcome message to console, indicates development/production mode', async ({
+  page,
+}) => {
+  let logs = '';
+  page.on('console', (msg) => {
+    logs += msg.text();
+  });
+  await page.goto('/');
+  await expect(() => {
+    expect(logs).toContain('Welcome to Bitauth IDE!');
+    expect(logs).toContain(
+      process.env.NODE_ENV === 'production'
+        ? 'Bitauth IDE is installed locally and ready to use offline.'
+        : 'Bitauth IDE is running in development mode.',
+    );
+  }).toPass();
+});
 
 preFixturesTest(
   'loads the welcome screen and guide',

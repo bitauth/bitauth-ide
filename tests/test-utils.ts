@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { promises, writeFileSync } from 'fs';
 import { join } from 'path';
 
-import { test as baseTest, Locator, Page } from '@playwright/test';
+import { test as baseTest, Page } from '@playwright/test';
 
 const istanbulCLIOutput = join(process.cwd(), '.nyc_output');
 const generateUUID = () => randomBytes(16).toString('hex');
@@ -100,64 +100,4 @@ export const fixFontFlakiness = async (page: Page, enable = true) => {
       (element) => (element.style.textRendering = 'geometricPrecision'),
     );
   await page.evaluate(() => document.fonts.ready);
-};
-
-const timeout = (ms: number) => {
-  const state = {
-    done: false,
-    promise: new Promise((res) => setTimeout(res, ms)).then(() => {
-      state.done = true;
-    }),
-  };
-  return state;
-};
-
-/**
- * A utility to scroll within a container until another element becomes visible.
- *
- * Note, scrolling with Playwright's `mouse.wheel` is not supported in
- * mobile WebKit.
- */
-export const scrollUntil = async (
-  /**
-   * A Playwright {@link Page}
-   */
-  page: Page,
-  /**
-   * A locator for the element in which to scroll
-   */
-  scrollContainer: Locator,
-  /**
-   * A locator for the element to which the container should scroll
-   */
-  scrollUntilVisible: Locator,
-  options: {
-    /**
-     * Pixels to scroll horizontally for each `wheel` event
-     */
-    deltaX: number;
-    /**
-     * Pixels to scroll vertically for each `wheel` event
-     */
-    deltaY: number;
-    /**
-     * The delay in milliseconds after which the operation will abort
-     */
-    timeout: number;
-  } = {
-    deltaX: 0,
-    deltaY: 100,
-    timeout: 5_000,
-  },
-) => {
-  const indefinite = options.timeout === 0;
-  const timer = timeout(options.timeout);
-  await scrollContainer.hover();
-  while (
-    (indefinite || !timer.done) &&
-    !(await scrollUntilVisible.isVisible())
-  ) {
-    await page.mouse.wheel(options.deltaX, options.deltaY);
-  }
-  await page.mouse.wheel(options.deltaX, options.deltaY);
 };

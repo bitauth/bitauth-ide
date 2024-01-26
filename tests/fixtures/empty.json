@@ -10,7 +10,7 @@
       "unlocks": "lock"
     },
     "lock": {
-      "lockingType": "standard",
+      "lockingType": "p2sh20",
       "name": "Lock",
       "script": ""
     }
