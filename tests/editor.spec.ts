@@ -1,4 +1,4 @@
-import { expect, loadTemplate, scrollUntil, test } from './test-utils';
+import { expect, loadTemplate, test } from './test-utils';
 
 test('renders spacers as expected', async ({ page }) => {
   await loadTemplate(page, 'tests/fixtures/spacers.json');
@@ -29,7 +29,7 @@ test('renders error as expected for a non-push opcode in unlocking script', asyn
   await expect(page).toHaveScreenshot();
 });
 
-test('Displays evaluation of tested scripts', async ({ page }) => {
+test('displays evaluation of tested scripts', async ({ page }) => {
   await loadTemplate(page, 'tests/fixtures/state-merkle-trees.json');
   await page.getByRole('button', { name: 'Empty Leaf', exact: true }).click();
   await expect(page).toHaveScreenshot();
@@ -51,7 +51,7 @@ test('Displays evaluation of tested scripts', async ({ page }) => {
   await expect(page.locator('.state.highlight.success')).toContainText('1');
 });
 
-test('Displays evaluation of tested scripts with custom scenarios', async ({
+test('displays evaluation of tested scripts with custom scenarios', async ({
   page,
 }) => {
   await loadTemplate(
@@ -61,34 +61,15 @@ test('Displays evaluation of tested scripts with custom scenarios', async ({
   await page.getByRole('button', { name: 'Is 2 Bytes' }).click();
 });
 
-test.fixme(
-  'scrolls, renders success highlighting on valid unlock',
-  async ({ page, isMobile }) => {
-    test.skip(isMobile, '`scrollUntil` is not supported by mobile WebKit');
-    await loadTemplate(page, 'tests/fixtures/state-merkle-trees.json');
-    await page.getByRole('button', { name: 'Replace Empty Leaf' }).click();
-
-    await scrollUntil(
-      page,
-      page.locator('.ScriptEditor-locking .editor'),
-      page.getByText('OP_OUTPUTVALUE OP_EQUAL'),
-    );
-    await page.locator('.state.highlight.success').isVisible();
-    await expect(page).toHaveScreenshot();
-  },
-);
-
-test.fixme(
-  'ignores misleading unicode characters, shows compilation on hover',
-  async ({ page }) => {
-    await loadTemplate(page, 'tests/fixtures/empty.json');
-    await page.getByRole('button', { name: 'Unlock' }).click();
-    await page.locator('.ScriptEditor-locking .monaco-editor').click();
-    await page
-      .locator('.editor textarea')
-      .last()
-      .fill("<'ﬁt'> <'fit'>\nOP_EQUAL\n");
-    await page.getByText('<').first().hover();
-    await expect(page).toHaveScreenshot();
-  },
-);
+test('ignores misleading unicode characters, shows compilation on hover', async ({
+  page,
+}) => {
+  await loadTemplate(page, 'tests/fixtures/empty.json');
+  await page.getByRole('button', { name: 'Unlock' }).click();
+  await page.locator('.ScriptEditor-locking .monaco-editor').click();
+  await page.locator('.editor .view-line').last().click();
+  await page.keyboard.type(`<'ﬁt'> <'fit'>\nOP_EQUAL `);
+  await page.getByText('<').first().hover();
+  await expect(page.getByText('Compiled: 0x03666974')).toBeVisible();
+  await expect(page).toHaveScreenshot();
+});

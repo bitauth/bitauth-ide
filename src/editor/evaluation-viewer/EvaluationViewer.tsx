@@ -46,6 +46,18 @@ import {
 } from '@blueprintjs/icons';
 import { useState } from 'react';
 
+// TODO: remove this workaround when https://github.com/PostHog/posthog-js/issues/968 lands
+declare global {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  interface BigInt {
+    toJSON: () => string;
+  }
+}
+BigInt.prototype.toJSON = function () {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  return this.toString();
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
 (window as any).libauth = libauth;
 
@@ -262,7 +274,7 @@ const EvaluationLine = ({
       }`}
       onClick={() => {
         console.log(`ProgramState after line #${lineNumber}:`);
-        console.log(stringify(line.state));
+        console.log(line.state);
       }}
     >
       {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) => (
