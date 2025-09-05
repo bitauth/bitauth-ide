@@ -11,7 +11,9 @@ import {
   AuthenticationProgramCommon,
   CompilationResult,
   EvaluationSample,
+  StackItemLabel,
   WalletTemplateScriptLocking,
+  walletTemplateToCompilerConfiguration,
 } from '@bitauth/libauth';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
@@ -110,12 +112,34 @@ export enum EvaluationViewerSpacer {
    */
   executedConditional = 'executedConditional',
   /**
+   * Spacer applied to intermediate lines ending inside a loop.
+   *
+   * Note that the first line of each loop is instead marked by
+   * a {@link EvaluationViewerBeginLoop}.
+   */
+  loop = 'loop',
+  /**
    * Spacer applied to lines ending inside an OP_IF/OP_NOTIF... OP_ENDIF block
    * where the last instruction was skipped, i.e. the top element of
    * `executionStack` is `false`.
    */
   skippedConditional = 'skippedConditional',
 }
+
+export type EvaluationViewerBeginLoop = {
+  /**
+   * The index of this loop in the script source.
+   */
+  loopIndex: number;
+  /**
+   * The iteration index of this loop currently being displayed.
+   */
+  iterationIndex: number;
+  /**
+   * The maximum iteration index for this loop in the current evaluation.
+   */
+  maximumIterationIndex: number;
+};
 
 /**
  * TODO: highlights (and descriptions) for the other failure scenarios
@@ -135,7 +159,7 @@ export type EvaluationViewerLine<
   ProgramState extends IDESupportedProgramState = IDESupportedProgramState,
 > = {
   state?: ProgramState;
-  spacers?: EvaluationViewerSpacer[];
+  spacers?: (EvaluationViewerSpacer | EvaluationViewerBeginLoop)[];
   highlight?: EvaluationViewerHighlight;
 };
 
@@ -147,6 +171,11 @@ export type ProjectExplorerTreeNode = {
 
 export type ScriptEditorFrame<ProgramState extends IDESupportedProgramState> = {
   monacoModel?: monacoEditor.editor.ITextModel;
+  /**
+   * The `ip` offset of `test-check` scripts.
+   */
+  ipOffset: number | undefined;
+  labels: StackItemLabel[] | undefined;
   /**
    * `samples` is undefined if there are compilation errors.
    */
@@ -213,6 +242,14 @@ export type EditorStateScriptMode<
     | ProjectEditorMode.isolatedScriptEditor
     | ProjectEditorMode.testedScriptEditor
     | ProjectEditorMode.scriptPairEditor;
+  /**
+   * Set to `undefined` if no compilations were successful (so the previous
+   * StackItemIdentifyFunction can continue to be used.)
+   */
+  identifyStackItems: StackItemIdentifyFunction | undefined;
+  isProcessing: boolean;
+  isPushed: boolean;
+  lockingType: WalletTemplateScriptLocking['lockingType'];
   scriptEditorFrames: ScriptEditorFrame<ProgramState>[];
   /**
    * An array of the internalIds of scripts which are part of this evaluation.
@@ -225,14 +262,16 @@ export type EditorStateScriptMode<
    * the EvaluationViewer to recognize viable updates to its cache.
    */
   scriptEditorEvaluationSource: string[];
-  lockingType: WalletTemplateScriptLocking['lockingType'];
-  isPushed: boolean;
-  /**
-   * Set to `undefined` if no compilations were successful (so the previous
-   * StackItemIdentifyFunction can continue to be used.)
-   */
-  identifyStackItems: StackItemIdentifyFunction | undefined;
-  variableDetails: VariableDetails;
   scriptDetails: ScriptDetails;
   scenarioDetails: ScenarioDetails;
+  variableDetails: VariableDetails;
+  workerDetails: {
+    program: IDESupportedAuthenticationProgram | undefined;
+    compilerConfiguration: ReturnType<
+      typeof walletTemplateToCompilerConfiguration
+    >;
+    lockingScriptId: string | undefined;
+    unlockingScriptId: string | undefined;
+    scenarioId: string | undefined;
+  };
 };

@@ -15,8 +15,12 @@ export const emptyTemplate: WalletTemplate = {
   name: 'Untitled',
   entities: {},
   scripts: {},
-  supported: ['BCH_2023_05'] as IDESupportedVM[],
-  version: 0 as const,
+  supported: [
+    'BCH_2023_05',
+    'BCH_2025_05',
+    'BCH_2026_05',
+    'BCH_SPEC',
+  ] as IDESupportedVM[],
 };
 
 const defaultTemplate = ideImportWalletTemplate(emptyTemplate);
@@ -34,18 +38,25 @@ export const defaultState: AppState = {
   currentScenarioInternalId: undefined,
   lastSelectedScenarioInternalId: undefined,
   currentTemplate: defaultTemplate,
-  currentVmId: 'BCH_2023_05',
+  currentVmId: 'BCH_2025_05',
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
     groupStackItemsDeeperThan: 3,
-    scriptNumbersDisplayFormat: 'integer',
+    supportBigInt: true,
+    vmNumbersDisplayFormat: 'integer',
     reverseStack: false,
     showAlternateStack: false,
     identifyStackItems: true,
+    loopViewingIndexes: [],
   },
   activeDialog: ActiveDialog.none,
   templateLoadTime: undefined,
   pendingTemplateImport: undefined,
+  debug: {
+    isProcessing: true,
+    compilationId: 0,
+    result: undefined,
+  },
   wallets: {
     // cspell: disable
     walletsByInternalId: {

@@ -92,10 +92,12 @@ export type ScenarioDetails = {
       };
   /**
    * The generated scenario or scenario generation error for this evaluation.
+   * Undefined before generation has completed.
    */
   generatedScenario:
     | ScenarioGenerationDebuggingResult<IDESupportedProgramState>
-    | string;
+    | string
+    | undefined;
   /**
    * A listing of all available scenarios, including the currently active one.
    * If `currentScenario` is undefined, this should be an empty list (since
@@ -114,6 +116,47 @@ export type ScenarioDetails = {
 };
 
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';
+
+export const scriptTypes: { label: string; value: ScriptType }[] = [
+  { label: 'Locking Script', value: 'locking' },
+  { label: 'Unlocking Script', value: 'unlocking' },
+  { label: 'Isolated Script', value: 'isolated' },
+  { label: 'Script Test', value: 'test-setup' },
+];
+
+export const typeDescriptions: { [key in ScriptType]: string } = {
+  locking:
+    'Locking scripts hold funds. A locking script is the “challenge” which must be unlocked to spend a transaction output. An “Address” is simply an abstraction for a specific locking script.',
+  unlocking:
+    'An unlocking script spends from a locking script. To create a transaction, the spender must provide a valid unlocking script for each input being spent. (A locking script can be unlocked by multiple unlocking scripts.)',
+  isolated:
+    'An isolated script is useful for constructions like checksums or re-usable utility scripts (which can be used inside other scripts). Isolated scripts can have script tests, e.g. utility scripts can be tested to ensure they perform a series of operations properly.',
+  'test-setup':
+    'A script test is applied to an isolated script. Each script test has a “setup” phase which is evaluated before the tested script, and a “check” phase which is evaluated after. The test passes if the “check” script leaves a single Script Number 1 on the stack.',
+  tested:
+    'Something is broken: tested scripts should be created by assigning a test-setup script to an isolated script.',
+  'test-check':
+    'Something is broken: script tests should use the `test-setup` type in this dialog.',
+};
+
+export type LockingType = WalletTemplateScriptLocking['lockingType'];
+
+export const lockingTypes: { label: string; value: LockingType }[] = [
+  { label: 'P2SH20', value: 'p2sh20' },
+  { label: 'P2SH32', value: 'p2sh32' },
+  { label: 'P2S', value: 'standard' },
+];
+
+export const lockingTypeDescriptions: {
+  [key in LockingType]: string;
+} = {
+  p2sh20:
+    'This is a P2SH20 script: P2SH20-wrapping bytecode is automatically included during compilation.',
+  p2sh32:
+    'This is a P2SH32 script. The P2SH32-wrapping bytecode is automatically included during compilation.',
+  standard:
+    'This is a P2S script: it is compiled directly into the transaction output without P2SH-wrapping bytecode.',
+};
 
 export type BaseScriptType =
   | 'locking'
@@ -241,6 +284,8 @@ export type DisableId = true;
  */
 export const IDEVms = [
   'BCH_2023_05',
+  'BCH_2025_05',
+  'BCH_2026_05',
   'BCH_SPEC',
   'BSV_2020_02',
   'BTC_2017_08',
@@ -328,6 +373,24 @@ export type IDEWallets = {
   utxosByChainPath: { [internalId: string]: IDEUTXOs };
 };
 
+export type DebugDetails =
+  | {
+      isProcessing: true;
+      compilationId: number;
+      result: undefined;
+    }
+  | {
+      isProcessing: false;
+      compilationId: number;
+      result: {
+        debugTrace: IDESupportedProgramState[];
+        verifyResult: string | true;
+        scenarioGeneration:
+          | string
+          | ScenarioGenerationDebuggingResult<IDESupportedProgramState>;
+      };
+    };
+
 export type AppState = {
   ideMode: IDEMode;
   /**
@@ -392,6 +455,7 @@ export type AppState = {
    * display the pending import rather than the default empty template.
    */
   pendingTemplateImport: string | undefined;
+  debug: DebugDetails;
 };
 
 export type CurrentScripts = {
@@ -422,7 +486,7 @@ export type CurrentVariables = {
 export type IDESupportedProgramState = AuthenticationProgramStateMinimum &
   AuthenticationProgramStateStack &
   AuthenticationProgramStateAlternateStack &
-  AuthenticationProgramStateControlStack<boolean | number> &
+  AuthenticationProgramStateControlStack &
   AuthenticationProgramStateError &
   AuthenticationProgramStateCodeSeparator &
   AuthenticationProgramStateSignatureAnalysis &
@@ -433,10 +497,11 @@ export type IDESupportedProgramState = AuthenticationProgramStateMinimum &
  */
 export type EvaluationViewerSettings = {
   /**
-   * If `true`, the EvaluationViewer should aggressively attempt to replace
-   * valid Script Numbers on the stack with their numerical representation.
+   * The EvaluationViewer will aggressively attempt to replace valid Script
+   * Numbers on the stack with the chosen representation.
    */
-  scriptNumbersDisplayFormat: 'hex' | 'integer' | 'binary';
+  vmNumbersDisplayFormat: 'hex' | 'integer' | 'binary' | 'bigint';
+  supportBigInt: boolean;
   /**
    * If `true`, the EvaluationViewer should show the AlternativeStack rather
    * than the normal stack.
@@ -469,4 +534,29 @@ export type EvaluationViewerSettings = {
    * follow the origin of specific byte sequences).
    */
   identifyStackItems: boolean;
+
+  /**
+   * An array of numbers indicating the iteration index to display of each
+   * loop rendered in the EvaluationViewer. Each array item corresponds to a
+   * visible loop in source order.
+   *
+   * Note that this setting is global: when switching between active scripts,
+   * the editor attempts to continue displaying the same iteration index as a
+   * convenience; this is often useful when reviewing different code paths of
+   * the same contract or when switching rapidly between contracts.
+   *
+   * By design, if any index of the current `loopViewingIndexes` is set to an
+   * index which is not valid in the current evaluation, the viewer will
+   * automatically display iteration `0` of that particular loop without
+   * modifying `loopViewingIndexes`, retaining the user's configured
+   * loop-viewing state until the user manually changes the respective loop
+   * viewing index. This allows the viewer to maintain the users configured
+   * state through program changes which shorten and then revert the number of
+   * iterations performed by a particular loop.
+   *
+   * Note also that tested scripts therefore share loop viewing indexes between
+   * the tested script and script test (a useful feature, as the tested script
+   * will often iterate in the same way as the tested script).
+   */
+  loopViewingIndexes: number[];
 };

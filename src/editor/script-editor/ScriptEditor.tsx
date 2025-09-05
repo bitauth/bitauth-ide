@@ -3,6 +3,8 @@ import { MonacoMarkerDataRequired } from '../../cash-assembly/editor-tooling';
 import { ActionCreators } from '../../state/reducer';
 import {
   IDESupportedProgramState,
+  LockingType,
+  lockingTypeDescriptions,
   ScriptDetails,
   VariableDetails,
 } from '../../state/types';
@@ -17,8 +19,8 @@ import {
   getSigningSerializationOperationDetails,
   isCorrectScript,
   keyOperationsWhichRequireAParameter,
-  opcodeCompletionItemProviderBCH,
   opcodeHoverProviderBCH,
+  opcodeSuggestions,
   signatureOperationParameterDescriptions,
   signingSerializationOperationDetails,
 } from './bch-language';
@@ -202,7 +204,7 @@ const updateMarkers =
 
 export const ScriptEditor = (props: {
   frame: ScriptEditorFrame<IDESupportedProgramState>;
-  isP2SH: boolean;
+  lockingType: LockingType;
   isPushed: boolean;
   scriptDetails: ScriptDetails;
   variableDetails: VariableDetails;
@@ -494,7 +496,30 @@ export const ScriptEditor = (props: {
       const opcodeCompletionProvider =
         monaco.languages.registerCompletionItemProvider(
           cashAssemblyLanguageId,
-          opcodeCompletionItemProviderBCH,
+          {
+            triggerCharacters: [''],
+            provideCompletionItems: (model, position) => {
+              if (!isCorrectScript(model, script)) {
+                return;
+              }
+              const query = model.getWordAtPosition(position);
+              const columns = model.getWordUntilPosition(position);
+              const range: Range = {
+                startColumn: columns.startColumn,
+                endColumn: columns.endColumn,
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+              };
+              const suggestions =
+                query !== null &&
+                (query.word === 'O' ||
+                  query.word === 'OP' ||
+                  query.word.startsWith('OP_'))
+                  ? opcodeSuggestions(range)
+                  : [];
+              return { suggestions };
+            },
+          },
         );
 
       const variableCompletionProvider =
@@ -803,14 +828,29 @@ export const ScriptEditor = (props: {
         {name}
         {scriptType === 'test-setup' && <span>&nbsp;(Setup)</span>}
         {scriptType === 'test-check' && <span>&nbsp;(Check)</span>}
-        {props.isP2SH && (
-          <span
-            className="script-tag p2sh-tag"
-            title="This is a P2SH script. The P2SH boilerplate is automatically included during compilation."
-          >
-            P2SH
-          </span>
-        )}
+        {(scriptType === 'unlocking' || scriptType === 'locking') &&
+          (props.lockingType === 'p2sh20' ? (
+            <span
+              className="script-tag locking-type-tag"
+              title={lockingTypeDescriptions.p2sh20}
+            >
+              P2SH20
+            </span>
+          ) : props.lockingType === 'p2sh32' ? (
+            <span
+              className="script-tag locking-type-tag"
+              title={lockingTypeDescriptions.p2sh32}
+            >
+              P2SH32
+            </span>
+          ) : (
+            <span
+              className="script-tag locking-type-tag"
+              title={lockingTypeDescriptions.standard}
+            >
+              P2S
+            </span>
+          ))}
         {props.isPushed && scriptType === 'tested' && (
           <span
             className="script-tag pushed-tag"
@@ -870,7 +910,7 @@ export const ScriptEditor = (props: {
         id={id}
         name={name}
         scriptType={scriptType}
-        isP2SH={props.isP2SH}
+        lockingType={props.lockingType}
         isPushed={props.isPushed}
         closeDialog={() => {
           setEditScriptDialogIsOpen(false);

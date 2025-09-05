@@ -17,7 +17,6 @@ import {
 import {
   compilationErrorAssistance,
   renderSimpleMarkdown,
-  vmErrorAssistanceBCH,
 } from '../script-editor/error-assistance';
 
 import * as libauth from '@bitauth/libauth';
@@ -30,7 +29,13 @@ import {
   summarizeDebugTrace,
   vmNumberToBigInt,
 } from '@bitauth/libauth';
-import { Button, HTMLSelect, Popover, Tooltip } from '@blueprintjs/core';
+import {
+  Button,
+  HTMLSelect,
+  Popover,
+  Slider,
+  Tooltip,
+} from '@blueprintjs/core';
 import {
   Cross,
   Error,
@@ -99,6 +104,17 @@ const stackItem = (
   </Popover>
 );
 
+const elideAt = 200;
+const splitAt = 100;
+const elideDigits = (digits: string) =>
+  digits.length < elideAt
+    ? digits
+    : `${digits.slice(0, splitAt)} \u2026 (${digits.length - elideAt} total digits) \u2026 ${digits.slice(-splitAt)}`;
+const elideHex = (characters: string) =>
+  characters.length < elideAt
+    ? characters
+    : `${characters.slice(0, splitAt)} \u2026 (${(characters.length - 2) / 2} total bytes) \u2026 ${characters.slice(-splitAt)}`;
+
 const getStackItemDisplaySettings = (
   item: Uint8Array,
   settings: EvaluationViewerSettings,
@@ -114,34 +130,35 @@ const getStackItemDisplaySettings = (
       label: name,
     };
   }
-  const number = vmNumberToBigInt(item);
+  const number = vmNumberToBigInt(item, {
+    maximumVmNumberByteLength:
+      settings.vmNumbersDisplayFormat === 'bigint'
+        ? 10_000
+        : settings.supportBigInt
+          ? 19
+          : 8,
+  });
   if (typeof number === 'bigint') {
-    if (settings.scriptNumbersDisplayFormat === 'integer') {
-      return {
-        hex,
-        type: 'number' as const,
-        label: `${number}`,
-      };
+    if (
+      settings.vmNumbersDisplayFormat === 'integer' ||
+      settings.vmNumbersDisplayFormat === 'bigint'
+    ) {
+      return { hex, type: 'number' as const, label: elideDigits(`${number}`) };
     }
-    if (settings.scriptNumbersDisplayFormat === 'binary') {
+    if (settings.vmNumbersDisplayFormat === 'binary') {
       return {
         hex,
         type: 'binary' as const,
-        label: `0b${binToBinString(item)}`,
+        label: elideDigits(`0b${binToBinString(item)}`),
       };
     }
   }
-  return {
-    hex,
-    type: 'hex' as const,
-    label: settings.abbreviateLongStackItems ? abbreviateStackItem(hex) : hex,
-  };
+  return { hex, type: 'hex' as const, label: elideHex(hex) };
 };
 
-const hasVmHelp = (
-  error?: string,
-): error is keyof typeof vmErrorAssistanceBCH =>
-  error !== undefined && vmErrorAssistanceBCH[error] !== undefined;
+// TODO: modernize
+const hasVmHelp = (_error?: string) => false;
+// error !== undefined && vmErrorAssistanceBCH[error] !== undefined;
 
 /**
  * Renders some common virtual machine errors with friendly help information.
@@ -150,7 +167,7 @@ const VmErrorLine = ({ state }: { state: IDESupportedProgramState }) =>
   hasVmHelp(state.error) ? (
     <span className="stack-item error error-with-help">
       <Popover
-        content={vmErrorAssistanceBCH[state.error]?.(state)}
+        // content={vmErrorAssistanceBCH[state.error]?.(state)}
         portalClassName="help-popover"
         interactionKind="hover"
       >
@@ -215,6 +232,9 @@ const EvaluationLine = ({
   lineNumber,
   lookup,
   settings,
+  changeEvaluationViewerSettings,
+  setStackItemDifferState,
+  stackItemDifferState,
 }: {
   hasError: boolean;
   hasActiveCursor: boolean;
@@ -222,6 +242,11 @@ const EvaluationLine = ({
   lineNumber: number;
   lookup?: StackItemIdentifyFunction;
   settings: EvaluationViewerSettings;
+  changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  stackItemDifferState: StackItemDifferState;
+  setStackItemDifferState: React.Dispatch<
+    React.SetStateAction<StackItemDifferState>
+  >;
 }) => {
   const firstSkippedSpacer =
     line.spacers === undefined
@@ -252,7 +277,7 @@ const EvaluationLine = ({
             : index === stack.length - (settings.groupStackItemsDeeperThan + 1)
               ? stack.slice(
                   0,
-                  stack.length - (settings.groupStackItemsDeeperThan + 1),
+                  stack.length - settings.groupStackItemsDeeperThan,
                 )
               : undefined,
       )
@@ -273,24 +298,76 @@ const EvaluationLine = ({
             }`
       }`}
       onClick={() => {
-        console.log(`ProgramState after line #${lineNumber}:`);
-        console.log(line.state);
+        if (stackItemDifferState.lineNumber !== lineNumber) {
+          console.log(`ProgramState after line #${lineNumber}:`);
+          console.log(line.state);
+        }
       }}
     >
-      {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) => (
-        <span
-          key={index}
-          className={`spacer ${
-            type === EvaluationViewerSpacer.evaluation
-              ? 'spacer-evaluation'
-              : type === EvaluationViewerSpacer.executedConditional
-                ? 'spacer-conditional-executed'
-                : 'spacer-conditional-skipped'
-          }`}
-        >
-          &nbsp;
-        </span>
-      ))}
+      {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) =>
+        typeof type === 'object' ? (
+          <Tooltip
+            content={`Evaluated ${type.maximumIterationIndex + 1} time${type.maximumIterationIndex === 0 ? '' : 's'}, displaying iteration ${type.iterationIndex + 1} (index ${type.iterationIndex}).`}
+            key={index}
+            portalClassName="loop-tooltip"
+            position="bottom-right"
+          >
+            <Popover
+              position="left"
+              content={
+                type.maximumIterationIndex === 0 ? (
+                  <>
+                    This <code>OP_BEGIN</code> is not repeated.
+                  </>
+                ) : (
+                  <div className="loop-controls">
+                    <Slider
+                      min={0}
+                      max={type.maximumIterationIndex}
+                      stepSize={1}
+                      labelStepSize={
+                        type.maximumIterationIndex < 3
+                          ? 1
+                          : Math.round(type.maximumIterationIndex / 2)
+                      }
+                      value={type.iterationIndex}
+                      onChange={(value) => {
+                        const newIndexes = settings.loopViewingIndexes.slice();
+                        newIndexes.splice(type.loopIndex, 1, value);
+                        changeEvaluationViewerSettings({
+                          ...settings,
+                          loopViewingIndexes: newIndexes,
+                        });
+                      }}
+                    />
+                  </div>
+                )
+              }
+              portalClassName="stack-popover"
+              interactionKind="click"
+            >
+              <span key={index} className={'spacer spacer-loop loop-start'}>
+                {type.iterationIndex}
+              </span>
+            </Popover>
+          </Tooltip>
+        ) : (
+          <span
+            key={index}
+            className={`spacer ${
+              type === EvaluationViewerSpacer.evaluation
+                ? 'spacer-evaluation'
+                : type === EvaluationViewerSpacer.loop
+                  ? 'spacer-loop'
+                  : type === EvaluationViewerSpacer.executedConditional
+                    ? 'spacer-conditional-executed'
+                    : 'spacer-conditional-skipped'
+            }`}
+          >
+            &nbsp;
+          </span>
+        ),
+      )}
       {hasError ? (
         <VmErrorLine state={line.state!}></VmErrorLine>
       ) : lineNumber === 1 && line.state?.ip === 0 ? (
@@ -320,13 +397,147 @@ const EvaluationLine = ({
           );
           return stackItem(
             itemIndex,
-            hex,
-            <span className={`stack-item ${type}`}>{label}</span>,
+            elideHex(hex),
+            <span
+              className={`stack-item ${type}`}
+              onClick={() => {
+                if (
+                  stackItemDifferState.diffNext &&
+                  !(
+                    stackItemDifferState.lineNumber === lineNumber &&
+                    stackItemDifferState.itemIndex === itemIndex
+                  )
+                ) {
+                  const expected = stackItemDifferState.hex;
+                  const got = hex;
+                  const diff = diffHexBytes(expected, got);
+                  const [formatted1, ...styles1] = buildStyledLog(
+                    expected,
+                    diff,
+                    'expected',
+                  );
+                  const [formatted2, ...styles2] = buildStyledLog(
+                    got,
+                    diff,
+                    'got',
+                  );
+                  console.log(
+                    `Comparing stack items – Expected: line ${lineNumber}, item ${itemIndex} | Got: line ${lineNumber}, item ${itemIndex}
+%cExpected:%c  ${formatted1}
+%cGot:%c ${formatted2}`,
+                    highlight,
+                    fade,
+                    ...styles1,
+                    highlight,
+                    fade,
+                    ...styles2,
+                  );
+                  console.log('diff:', diff);
+                  setStackItemDifferState(initialStackItemDifferState);
+                }
+                if (
+                  stackItemDifferState.lineNumber === lineNumber &&
+                  stackItemDifferState.itemIndex === itemIndex &&
+                  stackItemDifferState.hex === hex
+                ) {
+                  console.log(
+                    `Diff viewer: set multi-clicked stack item (line ${lineNumber}, item ${itemIndex}) as "Expected". Click on another stack item to diff the two items.`,
+                  );
+                  setStackItemDifferState({
+                    diffNext: true,
+                    lineNumber,
+                    itemIndex,
+                    hex,
+                  });
+                } else {
+                  setStackItemDifferState({
+                    diffNext: false,
+                    lineNumber,
+                    itemIndex,
+                    hex,
+                  });
+                }
+              }}
+            >
+              {settings.abbreviateLongStackItems
+                ? abbreviateStackItem(label)
+                : label}
+            </span>,
           );
         })
       )}
     </div>
   );
+};
+
+type DiffSegment = { i: number; expected: string; got: string };
+
+const diffHexBytes = (
+  expectedHex: string,
+  receivedHex: string,
+): DiffSegment[] => {
+  const segments: DiffSegment[] = [];
+  const maxChars = Math.max(expectedHex.length, receivedHex.length);
+
+  for (let pos = 0; pos < maxChars; pos += 2) {
+    const expectedByte = expectedHex.slice(pos, pos + 2);
+    const receivedByte = receivedHex.slice(pos, pos + 2);
+
+    if (expectedByte !== receivedByte) {
+      const byteIndex = pos / 2;
+      const last = segments[segments.length - 1];
+      last && last.i + last.expected.length / 2 === byteIndex
+        ? ((last.expected += expectedByte), (last.got += receivedByte))
+        : segments.push({
+            i: byteIndex,
+            expected: expectedByte,
+            got: receivedByte,
+          });
+    }
+  }
+  return segments;
+};
+
+const fade = 'color:#888;';
+const highlight = 'font-weight:bold;';
+const buildStyledLog = (
+  hex: string,
+  diffs: DiffSegment[],
+  side: 'expected' | 'got',
+): [string, ...string[]] => {
+  let fmt = '';
+  const styles: string[] = [];
+  let cursor = 0;
+  for (const { i, expected, got } of diffs) {
+    const diffBytes = side === 'expected' ? expected : got;
+    const start = i * 2;
+    if (start > cursor) {
+      const slice = hex.slice(cursor, start);
+      fmt += `%c${slice}`;
+      styles.push(fade);
+    }
+    fmt += `%c${diffBytes}`;
+    styles.push(highlight);
+    cursor = start + diffBytes.length;
+  }
+  if (cursor < hex.length) {
+    fmt += `%c${hex.slice(cursor)}`;
+    styles.push(fade);
+  }
+  return [fmt, ...styles];
+};
+
+type StackItemDifferState = {
+  diffNext: boolean;
+  lineNumber: number;
+  itemIndex: number;
+  hex: string;
+};
+const initialStackItemDifferState: StackItemDifferState = {
+  diffNext: false,
+  lineNumber: 0,
+  itemIndex: 0,
+  hex: '',
 };
 
 const emptyEvaluation = [] as EvaluationViewerLine[];
@@ -550,7 +761,9 @@ export const ViewerControls = ({
               </p>
               <code className="generated-scenario">
                 <pre>
-                  {stringify(scenarioDetails.generatedScenario.scenario)}
+                  {scenarioDetails.generatedScenario === undefined
+                    ? 'Generating scenario...'
+                    : stringify(scenarioDetails.generatedScenario.scenario)}
                 </pre>
               </code>
             </div>
@@ -571,9 +784,9 @@ export const ViewerControls = ({
         </Popover>
       )}
 
-      {evaluationViewerSettings.scriptNumbersDisplayFormat === 'integer' ? (
+      {evaluationViewerSettings.vmNumbersDisplayFormat === 'integer' ? (
         <Tooltip
-          content="Showing Script Numbers in integer format"
+          content="Showing VM Numbers in integer format"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
@@ -581,16 +794,18 @@ export const ViewerControls = ({
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
-                scriptNumbersDisplayFormat: 'hex',
+                vmNumbersDisplayFormat: evaluationViewerSettings.supportBigInt
+                  ? 'bigint'
+                  : 'hex',
               });
             }}
           >
             <span className="number-format">123</span>
           </Button>
         </Tooltip>
-      ) : evaluationViewerSettings.scriptNumbersDisplayFormat === 'hex' ? (
+      ) : evaluationViewerSettings.vmNumbersDisplayFormat === 'bigint' ? (
         <Tooltip
-          content="Showing Script Numbers in hex format"
+          content="Showing VM Numbers in integer format (up to maximum length)"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
@@ -598,7 +813,24 @@ export const ViewerControls = ({
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
-                scriptNumbersDisplayFormat: 'binary',
+                vmNumbersDisplayFormat: 'hex',
+              });
+            }}
+          >
+            <span className="number-format">123...</span>
+          </Button>
+        </Tooltip>
+      ) : evaluationViewerSettings.vmNumbersDisplayFormat === 'hex' ? (
+        <Tooltip
+          content="Showing VM Numbers in hex format"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                vmNumbersDisplayFormat: 'binary',
               });
             }}
           >
@@ -607,7 +839,7 @@ export const ViewerControls = ({
         </Tooltip>
       ) : (
         <Tooltip
-          content="Showing Script Numbers in binary format"
+          content="Showing VM Numbers in binary format"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
@@ -615,7 +847,7 @@ export const ViewerControls = ({
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
-                scriptNumbersDisplayFormat: 'integer',
+                vmNumbersDisplayFormat: 'integer',
               });
             }}
           >
@@ -796,6 +1028,7 @@ export const EvaluationViewer = (props: {
   viewerRef: (viewer: HTMLDivElement | null) => void;
   showControls: boolean;
   scenarioDetails: ScenarioDetails;
+  isProcessing: boolean;
 }) => {
   const { evaluationSource, evaluationTrace, frame, lookup } =
     props.computedState;
@@ -806,6 +1039,8 @@ export const EvaluationViewer = (props: {
   const [cachedLookup, setCachedLookup] = useState<{
     lookup: StackItemIdentifyFunction | undefined;
   }>(emptyLookup);
+  const [stackItemDifferState, setStackItemDifferState] =
+    useState<StackItemDifferState>(initialStackItemDifferState);
 
   if (evaluationTrace.join() !== cachedEvaluationTrace.join()) {
     setCachedEvaluation(emptyEvaluation);
@@ -825,6 +1060,7 @@ export const EvaluationViewer = (props: {
 
   const cacheIsAvailable = cachedEvaluation.length !== 0;
   const showCached = hasError && cacheIsAvailable;
+  const fadeCached = showCached; // && props.isProcessing; // TODO: props.isProcessing should be false for compilation errors in tested scripts
   const evaluation = showCached ? cachedEvaluation : evaluationLines;
   const activeLookup = showCached ? cachedLookup.lookup : lookup;
 
@@ -833,7 +1069,7 @@ export const EvaluationViewer = (props: {
       className={`EvaluationViewer EvaluationViewer-${frame.scriptType}`}
       ref={props.viewerRef}
     >
-      <div className={`content${showCached ? ' cached' : ''}`}>
+      <div className={`content${fadeCached ? ' cached' : ''}`}>
         {evaluation && evaluation.length > 0 ? (
           <div>
             <div className="header-bar">
@@ -860,6 +1096,11 @@ export const EvaluationViewer = (props: {
                     lineNumber={0}
                     lookup={activeLookup}
                     settings={props.evaluationViewerSettings}
+                    changeEvaluationViewerSettings={
+                      props.changeEvaluationViewerSettings
+                    }
+                    stackItemDifferState={stackItemDifferState}
+                    setStackItemDifferState={setStackItemDifferState}
                   />
                 )}
               </div>
@@ -875,6 +1116,11 @@ export const EvaluationViewer = (props: {
                   lineNumber={lineIndex + 1}
                   lookup={activeLookup}
                   settings={props.evaluationViewerSettings}
+                  changeEvaluationViewerSettings={
+                    props.changeEvaluationViewerSettings
+                  }
+                  stackItemDifferState={stackItemDifferState}
+                  setStackItemDifferState={setStackItemDifferState}
                 />
               ))}
             </div>
